@@ -1,0 +1,12 @@
+cd backend
+
+# Crear package.json
+npm init -y
+
+# Instalar dependencias principales
+npm install express cors dotenv bcryptjs jsonwebtoken
+npm install pg prisma @prisma/client
+npm install multer express-rate-limit helmet
+
+# Dependencias de desarrollo
+npm install --save-dev nodemon
