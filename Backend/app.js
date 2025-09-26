@@ -13,6 +13,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Rutas de API 
+app.use('/api/productos', require('./routes/productos'));
+
+// Ruta de prueba
+app.get('/', (req, res) => {
+    res.json({ 
+        mensaje: '🚀 API Supermercado funcionando!',
+        version: '1.0.0',
+        fecha: new Date().toISOString(),
+        endpoints: [
+            'GET /',
+            'GET /api/productos',
+            'GET /api/productos/:id',
+            'GET /test-db'
+        ]
+    });
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -22,15 +40,6 @@ app.use(limiter);
 
 // Servir archivos estáticos (imágenes)
 app.use('/uploads', express.static('uploads'));
-
-// Ruta de prueba
-app.get('/', (req, res) => {
-  res.json({ 
-    mensaje: '🚀 API Supermercado funcionando!',
-    version: '1.0.0',
-    fecha: new Date().toISOString()
-  });
-});
 
 // Ruta para probar conexión a base de datos
 app.get('/test-db', async (req, res) => {
