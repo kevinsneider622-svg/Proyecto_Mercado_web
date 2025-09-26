@@ -13,10 +13,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting - limita peticiones por IP
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // máximo 100 requests por IP cada 15 min
+  max: 100 // máximo 100 requests por IP
 });
 app.use(limiter);
 
@@ -57,8 +57,20 @@ app.get('/test-db', async (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`📡 http://localhost:${PORT}`);
   console.log(`🔍 Prueba: http://localhost:${PORT}/test-db`);
+  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Manejo graceful de errores
+process.on('SIGINT', async () => {
+  console.log('🛑 Cerrando servidor...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🛑 Terminando aplicación...');
+  process.exit(0);
 });

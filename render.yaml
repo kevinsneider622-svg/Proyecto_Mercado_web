@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: supermercado_web
+    env: node
+    plan: free
+    region: oregon
+
+    buildCommand : npm install && cd Backend && npx prisma generate
+    startCommand: cd Backend && node app.js
+
+    rootDir: Backend
