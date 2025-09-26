@@ -14,7 +14,7 @@
     "npm": "9.x"
   },
   "keywords": ["supermercado", "api", "nodejs"],
-  "author": "Tu Nombre",
+  "author": "Kev",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.0.0",
