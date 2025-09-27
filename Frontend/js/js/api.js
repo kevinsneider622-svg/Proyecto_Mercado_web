@@ -1,7 +1,7 @@
 // Configuración global del frontend
 const CONFIG = {
     // URL de la API backend
-    API_BASE_URL: 'http://localhost:3000/api',
+    API_BASE_URL: 'https://proyecto-mercado-web.onrender.com',
     
     // URLs específicas
     ENDPOINTS: {
