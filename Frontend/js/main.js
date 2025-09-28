@@ -2,7 +2,7 @@
 
 // Cargar página específica
 function cargarPagina(pagina) {
-    currentPage = pagina;
+    window.currentPage = pagina;
     
     // Actualizar navegación activa
     actualizarNavegacionActiva(pagina);
@@ -193,7 +193,7 @@ async function cargarProductosDestacados() {
                                      onerror="this.src='img/placeholder.jpg'">
                                 <div class="card-body">
                                     <h6 class="card-title">${producto.nombre}</h6>
-                                    <p class="product-price">${UTILS.formatPrice(producto.precioVenta)}</p>
+                                    <p class="product-price">${window.UTILS ? window.UTILS.formatPrice(producto.precioVenta) : '$' + producto.precioVenta}</p>
                                     <p class="product-stock ${producto.stockActual < 10 ? 'low-stock' : ''}">
                                         Stock: ${producto.stockActual}
                                     </p>
@@ -266,7 +266,7 @@ function buscarProductos(event) {
 
 // Cargar panel de administración
 async function cargarPanelAdmin() {
-    if (!currentUser || currentUser.rol !== 'admin') {
+    if (!window.currentUser || window.currentUser.rol !== 'admin') {
         showToast('No tienes permisos para acceder al panel de administración', 'danger');
         cargarPagina('inicio');
         return;
@@ -275,7 +275,7 @@ async function cargarPanelAdmin() {
     const contenido = `
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="fas fa-tachometer-alt"></i> Panel de Administración</h2>
-            <span class="badge bg-success">Admin: ${currentUser.username}</span>
+            <span class="badge bg-success">Admin: ${window.currentUser.username}</span>
         </div>
         
         <!-- Pestañas del admin -->
@@ -371,7 +371,7 @@ async function cargarAdminDashboard() {
                         <div class="d-flex align-items-center">
                             <i class="fas fa-dollar-sign fa-3x text-warning me-3"></i>
                             <div>
-                                <h3 class="mb-0">${UTILS.formatPrice(stats.ventasHoy || 0)}</h3>
+                                <h3 class="mb-0">${window.UTILS ? window.UTILS.formatPrice(stats.ventasHoy || 0) : '$' + (stats.ventasHoy || 0)}</h3>
                                 <p class="text-muted mb-0">Ingresos Hoy</p>
                             </div>
                         </div>
@@ -488,3 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ Frontend inicializado correctamente');
 });
+
+window.cargarPagina = cargarPagina;
+window.showToast = showToast;
+window.filtrarPorCategoria = filtrarPorCategoria;
+window.buscarProductos = buscarProductos;
