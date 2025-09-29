@@ -1,7 +1,7 @@
 // Configuración global
 const CONFIG = {
     // URL base de la API
-    API_BASE_URL: 'https://proyecto-mercado-web.onrender.com',
+    API_BASE_URL: 'https://proyecto-mercado-web.onrender.com/api',
 
     // URLs específicas
     ENDPOINTS: {
@@ -30,7 +30,14 @@ const CONFIG = {
         DASHBOARD: '/dashboard',
         ESTADISTICAS: '/dashboard/estadisticas'
     },
-    
+
+    // Configuración de UI
+    UI: {
+        ANIMATION_DURATION: 300,
+        TOAST_DURATION: 5000,
+        DEBOUNCE_DELAY: 500
+    },
+
     // Configuración de paginación
     PAGINATION: {
         DEFAULT_LIMIT: 12,
@@ -88,12 +95,7 @@ const CONFIG = {
         }
     },
     
-    // Configuración de UI
-    UI: {
-        ANIMATION_DURATION: 300,
-        TOAST_DURATION: 5000,
-        DEBOUNCE_DELAY: 500
-    },
+    
     
     // Estados de productos
     PRODUCT_STATUS: {
@@ -275,3 +277,12 @@ function setupApiInterceptors() {
 function handleResponsiveChang(){
     
 }
+
+
+// Exponer CONFIG, cart, currentUser, UTILS globalmente para que main.js y api.js los usen
+window.CONFIG = CONFIG;
+window.UTILS = UTILS;
+window.cart = cart;
+window.currentUser = currentUser;
+window.currentPage = currentPage;   
+//-----------------------------------------------------------------------------------------

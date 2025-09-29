@@ -1,5 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+
+
+
+
+
+
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
@@ -9,7 +15,12 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware de seguridad
 app.use(helmet());
-app.use(cors());
+const cors = require('cors');
+app.use(cors({
+  origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

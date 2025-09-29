@@ -3,6 +3,47 @@
 // Agregar producto al carrito
 function agregarAlCarrito(producto, cantidad = 1) {
     try {
+
+         console.log('Agregando producto:', producto);
+
+          if (!window.cart) {
+            window.cart = [];
+         }
+
+          // Buscar si el producto ya existe
+        const existingIndex = window.cart.findIndex(item => item.id === producto.id);
+        
+        if (existingIndex !== -1) {
+            // Producto existe, actualizar cantidad
+            window.cart[existingIndex].cantidad += cantidad;
+        } else {
+            // Nuevo producto
+            window.cart.push({
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: producto.precioVenta,
+                cantidad: cantidad,
+                imagen: producto.imagenUrl
+            });
+        }
+        
+        // Guardar en localStorage
+        localStorage.setItem('supermercado_cart', JSON.stringify(window.cart));
+        
+        // Actualizar contador
+        actualizarContadorCarrito();
+        
+        // Mostrar mensaje
+        showToast('Producto agregado al carrito', 'success');
+        
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        showToast('Error al agregar producto', 'danger');
+    }
+
+    // Hasta aqui va el nuevo codigo 
+        
+ 
         // Validar cantidad
         if (cantidad <= 0 || cantidad > CONFIG.CART.MAX_QUANTITY) {
             showToast(`Cantidad inválida. Máximo ${CONFIG.CART.MAX_QUANTITY} productos`, 'warning');
@@ -55,7 +96,7 @@ function agregarAlCarrito(producto, cantidad = 1) {
     } catch (error) {
         console.error('Error agregando al carrito:', error);
         showToast('Error al agregar producto al carrito', 'danger');
-        return false;
+        return false
     }
 }
 
@@ -297,15 +338,18 @@ function obtenerCantidadTotalCarrito() {
 }
 
 // Actualizar contador del carrito en la navbar
-function updateCartCounter() {
+function actualizaContadorCarrito() {
     const counter = document.getElementById('carritoCount');
     if (counter) {
         const totalItems = obtenerCantidadTotalCarrito();
         counter.textContent = totalItems;
         counter.style.display = totalItems > 0 ? 'inline' : 'none';
+        counter.textContent = window.cart ? window.cart.length : 0;
     }
 }
 
+window.actualizarContadorCarrito = actualizarContadorCarrito;
+    
 // Guardar carrito en localStorage
 function guardarCarritoEnStorage() {
     try {
