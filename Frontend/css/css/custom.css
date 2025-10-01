@@ -38,23 +38,25 @@ body {
 
 /* Cards de productos */
 .product-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.15s ease;
     border: none;
     border-radius: 10px;
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 .product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 .product-image {
     height: 200px;
     object-fit: cover;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
+    background-color: #f0f0f0;
+    transform: translateZ(0);
 }
-
 .product-price {
     font-size: 1.2rem;
     font-weight: bold;
@@ -71,22 +73,41 @@ body {
     font-weight: bold;
 }
 
+.product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    border: none;
+    border-radius: 10px;
+    will-change: transform; /* Optimización de rendimiento */
+}
+
+.product-card:hover {
+    transform: translateY(-3px); /* Reducido de -5px a -3px */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Sombra más ligera */
+}
+
+.product-image {
+    height: 200px;
+    object-fit: cover;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    background-color: #f8f9fa; /* Color de fondo mientras carga */
+}
+
 /* Botones personalizados */
 .btn-add-cart {
-    background: linear-gradient(45deg, var(--success-color), #20c997);
+    background: var(--success-color);
     border: none;
     border-radius: 25px;
     padding: 8px 20px;
     color: white;
-    transition: all 0.3s ease;
+    transition: transform 0.15s ease;
 }
 
 .btn-add-cart:hover {
-    background: linear-gradient(45deg, #20c997, var(--success-color));
+    background: #20c997;
     color: white;
-    transform: translateY(-2px);
+    transform: scale(1.02);
 }
-
 .btn-primary-custom {
     background: linear-gradient(45deg, var(--primary-color), #6610f2);
     border: none;

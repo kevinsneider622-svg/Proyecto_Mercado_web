@@ -121,8 +121,7 @@ function mostrarProductos() {
                         <img src="${obtenerImagenProducto(producto.imagenUrl)}" 
                              class="product-image" 
                              alt="${producto.nombre}"
-                             onerror="this.src='img/placeholder.jpg'">
-                        
+                             onerror="this.src='https://via.placeholder.com/200x200/0d6efd/ffffff?text=Producto'"
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title mb-2">${producto.nombre}</h6>
                             
