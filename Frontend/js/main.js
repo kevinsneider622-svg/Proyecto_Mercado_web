@@ -188,8 +188,8 @@ async function cargarProductosDestacados() {
                     ${response.productos.map(producto => `
                         <div class="col-md-3 mb-3">
                             <div class="card product-card h-100">
-                                <img src="${CONFIG.API_BASE_URL}${producto.imagenUrl || '/img/placeholder.jpg'}" 
-                                     class="product-image" alt="${producto.nombre}"
+                                <img src="${producto.imagenUrl ? CONFIG.API_BASE_URL + producto.imagenUrl : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EProducto%3C/text%3E%3C/svg%3E'}"
+                                     class="product-image" alt="${producto.nombre}">
                                      onerror="this.src='img/placeholder.jpg'">
                                 <div class="card-body">
                                     <h6 class="card-title">${producto.nombre}</h6>

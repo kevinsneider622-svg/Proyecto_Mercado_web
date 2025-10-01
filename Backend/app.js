@@ -23,6 +23,7 @@ app.use(limiter);
 
 app.use('/uploads', express.static('uploads'));
 app.use('/api/productos', require('./routes/productos'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 app.get('/', (req, res) => {
     res.json({ 
