@@ -1,75 +1,54 @@
+// productos.js
 const express = require('express');
 const router = express.Router();
+// 💡 IMPORTANTE: Importa tu conexión a la base de datos
+const db = require('../db'); 
 
-const productosDemo = [
-      {
-        id: 1,
-        nombre: "Coca Cola 2L",
-        precioVenta: 2500,
-        stockActual: 50,
-        imagenUrl: null,
-        categoria: { nombre: "Bebidas" }
-    },
-    {
-        id: 2,
-        nombre: "Pan Integral",
-        precioVenta: 1200,
-        stockActual: 30,
-        imagenUrl: null,
-        categoria: { nombre: "Panadería" }
-    },
-    {
-        id: 3,
-        nombre: "Leche Deslactosada 1L",
-        precioVenta: 1800,
-        stockActual: 25,
-        imagenUrl: null,
-        categoria: { nombre: "Lácteos" }
-    },
-    {
-        id: 4,
-        nombre: "Manzanas Red 1Kg",
-        precioVenta: 3200,
-        stockActual: 40,
-        imagenUrl: null,
-        categoria: { nombre: "Frutas" }
-    }
-];
+// Obtener todos los productos (AHORA DESDE POSTGRES con alias)
+router.get('/', async (req, res) => {
+    // Nota: El 'req.query' se puede usar aquí si quieres implementar paginación o filtros
+    // const { limit = 10, page = 1 } = req.query; 
 
-// Obtener todos los productos
-router.get('/', (req, res) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        // ✅ 1. Definición de la consulta SQL con los alias (camelCase)
+        // Usamos AS "NombreCamelCase" para que el frontend reconozca las propiedades.
+        const consultaSQL = `
+            SELECT 
+                id, 
+                nombre, 
+                precio_venta AS "precioVenta", 
+                stock_actual AS "stockActual", 
+                imagen_url AS "imagenUrl" 
+            FROM productos
+        `;
         
+        // 📞 2. Ejecutar la consulta SQL usando la variable 'consultaSQL'
+        const resultado = await db.query(consultaSQL); 
+        
+        // Los productos vienen en el array `resultado.rows`
+        const productosDeDB = resultado.rows;
+
+        // Devuelve los datos de la DB como respuesta JSON
         res.json({
-            productos: productosDemo,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total: productosDemo.length,
-                pages: Math.ceil(productosDemo.length / limit)
+            productos: productosDeDB, // ¡Ahora son los datos reales!
+            pagination: { 
+                page: 1, // Placeholder, si no implementas paginación avanzada
+                limit: productosDeDB.length,
+                total: productosDeDB.length,
+                pages: 1
             }
         });
+
     } catch (error) {
-        res.status(500).json({ error: 'Error obteniendo productos' });
+        // Si hay un error, lo registramos y devolvemos un error 500
+        console.error('❌ Error al obtener productos de la base de datos:', error);
+        res.status(500).json({ 
+            error: 'Error obteniendo productos de PostgreSQL',
+            details: error.message 
+        });
     }
 });
 
-
-// Obtener producto por ID
-router.get('/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        const producto = productosDemo.find(p => p.id === parseInt(id));
-        
-        if (!producto) {
-            return res.status(404).json({ error: 'Producto no encontrado' });
-        }
-        
-        res.json(producto);
-    } catch (error) {
-        res.status(500).json({ error: 'Error obteniendo producto' });
-    }
-});
+// ... (Aquí irían las demás rutas como GET /:id, POST, PUT, DELETE)
 
 module.exports = router;

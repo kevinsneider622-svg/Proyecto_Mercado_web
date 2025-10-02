@@ -399,6 +399,3 @@ async function cargarProductosStockBajo() {
         return '<p class="text-danger">Error cargando productos</p>';
     }
 }
-
-
-hola
