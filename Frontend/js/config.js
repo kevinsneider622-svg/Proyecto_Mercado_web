@@ -1,7 +1,7 @@
 // Configuración global
 const CONFIG = {
     // URL base de la API
-    API_BASE_URL: 'http://localhost:5432/api',
+    API_BASE_URL: 'http://127.0.0.7:3000/api',
 
     // URLs específicas
     ENDPOINTS: {
@@ -238,7 +238,7 @@ function loadCartFromStorage() {
         const savedCart = localStorage.getItem(CONFIG.CART.STORAGE_KEY);
         if (savedCart) {
             cart = JSON.parse(savedCart);
-            updateCartCounter();
+            //updateCartCounter();
         }
     } catch (error) {
         console.error('Error cargando carrito:', error);
@@ -270,8 +270,12 @@ function setupGlobalEventListeners() {
     }, CONFIG.UI.DEBOUNCE_DELAY));
 }
 
+
+// Los interceptores se configurarán en api.js
+
 function setupApiInterceptors() {
-    // Los interceptores se configurarán en api.js
+
+    console.log("Interceptores API configurados");
 }
 
 function handleResponsiveChang(){

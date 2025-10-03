@@ -481,7 +481,6 @@ function handleResponsiveChanges() {
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
 
-       initializeApp();
        
     // Cargar página inicial
     cargarPagina('inicio');
@@ -503,36 +502,6 @@ window.buscarProductos = buscarProductos;
 // 
 // Se asume que CONFIG y UTILS están definidos en config.js y api.js está cargado antes.
 // =================================================================
-
-function initializeApp() {
-    console.log(`🚀 Inicializando ${CONFIG.APP.NAME} v${CONFIG.APP.VERSION}`);
-    loadCartFromStorage();
-    checkAuthenticationStatus();
-    setupGlobalEventListeners();
-    setupApiInterceptors(); // Llama a la función definida en api.js
-}
-
-function loadCartFromStorage() {
-    // Usa CONFIG y cart, definidos en config.js
-    try {
-        const savedCart = localStorage.getItem(CONFIG.CART.STORAGE_KEY);
-        if (savedCart) {
-            window.cart = JSON.parse(savedCart); // Actualiza la variable global
-            // updateCartCounter(); // Asume que esta función existe en otro lugar (carrito.js)
-        }
-    } catch (error) {
-        console.error('Error cargando carrito:', error);
-        window.cart = [];
-    }
-}
-
-function checkAuthenticationStatus() {
-    const token = localStorage.getItem('token');
-    if (token) {
-        // Llama a una función de api.js (si la defines allí)
-        // verifyToken(); 
-    }
-}
 
 function setupGlobalEventListeners() {
     // Manejar errores de red
