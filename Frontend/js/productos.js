@@ -5,6 +5,29 @@ let categoriasDisponibles = [];
 let paginaActual = 1;
 let totalPaginas = 1;
 
+// Cargar todos los productos
+async function cargarProductos() {
+    try {
+        const params = {
+            page: paginaActual,
+            limit: 12
+        };
+        const response = await ProductosAPI.obtenerTodos(params);
+        
+        if (response && response.productos) {
+            productosActuales = response.productos;
+            totalPaginas = response.pagination ? response.pagination.pages : 1;
+            mostrarProductos();
+            actualizarPaginacion();
+        } else {
+            mostrarError('No se pudieron cargar los productos');
+        }
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
+        mostrarError('Error al cargar los productos');
+    }
+}
+
 // Cargar página de productos
 function cargarPaginaProductos() {
     const contenido = `
@@ -13,8 +36,7 @@ function cargarPaginaProductos() {
                 <h2><i class="fas fa-box"></i> Catálogo de Productos</h2>
             </div>
         </div>
-
-        <!-- Filtros y búsqueda -->
+        
         <div class="filter-section mb-4">
             <div class="row">
                 <div class="col-md-4 mb-3">
@@ -28,7 +50,6 @@ function cargarPaginaProductos() {
                 <div class="col-md-3 mb-3">
                     <select class="form-select" id="filtroCategoria" onchange="filtrarProductos()">
                         <option value="">Todas las categorías</option>
-                        <!-- Se cargarán dinámicamente -->
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
@@ -48,7 +69,6 @@ function cargarPaginaProductos() {
             </div>
         </div>
 
-        <!-- Lista de productos -->
         <div id="productosContainer">
             <div class="text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -57,48 +77,151 @@ function cargarPaginaProductos() {
             </div>
         </div>
 
-        <!-- Paginación -->
         <nav aria-label="Paginación de productos" id="paginacionContainer" style="display: none;">
-            <ul class="pagination justify-content-center" id="paginacionList">
-                <!-- Se genera dinámicamente -->
-            </ul>
+            <ul class="pagination justify-content-center" id="paginacionList"></ul>
         </nav>
     `;
     
     document.getElementById('contenidoPrincipal').innerHTML = contenido;
-    
-    // Cargar datos iniciales
     cargarProductos();
     cargarCategorias();
 }
 
-// Cargar productos desde la API
-async function cargarProductos(pagina = 1, filtros = {}) {
+async function cargarProductosDestacados() {
     try {
-        mostrarLoadingProductos();
-        
-        const params = {
-            page: pagina,
-            limit: 12,
-            ...filtros
-        };
-        
-        const response = await ProductosAPI.obtenerTodos(params);
-        
-        productosActuales = response.productos || [];
-        paginaActual = response.pagination?.page || 1;
-        totalPaginas = response.pagination?.pages || 1;
-        
-        mostrarProductos();
-        actualizarPaginacion();
-        
+        const response = await ProductosAPI.obtenerDestacados();
+        if (response && response.productos) {
+            mostrarProductosDestacados(response.productos);
+        } else {
+            mostrarErrorProductosDestacados();
+        }
     } catch (error) {
-        console.error('Error cargando productos:', error);
-        mostrarErrorProductos(error.message);
+        console.error('Error cargando productos destacados:', error);
+        mostrarErrorProductosDestacados();
     }
 }
 
-// Mostrar productos en el HTML
+function mostrarProductosDestacados(productos) {
+    const container = document.getElementById('productosDestacados');
+    if (!productos || productos.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                No hay productos destacados disponibles en este momento.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="row">
+            ${productos.map(producto => `
+                <div class="col-md-3 mb-3">
+                    <div class="card product-card h-100">
+                        <img src="${producto.imagenUrl || 'img/placeholder.jpg'}" 
+                             class="product-image" 
+                             alt="${producto.nombre}"
+                             onerror="this.src='img/placeholder.jpg'">
+                        <div class="card-body">
+                            <h6 class="card-title">${producto.nombre}</h6>
+                            <p class="product-price">$${producto.precio}</p>
+                            <button class="btn btn-primary btn-sm w-100" onclick="agregarAlCarrito(${producto.id})">
+                                <i class="fas fa-cart-plus"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function mostrarErrorProductosDestacados() {
+    const container = document.getElementById('productosDestacados');
+    container.innerHTML = `
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            Lo sentimos, no pudimos cargar los productos destacados.
+        </div>
+    `;
+}
+
+function mostrarError(mensaje) {
+    const container = document.getElementById('productosContainer');
+    container.innerHTML = `
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            ${mensaje}
+        </div>
+    `;
+}
+
+async function cambiarPagina(nuevaPagina) {
+    if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
+    
+    paginaActual = nuevaPagina;
+    await cargarProductos();
+    window.scrollTo(0, 0);
+}
+
+function actualizarPaginacion() {
+    const paginacionContainer = document.getElementById('paginacionContainer');
+    if (!paginacionContainer) return;
+
+    if (totalPaginas <= 1) {
+        paginacionContainer.style.display = 'none';
+        return;
+    }
+
+    paginacionContainer.style.display = 'block';
+    const paginacionList = document.getElementById('paginacionList');
+    
+    let paginacionHtml = '';
+    
+    // Botón anterior
+    paginacionHtml += `
+        <li class="page-item ${paginaActual === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Números de página
+    for (let i = 1; i <= totalPaginas; i++) {
+        if (
+            i === 1 || // Primera página
+            i === totalPaginas || // Última página
+            (i >= paginaActual - 2 && i <= paginaActual + 2) // 2 páginas antes y después de la actual
+        ) {
+            paginacionHtml += `
+                <li class="page-item ${i === paginaActual ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${i})">${i}</a>
+                </li>
+            `;
+        } else if (
+            i === paginaActual - 3 || 
+            i === paginaActual + 3
+        ) {
+            paginacionHtml += `
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `;
+        }
+    }
+
+    // Botón siguiente
+    paginacionHtml += `
+        <li class="page-item ${paginaActual === totalPaginas ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginacionList.innerHTML = paginacionHtml;
+}
+
 function mostrarProductos() {
     const container = document.getElementById('productosContainer');
     
@@ -107,7 +230,6 @@ function mostrarProductos() {
             <div class="text-center py-5">
                 <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
                 <h5 class="text-muted">No hay productos disponibles</h5>
-                <p class="text-muted">Intenta cambiar los filtros o agregar productos desde el panel de administración</p>
             </div>
         `;
         return;
@@ -121,7 +243,8 @@ function mostrarProductos() {
                         <img src="${obtenerImagenProducto(producto.imagenUrl)}" 
                              class="product-image" 
                              alt="${producto.nombre}"
-                             onerror="this.src='https://via.placeholder.com/200x200/0d6efd/ffffff?text=Producto'"
+                             onerror="this.src='https://via.placeholder.com/200x200/0d6efd/ffffff?text=Producto'">
+                        
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title mb-2">${producto.nombre}</h6>
                             
@@ -147,7 +270,7 @@ function mostrarProductos() {
                                 <div class="d-grid">
                                     ${producto.stockActual > 0 ? 
                                         `<button class="btn btn-add-cart" onclick="agregarProductoAlCarrito(${producto.id})">
-                                            <i class="fas fa-cart-plus"></i> Agregar al Carrito
+                                            <i class="fas fa-cart-plus"></i> Agregar
                                         </button>` :
                                         `<button class="btn btn-secondary" disabled>
                                             <i class="fas fa-times"></i> Sin Stock
@@ -165,7 +288,6 @@ function mostrarProductos() {
     container.innerHTML = productosHtml;
 }
 
-// Agregar producto al carrito (wrapper)
 async function agregarProductoAlCarrito(productoId) {
     try {
         const producto = productosActuales.find(p => p.id === productoId);
@@ -173,35 +295,21 @@ async function agregarProductoAlCarrito(productoId) {
             showToast('Producto no encontrado', 'error');
             return;
         }
-        
-        const exito = agregarAlCarrito(producto, 1);
-        if (exito) {
-            // Opcional: actualizar la vista del producto para reflejar el cambio de stock
-            // cargarProductos(paginaActual);
-        }
-        
+        agregarAlCarrito(producto, 1);
     } catch (error) {
-        console.error('Error agregando producto:', error);
-        showToast('Error al agregar producto al carrito', 'error');
+        console.error('Error:', error);
+        showToast('Error al agregar producto', 'error');
     }
 }
 
-// Filtrar productos
 function filtrarProductos() {
     const search = document.getElementById('searchBox')?.value || '';
     const categoria = document.getElementById('filtroCategoria')?.value || '';
     const orden = document.getElementById('ordenarPor')?.value || '';
     
     const filtros = {};
-    
-    if (search.trim()) {
-        filtros.search = search.trim();
-    }
-    
-    if (categoria) {
-        filtros.categoria = categoria;
-    }
-    
+    if (search.trim()) filtros.search = search.trim();
+    if (categoria) filtros.categoria = categoria;
     if (orden) {
         const [campo, direccion] = orden.split('_');
         filtros.sortBy = campo;
@@ -211,16 +319,13 @@ function filtrarProductos() {
     cargarProductos(1, filtros);
 }
 
-// Limpiar filtros
 function limpiarFiltros() {
     document.getElementById('searchBox').value = '';
     document.getElementById('filtroCategoria').value = '';
     document.getElementById('ordenarPor').value = '';
-    
     cargarProductos(1);
 }
 
-// Cargar categorías para el filtro
 async function cargarCategorias() {
     try {
         const categorias = await CategoriasAPI.obtenerTodas();
@@ -229,20 +334,17 @@ async function cargarCategorias() {
         const selectCategoria = document.getElementById('filtroCategoria');
         if (selectCategoria) {
             selectCategoria.innerHTML = '<option value="">Todas las categorías</option>';
-            
             categorias.forEach(categoria => {
                 selectCategoria.innerHTML += `
                     <option value="${categoria.id}">${categoria.nombre}</option>
                 `;
             });
         }
-        
     } catch (error) {
         console.error('Error cargando categorías:', error);
     }
 }
 
-// Actualizar paginación
 function actualizarPaginacion() {
     const container = document.getElementById('paginacionContainer');
     const list = document.getElementById('paginacionList');
@@ -253,10 +355,8 @@ function actualizarPaginacion() {
     }
     
     container.style.display = 'block';
-    
     let paginacionHtml = '';
     
-    // Botón anterior
     if (paginaActual > 1) {
         paginacionHtml += `
             <li class="page-item">
@@ -267,7 +367,6 @@ function actualizarPaginacion() {
         `;
     }
     
-    // Números de página
     const inicio = Math.max(1, paginaActual - 2);
     const fin = Math.min(totalPaginas, paginaActual + 2);
     
@@ -279,7 +378,6 @@ function actualizarPaginacion() {
         `;
     }
     
-    // Botón siguiente
     if (paginaActual < totalPaginas) {
         paginacionHtml += `
             <li class="page-item">
@@ -293,22 +391,19 @@ function actualizarPaginacion() {
     list.innerHTML = paginacionHtml;
 }
 
-// Cambiar página
 function cambiarPagina(nuevaPagina) {
-    if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas && nuevaPagina !== paginaActual) {
+    if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
         const filtros = obtenerFiltrosActuales();
         cargarProductos(nuevaPagina, filtros);
     }
 }
 
-// Obtener filtros actuales
 function obtenerFiltrosActuales() {
     const search = document.getElementById('searchBox')?.value || '';
     const categoria = document.getElementById('filtroCategoria')?.value || '';
     const orden = document.getElementById('ordenarPor')?.value || '';
     
     const filtros = {};
-    
     if (search.trim()) filtros.search = search.trim();
     if (categoria) filtros.categoria = categoria;
     if (orden) {
@@ -316,18 +411,15 @@ function obtenerFiltrosActuales() {
         filtros.sortBy = campo;
         filtros.sortOrder = direccion;
     }
-    
     return filtros;
 }
 
-// Funciones de utilidad
 function mostrarLoadingProductos() {
     document.getElementById('productosContainer').innerHTML = `
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando productos...</span>
             </div>
-            <p class="mt-2 text-muted">Cargando productos...</p>
         </div>
     `;
 }
@@ -349,53 +441,21 @@ function obtenerImagenProducto(imagenUrl) {
     if (imagenUrl) {
         return imagenUrl.startsWith('http') ? imagenUrl : `${window.CONFIG?.API_BASE_URL || 'http://localhost:3000'}${imagenUrl}`;
     }
-    return 'img/placeholder.jpg';
+    return 'https://via.placeholder.com/200x200/0d6efd/ffffff?text=Producto';
 }
 
 function formatearPrecio(precio) {
-    if (typeof precio === 'string') {
-        precio = parseFloat(precio);
-    }
     return new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP',
         minimumFractionDigits: 0
-    }).format(precio);
+    }).format(parseFloat(precio));
 }
 
-// Configurar búsqueda en tiempo real (opcional)
-document.addEventListener('DOMContentLoaded', function() {
-    // Búsqueda con Enter
-    document.addEventListener('keypress', function(e) {
-        if (e.target.id === 'searchBox' && e.key === 'Enter') {
-            e.preventDefault();
-            filtrarProductos();
-        }
-    });
-});
-
-// Cargar productos con stock bajo (para admin)
-async function cargarProductosStockBajo() {
-    try {
-        const response = await ProductosAPI.obtenerTodos({ stockBajo: true });
-        const productos = response.productos || [];
-        
-        if (productos.length === 0) {
-            return '<p class="text-muted">No hay productos con stock bajo</p>';
-        }
-        
-        return productos.map(producto => `
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <div>
-                    <strong>${producto.nombre}</strong><br>
-                    <small class="text-muted">Stock: ${producto.stockActual}</small>
-                </div>
-                <span class="badge bg-warning">Stock Bajo</span>
-            </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error cargando productos con stock bajo:', error);
-        return '<p class="text-danger">Error cargando productos</p>';
-    }
-}
+// Exponer funciones globalmente
+window.cargarPaginaProductos = cargarPaginaProductos;
+window.cargarProductos = cargarProductos;
+window.filtrarProductos = filtrarProductos;
+window.limpiarFiltros = limpiarFiltros;
+window.agregarProductoAlCarrito = agregarProductoAlCarrito;
+window.cambiarPagina = cambiarPagina;
