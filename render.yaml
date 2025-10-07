@@ -4,7 +4,6 @@ services:
     env: node
     plan: free
     region: oregon
-    rootDirectory: Backend
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -16,9 +15,29 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      - key: PORT
-        value: 10000
-    healthCheckPath: /api/test-db
+      - key: CORS_ORIGIN
+        value: https://proyecto-mercado-web-zebx.vercel.app
+      - key: PGHOST
+        fromDatabase:
+          name: supermercado-postgres
+          property: host
+      - key: PGUSER
+        fromDatabase:
+          name: supermercado-postgres
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: supermercado-postgres
+          property: password
+      - key: PGDATABASE
+        fromDatabase:
+          name: supermercado-postgres
+          property: database
+      - key: PGPORT
+        fromDatabase:
+          name: supermercado-postgres
+          property: port
+    healthCheckPath: /test-db
     autoDeploy: true
 
 databases:

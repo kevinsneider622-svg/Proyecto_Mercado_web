@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 // Configuración de CORS
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://tu-frontend-url.onrender.com']  // Reemplaza con tu URL de frontend en producción
+        ? ['https://proyecto-mercado-web-zebx.vercel.app']  // URL del frontend en Vercel
         : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
