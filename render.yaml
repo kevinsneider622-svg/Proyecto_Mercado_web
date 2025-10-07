@@ -9,26 +9,10 @@ services:
         value: production
       - key: PORT
         value: "3000"
-      - key: PGUSER
+      - key: DATABASE_URL
         fromDatabase:
           name: supermercado-postgres
-          property: user
-      - key: PGHOST
-        fromDatabase:
-          name: supermercado-postgres
-          property: host
-      - key: PGPASSWORD
-        fromDatabase:
-          name: supermercado-postgres
-          property: password
-      - key: PGDATABASE
-        fromDatabase:
-          name: supermercado-postgres
-          property: database
-      - key: PGPORT
-        fromDatabase:
-          name: supermercado-postgres
-          property: port
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
