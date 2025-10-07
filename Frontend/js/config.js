@@ -1,9 +1,10 @@
 // Configuración global
 window.CONFIG = {
     api: {
-        // URL base de la API
-        baseUrl: 'http://localhost:3000/api',
-    },
+    baseUrl: window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/api'
+        : 'https://proyecto-mercado-web.onrender.com/api',  
+},
 
     // URLs específicas
     ENDPOINTS: {

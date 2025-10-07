@@ -3,16 +3,15 @@ require('dotenv').config();
 
 // Verificar el ambiente
 const isProduction = process.env.NODE_ENV === 'production';
-console.log('Ambiente:', process.env.NODE_ENV);
+console.log('🌍 Ambiente:', process.env.NODE_ENV);
 
-// Configuración de la base de datos
 let pool;
 
 try {
     if (isProduction) {
-        // Configuración para producción usando DATABASE_URL
+        // PRODUCCIÓN: Usa DATABASE_URL de Render
         if (!process.env.DATABASE_URL) {
-            throw new Error('DATABASE_URL no está definida en el ambiente de producción');
+            throw new Error('DATABASE_URL no está definida');
         }
         
         pool = new Pool({
@@ -20,9 +19,9 @@ try {
             ssl: { rejectUnauthorized: false }
         });
         
-        console.log('Configuración de producción: Usando DATABASE_URL con SSL');
+        console.log('🚀 Producción: Conectado a PostgreSQL de Render');
     } else {
-        // Configuración para desarrollo local
+        // DESARROLLO: Usa PostgreSQL local
         pool = new Pool({
             user: 'postgres',
             host: 'localhost',
@@ -31,31 +30,24 @@ try {
             port: 5432
         });
         
-        console.log('Configuración de desarrollo: Usando conexión local');
+        console.log('💻 Desarrollo: Conectado a PostgreSQL local');
     }
 } catch (error) {
-    console.error('Error al configurar la conexión:', error.message);
-    process.exit(1); // Terminar el proceso si hay un error de configuración
+    console.error('❌ Error al configurar la conexión:', error.message);
+    process.exit(1);
 }
 
 // Probar la conexión
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {
-        console.error('❌ Error al conectar a PostgreSQL:', err);
-        console.error('Detalles de la conexión:', {
-            isProduction,
-            hasConnectionString: !!process.env.DATABASE_URL,
-            error: err.message
-        });
+        console.error('❌ Error al conectar a PostgreSQL:', err.message);
     } else {
-        console.log('✅ Conexión a PostgreSQL exitosa:', res.rows[0].now);
+        console.log('✅ PostgreSQL conectado:', res.rows[0].now);
     }
 });
 
-// Manejar errores de conexión
 pool.on('error', (err) => {
-    console.error('Error inesperado en el pool de conexiones:', err);
-    process.exit(-1);
+    console.error('Error inesperado en el pool:', err);
 });
 
 module.exports = {

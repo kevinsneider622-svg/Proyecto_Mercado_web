@@ -9,10 +9,11 @@ const PORT = process.env.PORT || 3000;
 // Configuración de CORS
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://proyecto-mercado-web-zebx.vercel.app']  // URL del frontend en Vercel
+        ? 'https://proyecto-mercado-web-zebx.vercel.app'
         : '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());

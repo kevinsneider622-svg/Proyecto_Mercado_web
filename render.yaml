@@ -43,5 +43,5 @@ services:
 databases:
   - name: supermercado-postgres
     databaseName: supermercado_db
-    user: postgres
+    user: supermercado_user
     plan: free
