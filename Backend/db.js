@@ -6,15 +6,17 @@ const isProduction = process.env.NODE_ENV === 'production';
 const pool = new Pool(
     isProduction
     ? {
-    connectionString: process.env.DATABASE_URL,
-    ssl: {rejectUnauthorized: false}
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
     }
     : {
-        user: 'postgres',
-        host: '127.0.0.1',
-        database:  'supermercado_db',
-        password: '7372546011',
-        port: 5432,
+        user: process.env.PGUSER || 'postgres',
+        host: process.env.PGHOST || '127.0.0.1',
+        database: process.env.PGDATABASE || 'supermercado_db',
+        password: process.env.PGPASSWORD || '7372546011',
+        port: parseInt(process.env.PGPORT || '5432'),
     }
 );
 

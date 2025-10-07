@@ -1,9 +1,7 @@
 services:
   - type: web
     name: supermercado-backend
-    env: node
-    plan: free
-    region: oregon
+    runtime: node
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -13,6 +11,8 @@ services:
         fromDatabase:
           name: supermercado-postgres
           property: connectionString
+      - key: SSL_ENABLED
+        value: "true"
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
