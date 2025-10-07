@@ -3,22 +3,27 @@ const { Pool } = require('pg');
 // Usar variable de entorno en producción, config manual en desarrollo
 const isProduction = process.env.NODE_ENV === 'production';
 
-const pool = new Pool(
-    isProduction
-    ? {
-        connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false
-        }
+// Configuración de conexión para producción y desarrollo
+const poolConfig = isProduction ? {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
     }
-    : {
-        user: process.env.PGUSER || 'postgres',
-        host: process.env.PGHOST || '127.0.0.1',
-        database: process.env.PGDATABASE || 'supermercado_db',
-        password: process.env.PGPASSWORD || '7372546011',
-        port: parseInt(process.env.PGPORT || '5432'),
-    }
-);
+} : {
+    user: process.env.PGUSER || 'postgres',
+    host: process.env.PGHOST || '127.0.0.1',
+    database: process.env.PGDATABASE || 'supermercado_db',
+    password: process.env.PGPASSWORD || '7372546011',
+    port: parseInt(process.env.PGPORT || '5432'),
+};
+
+console.log('Ambiente:', process.env.NODE_ENV);
+console.log('Configuración de conexión:', {
+    ...poolConfig,
+    password: poolConfig.password ? '[HIDDEN]' : undefined
+});
+
+const pool = new Pool(poolConfig);
 
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {

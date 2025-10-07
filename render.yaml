@@ -3,7 +3,7 @@ services:
     name: supermercado-backend
     runtime: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node Backend/app.js
     envVars:
       - key: NODE_ENV
         value: production
