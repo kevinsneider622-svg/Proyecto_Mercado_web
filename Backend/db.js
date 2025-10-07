@@ -1,12 +1,22 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    user: 'postgres',
-    host: '127.0.0.7',  // ✅ Corregido de 127.0.0.7
-    database: 'supermercado_db',
-    password: '7372546011',
-    port: 5432,
-});
+// Usar variable de entorno en producción, config manual en desarrollo
+const isProduction = process.env.NODE_ENV === 'production';
+
+const pool = new Pool(
+    isProduction
+    ? {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {rejectUnauthorized: false}
+    }
+    : {
+        user: 'postgres',
+        host: '127.0.0.1',
+        database:  'supermercado_db',
+        password: '7372546011',
+        port: 5432,
+    }
+);
 
 pool.query('SELECT NOW()', (err, res) => {
     if (err) {

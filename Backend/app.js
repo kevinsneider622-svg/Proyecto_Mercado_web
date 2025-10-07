@@ -4,45 +4,69 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000; 
+const PORT = process.env.PORT || 3000;
 
-// Middlewares básicos
-app.use(cors());
-app.use(express.json()); 
+// Configuración de CORS
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://tu-frontend-url.onrender.com']  // Reemplaza con tu URL de frontend en producción
+        : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configurar frontend
-const frontendPath = path.join(__dirname, '..', 'Frontend');
-console.log('Sirviendo frontend desde:', frontendPath);
-
-// Archivos estáticos del frontend
-app.use(express.static(frontendPath));
-
-// Archivos estáticos de uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Rutas API
-app.use('/api/productos', require('./routes/productos')); 
-app.use('/api/dashboard', require('./routes/dashboard'));
-
-// Test DB
-app.get('/test-db', async (req, res) => {
-  try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    const totalProductos = await prisma.producto.count();
-    res.json({ mensaje: 'Conexion exitosa', totalProductos });
-    await prisma.$disconnect();
-  } catch (error) {
-    res.status(500).json({ error: 'Error BD', detalle: error.message });
-  }
+// Middleware para logging
+app.use((req, res, next) => {
+  console.log(`→ ${req.method} ${req.path}`);
+  next();
 });
 
-// Middleware para servir index.html en cualquier otra ruta
+// API Routes
+// Rutas de la API
+const productosRoutes = require('./routes/productos');
+const dashboardRoutes = require('./routes/dashboard');
+
+app.use('/api/productos', productosRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+// Logging de rutas no encontradas
+app.use('/api/*', (req, res) => {
+    console.log(`Ruta no encontrada: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Error handler para rutas de API
+app.use('/api', (err, req, res, next) => {
+  console.error('API Error:', err);
+  res.status(500).json({ 
+    error: 'Error en el servidor', 
+    details: err.message 
+  });
+});
+
+app.get('/test-db', async (req, res) => {
+  const db = require('./db');
+  const result = await db.query('SELECT COUNT(*) as total FROM productos');
+  res.json({ mensaje: 'OK', totalProductos: parseInt(result.rows[0].total) });
+});
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const frontendPath = path.join(__dirname, '..', 'Frontend');
+app.use(express.static(frontendPath, { 
+  index: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) res.setHeader('Content-Type', 'text/html');
+  }
+}));
+
 app.use((req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Server: http://localhost:${PORT}`);
 });

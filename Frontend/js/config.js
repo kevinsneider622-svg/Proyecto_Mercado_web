@@ -1,7 +1,9 @@
 // Configuración global
-const CONFIG = {
-    // URL base de la API
-    API_BASE_URL: 'http://127.0.0.7:3000/api',
+window.CONFIG = {
+    api: {
+        // URL base de la API
+        baseUrl: 'http://localhost:3000/api',
+    },
 
     // URLs específicas
     ENDPOINTS: {

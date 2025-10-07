@@ -1,0 +1,72 @@
+/* Estilos para el carrito */
+.cart-item {
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.cart-item-info h6 {
+    color: #333333;
+    font-weight: 600;
+}
+
+.cart-item-info .text-muted {
+    color: #6c757d !important;
+}
+
+.cart-item-actions .text-primary {
+    color: #0d6efd !important;
+}
+
+/* Modal de carrito */
+#carritoModal .modal-content {
+    background-color: #f8f9fa;
+}
+
+#carritoModal .modal-header {
+    background-color: #ffffff;
+    border-bottom: 2px solid #e9ecef;
+}
+
+#carritoModal .modal-title {
+    color: #333333;
+    font-weight: 600;
+}
+
+#carritoContent {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+#carritoTotal {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #198754;
+}
+
+/* Botones del carrito */
+.btn-process-cart {
+    background-color: #198754;
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-process-cart:hover {
+    background-color: #146c43;
+    color: #ffffff;
+}
+
+/* Animaciones */
+.cart-item {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cart-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}

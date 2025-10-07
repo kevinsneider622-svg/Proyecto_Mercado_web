@@ -23,6 +23,123 @@ function cargarPagina(pagina) {
         case 'admin':
             cargarPanelAdmin();
             break;
+
+// Función para cargar el panel de administración
+async function cargarPanelAdmin() {
+    const contenido = `
+        <div class="container-fluid px-4">
+            <h1 class="mt-4">Panel de Administración</h1>
+            
+            <!-- Cards de Estadísticas -->
+            <div class="row" id="statsSection">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Productos</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalProductos">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-box fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Categorías</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalCategorias">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-folder fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Ventas de Hoy</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalVentas">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Total Clientes</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalClientes">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Productos -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
+                    <button class="btn btn-primary" onclick="mostrarFormularioProducto()">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="tablaProductos">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productosTableBody">
+                                <!-- Los productos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cargar el contenido en el contenedor principal
+    document.getElementById('contenidoPrincipal').innerHTML = contenido;
+    
+    // Cargar las estadísticas
+    await DashboardAPI.cargarDashboard();
+    
+    // Cargar los productos en la tabla
+    await cargarTablaProductos();
+}
         case 'perfil':
             cargarPaginaPerfil();
             break;
@@ -141,30 +258,31 @@ async function cargarEstadisticasRapidas() {
         
         const statsHtml = `
             <div class="col-md-3 mb-3">
-                <div class="stat-card text-center">
+                <div class="stat-card text-center bg-primary text-white">
                     <i class="fas fa-box fa-2x mb-2"></i>
-                    <div class="stat-number">${stats.totalProductos || 0}</div>
+                    <div class="stat-number h3">${stats.totalProductos || 0}</div>
                     <div class="stat-label">Productos</div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <div class="stat-card text-center">
+                <div class="stat-card text-center bg-success text-white">
                     <i class="fas fa-tags fa-2x mb-2"></i>
-                    <div class="stat-number">${stats.totalCategorias || 0}</div>
+                    <div class="stat-number h3">${stats.totalCategorias || 0}</div>
                     <div class="stat-label">Categorías</div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <div class="stat-card text-center">
+                <div class="stat-card text-center bg-info text-white">
                     <i class="fas fa-shopping-cart fa-2x mb-2"></i>
-                    <div class="stat-number">${stats.ordenesHoy || 0}</div>
+                    <div class="stat-number h3">${stats.ordenesHoy || 0}</div>
                     <div class="stat-label">Ventas Hoy</div>
+                    <small>${window.UTILS.formatPrice(stats.ventasHoy || 0)}</small>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <div class="stat-card text-center">
+                <div class="stat-card text-center bg-warning text-white">
                     <i class="fas fa-users fa-2x mb-2"></i>
-                    <div class="stat-number">${stats.totalClientes || 0}</div>
+                    <div class="stat-number h3">${stats.totalClientes || 0}</div>
                     <div class="stat-label">Clientes</div>
                 </div>
             </div>
@@ -180,7 +298,7 @@ async function cargarEstadisticasRapidas() {
 // Cargar productos destacados
 async function cargarProductosDestacados() {
     try {
-        const response = await ProductosAPI.obtenerTodos({ limit: 4, page: 1 });
+        const response = await ProductosAPI.obtenerDestacados();
         
         if (response.productos && response.productos.length > 0) {
             const productosHtml = `
@@ -189,8 +307,8 @@ async function cargarProductosDestacados() {
                         <div class="col-md-3 mb-3">
                             <div class="card product-card h-100">
                                 <img src="${producto.imagenUrl ? CONFIG.API_BASE_URL + producto.imagenUrl : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EProducto%3C/text%3E%3C/svg%3E'}"
-                                     class="product-image" alt="${producto.nombre}">
-                                     onerror="this.src='img/placeholder.jpg'">
+                                    class="product-image" alt="${producto.nombre}"
+                                    onerror="this.src='img/placeholder.jpg'">
                                 <div class="card-body">
                                     <h6 class="card-title">${producto.nombre}</h6>
                                     <p class="product-price">${window.UTILS ? window.UTILS.formatPrice(producto.precioVenta) : '$' + producto.precioVenta}</p>
@@ -481,7 +599,6 @@ function handleResponsiveChanges() {
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
 
-       
     // Cargar página inicial
     cargarPagina('inicio');
     

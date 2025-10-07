@@ -58,13 +58,13 @@ function mostrarCarrito() {
                 const subtotal = item.precio * item.cantidad;
                 total += subtotal;
                 html += `
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                        <div>
-                            <strong>${item.nombre}</strong><br>
-                            <small class="text-muted">$${item.precio.toLocaleString()} x ${item.cantidad}</small>
+                    <div class="cart-item d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="cart-item-info">
+                            <h6 class="mb-0 text-dark">${item.nombre}</h6>
+                            <span class="text-muted">$${item.precio.toLocaleString()} x ${item.cantidad}</span>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <strong class="me-3">$${subtotal.toLocaleString()}</strong>
+                        <div class="cart-item-actions d-flex align-items-center gap-2">
+                            <span class="text-primary fw-bold">$${subtotal.toLocaleString()}</span>
                             <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${item.id})">
                                 <i class="fas fa-trash"></i>
                             </button>
