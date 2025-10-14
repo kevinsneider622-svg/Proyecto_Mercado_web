@@ -1,11 +1,47 @@
 services:
   - type: web
-    name: supermercado_web
-    env: node
+    name: supermercado-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node Backend/app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: supermercado-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://proyecto-mercado-web-zebx.vercel.app
+      - key: PGHOST
+        fromDatabase:
+          name: supermercado-postgres
+          property: host
+      - key: PGUSER
+        fromDatabase:
+          name: supermercado-postgres
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: supermercado-postgres
+          property: password
+      - key: PGDATABASE
+        fromDatabase:
+          name: supermercado-postgres
+          property: database
+      - key: PGPORT
+        fromDatabase:
+          name: supermercado-postgres
+          property: port
+    healthCheckPath: /test-db
+    autoDeploy: true
+
+databases:
+  - name: supermercado-postgres
+    databaseName: supermercado_db
+    user: supermercado_user
     plan: free
-    region: oregon
-
-    buildCommand : npm install && cd Backend && npx prisma generate
-    startCommand: cd Backend && node app.js
-
-    rootDir: Backend

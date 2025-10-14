@@ -1,0 +1,16 @@
+{
+  "name": "supermercado-web",
+  "version": "1.0.0",
+  "description": "Proyecto Supermercado Web",
+  "main": "Backend/app.js",
+  "scripts": {
+    "start": "cd Backend && npm start",
+    "install": "cd Backend && npm install",
+    "build": "cd Backend && npm install"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "author": "Kev",
+  "license": "ISC"
+}
