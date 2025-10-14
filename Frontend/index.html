@@ -3,190 +3,1396 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Supermercado Online</title>
-    
-    <!-- Bootstrap CSS -->
+    <title>Supermercado Online</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- CSS Personalizado -->
-    <link href="css/css/custom.css" rel="stylesheet">
-    <link href="css/css/cart.css" rel="stylesheet">
-    <link href="css/css/dashboard.css" rel="stylesheet">
-    
-    <!-- Scripts de la aplicación -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/productos.js"></script>
-    <script src="js/carrito.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/main.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2ecc71;
+            --secondary-color: #3498db;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .product-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .product-img {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+        
+        .price {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #27ae60;
+            border-color: #27ae60;
+        }
+        
+        .cart-item {
+            transition: background-color 0.2s;
+        }
+        
+        .cart-item:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        
+        .empty-cart {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .empty-cart i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 5rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        /* ============================================
+   ESTILOS DEL PERFIL DE USUARIO
+   ============================================ */
+
+.profile-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.profile-photo-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1rem;
+}
+
+.profile-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.photo-upload-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+    margin: 0.5rem 0;
+}
+
+.level-bronce { background: linear-gradient(135deg, #cd7f32, #8b4513); color: white; }
+.level-plata { background: linear-gradient(135deg, #c0c0c0, #808080); color: white; }
+.level-oro { background: linear-gradient(135deg, #ffd700, #daa520); color: white; }
+.level-platino { background: linear-gradient(135deg, #e5e4e2, #b0b0b0); color: white; }
+.level-diamante { background: linear-gradient(135deg, #b9f2ff, #00bfff); color: white; }
+
+.progress-custom {
+    height: 30px;
+    border-radius: 15px;
+    background: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    height: 100%;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    transition: width 0.5s ease;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.benefit-item i {
+    color: var(--primary-color);
+    margin-right: 1rem;
+    font-size: 1.5rem;
+}
+   </style>
 </head>
 <body>
-    <!-- Navegación Principal -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="#" onclick="cargarPagina('inicio')">
-                <i class="fas fa-store"></i> Mi Supermercado
+            <a class="navbar-brand" href="#" onclick="cargarPagina('inicio'); return false;">
+                <i class="fas fa-store me-2"></i>SuperMarket
             </a>
-            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="cargarPagina('productos')">
-                            <i class="fas fa-box"></i> Productos
-                        </a>
+                        <a class="nav-link active" href="#" onclick="cargarPagina('inicio'); return false;">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="mostrarCarrito()">
-                            <i class="fas fa-shopping-cart"></i> Carrito 
-                            <span class="badge bg-danger" id="carritoCount">0</span>
-                        </a>
+                        <a class="nav-link" href="#" onclick="cargarPagina('productos'); return false;">Productos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="cargarPagina('ofertas'); return false;">Ofertas</a>
                     </li>
                 </ul>
-
-
-                
-                <!-- Buscador -->
-                <form class="d-flex me-3" onsubmit="buscarProductos(event)">
-                    <input class="form-control me-2" type="search" placeholder="Buscar productos..." id="searchInput">
-                    <button class="btn btn-outline-light" type="submit">
-                        <i class="fas fa-search"></i>
+                <div class="d-flex align-items-center">
+                    <div class="cart-icon me-3" onclick="mostrarCarrito()">
+                        <i class="fas fa-shopping-cart fa-lg text-white"></i>
+                        <span id="carritoCount" class="cart-count" style="display: none;">0</span>
+                    </div>
+                    <button class="btn btn-outline-light" onclick="verificarSesion(); return false;">
+                        <i class="fas fa-user me-1"></i> Mi Cuenta
                     </button>
-                </form>
-                
-                <!-- Menú Usuario (oculto inicialmente) -->
-                <div class="dropdown" id="userMenu" style="display: none;">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i> <span id="userName"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="cargarPagina('admin')">
-                            <i class="fas fa-tachometer-alt"></i> Panel Admin
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </a></li>
-                    </ul>
-                </div>
-                
-                <!-- Botón Login (visible inicialmente) -->
-                <button class="btn btn-outline-light" id="loginBtn" onclick="cargarPagina('login')">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Contenido Principal -->
-    <div class="container-fluid" style="margin-top: 80px;">
-        <div id="contenidoPrincipal">
-            <!-- Página de Inicio por defecto -->
-            <div class="hero-section bg-primary text-white py-5 mb-4 rounded">
-                <div class="container text-center">
-                    <h1 class="display-4 mb-4">
-                        <i class="fas fa-store"></i> Bienvenido a Mi Supermercado
-                    </h1>
-                    <p class="lead mb-4">La mejor selección de productos para tu hogar</p>
-                    <button class="btn btn-light btn-lg" onclick="cargarPagina('productos')">
-                        <i class="fas fa-box"></i> Ver Productos
-                    </button>
-                </div>
-            </div>
-
-            <!-- Categorías Destacadas -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h3 class="mb-3">Categorías Populares</h3>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="fas fa-apple-alt fa-3x text-success mb-3"></i>
-                            <h5>Frutas y Verduras</h5>
-                            <p class="text-muted">Productos frescos</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="fas fa-bread-slice fa-3x text-warning mb-3"></i>
-                            <h5>Panadería</h5>
-                            <p class="text-muted">Pan fresco diario</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="fas fa-cheese fa-3x text-primary mb-3"></i>
-                            <h5>Lácteos</h5>
-                            <p class="text-muted">Leche, queso, yogurt</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="fas fa-wine-bottle fa-3x text-danger mb-3"></i>
-                            <h5>Bebidas</h5>
-                            <p class="text-muted">Refrescos y jugos</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Modal para Carrito -->
+    <!-- Contenedor principal -->
+    <div id="contenidoPrincipal">
+        <!-- Aquí se carga el contenido dinámico -->
+    </div>
+
+    <!-- Modal del Carrito -->
     <div class="modal fade" id="carritoModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-shopping-cart"></i> Mi Carrito
+                        <i class="fas fa-shopping-cart me-2"></i>Mi Carrito de Compras
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="carritoContent">
-                    <!-- Contenido del carrito se carga dinámicamente -->
+                <div class="modal-body">
+                    <div id="carritoContent"></div>
                 </div>
-                <div class="modal-footer">
-                    <div class="me-auto">
-                        <strong>Total: $<span id="carritoTotal">0.00</span></strong>
+                <div class="modal-footer d-flex justify-content-between">
+                    <div>
+                        <strong>Total: $<span id="carritoTotal">0</span></strong>
                     </div>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-success" onclick="procesarCompra()">
-                        <i class="fas fa-credit-card"></i> Procesar Compra
-                    </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Seguir Comprando</button>
+                        <button type="button" class="btn btn-primary" onclick="procesarCompra()">Finalizar Compra</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>&copy; 2025 SuperMarket. Todos los derechos reservados.</p>
+            <div class="mt-3">
+                <a href="#" class="text-white me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                <a href="#" class="text-white me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                <a href="#" class="text-white me-3"><i class="fab fa-instagram fa-lg"></i></a>
+            </div>
         </div>
-    </div>
+    </footer>
 
-    <!-- Bootstrap JS -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
     <script>
-        // Inicializar aplicación
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Frontend cargado correctamente');
-            verificarAutenticacion();
+        // Variables globales
+        const API_URL = 'http://localhost:3000/api';
+        window.cart = [];
+        window.currentUser = null;
+
+        // ============================================
+        // FUNCIONES DE NAVEGACIÓN
+        // ============================================
+
+        function cargarPagina(pagina) {
+            console.log('Cargando página:', pagina);
+            
+            switch(pagina) {
+                case 'inicio':
+                    cargarInicio();
+                    break;
+                case 'productos':
+                    cargarProductos();
+                    break;
+                case 'ofertas':
+                    cargarOfertas();
+                    break;
+                default:
+                    cargarInicio();
+            }
+        }
+
+        async function cargarInicio() {
+            const contenedor = document.getElementById('contenidoPrincipal');
+            contenedor.innerHTML = `
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="container">
+                        <h1 class="display-4 fw-bold">Bienvenido a SuperMarket</h1>
+                        <p class="lead">Los mejores productos al mejor precio</p>
+                        <button class="btn btn-primary btn-lg mt-3" onclick="cargarPagina('productos')">Ver Ofertas</button>
+                    </div>
+                </div>
+
+                <div class="container mb-5">
+                    <h2 class="text-center mb-4">Nuestros Productos Destacados</h2>
+                    <div id="productosDestacados" class="row g-4">
+                        <div class="loading-spinner">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_URL}/productos/destacados`);
+                const data = await response.json();
+                
+                if (data.success && data.productos) {
+                    mostrarProductosDestacados(data.productos);
+                }
+            } catch (error) {
+                console.error('Error cargando productos destacados:', error);
+                document.getElementById('productosDestacados').innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-danger">Error cargando productos. Verifica tu conexión.</div>
+                    </div>
+                `;
+            }
+        }
+// ============================================
+// FUNCIÓN MEJORADA PARA MOSTRAR PRODUCTOS
+// ============================================
+function mostrarProductosDestacados(productos) {
+    const container = document.getElementById('productosDestacados');
+    
+    if (!productos || productos.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center"><p>No hay productos disponibles</p></div>';
+        return;
+    }
+
+    const baseURL = window.location.origin; // http://localhost:3000 o 3001
+
+    container.innerHTML = productos.map(producto => {
+        // Construir URL de imagen correctamente
+        let imagenUrl;
+        if (producto.imagenUrl) {
+            if (producto.imagenUrl.startsWith('http')) {
+                imagenUrl = producto.imagenUrl;
+            } else if (producto.imagenUrl.startsWith('/')) {
+                imagenUrl = `${baseURL}${producto.imagenUrl}`;
+            } else {
+                imagenUrl = `${baseURL}/uploads/productos/${producto.imagenUrl}`;
+            }
+        } else {
+            imagenUrl = `${baseURL}/uploads/productos/default.jpg`;
+        }
+
+        return `
+        <div class="col-md-4">
+            <div class="card product-card h-100">
+                <img src="${imagenUrl}" 
+                     class="card-img-top product-img" 
+                     alt="${producto.nombre}"
+                     onerror="this.src='https://via.placeholder.com/300?text=Sin+Imagen'">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${producto.nombre}</h5>
+                    <p class="card-text flex-grow-1 small text-muted">
+                        Stock disponible: <strong>${producto.stockActual || 0}</strong> unidades
+                    </p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="price">$${Number(producto.precioVenta).toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="input-group mb-2">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', -1, ${producto.stockActual})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" 
+                                   id="cantidad-${producto.id}" 
+                                   class="form-control text-center" 
+                                   value="1" 
+                                   min="1" 
+                                   max="${producto.stockActual}"
+                                   onchange="validarCantidad(this, ${producto.stockActual})"
+                                   onkeyup="validarCantidad(this, ${producto.stockActual})">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', 1, ${producto.stockActual})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100" 
+                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")} )'>
+                            <i class="fas fa-cart-plus me-1"></i> Agregar al Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+async function cargarProductos() {
+    const contenedor = document.getElementById('contenidoPrincipal');
+    contenedor.innerHTML = `
+        <div class="container mt-4 mb-5">
+            <h2 class="mb-4">Todos los Productos</h2>
+            <div id="productosLista" class="row g-4">
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(`${API_URL}/productos`);
+        const data = await response.json();
+        
+        if (data.success && data.productos) {
+            mostrarListaProductos(data.productos);
+        }
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        document.getElementById('productosLista').innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-danger">Error cargando productos</div>
+            </div>
+        `;
+    }
+}
+
+function mostrarListaProductos(productos) {
+    const container = document.getElementById('productosLista');
+    
+    if (!productos || productos.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center"><p>No hay productos disponibles</p></div>';
+        return;
+    }
+
+    const baseURL = window.location.origin;
+
+    container.innerHTML = productos.map(producto => {
+        let imagenUrl;
+        if (producto.imagenUrl) {
+            if (producto.imagenUrl.startsWith('http')) {
+                imagenUrl = producto.imagenUrl;
+            } else if (producto.imagenUrl.startsWith('/')) {
+                imagenUrl = `${baseURL}${producto.imagenUrl}`;
+            } else {
+                imagenUrl = `${baseURL}/uploads/productos/${producto.imagenUrl}`;
+            }
+        } else {
+            imagenUrl = `${baseURL}/uploads/productos/default.jpg`;
+        }
+
+        return `
+        <div class="col-md-3">
+            <div class="card product-card h-100">
+                <img src="${imagenUrl}" 
+                     class="card-img-top product-img" 
+                     alt="${producto.nombre}"
+                     onerror="this.src='https://via.placeholder.com/300?text=Sin+Imagen'">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">${producto.nombre}</h6>
+                    <p class="card-text small flex-grow-1 text-muted">
+                        Stock: <strong>${producto.stockActual || 0}</strong>
+                    </p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="price fs-6">$${Number(producto.precioVenta).toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="input-group input-group-sm mb-2">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', -1, ${producto.stockActual})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" 
+                                   id="cantidad-${producto.id}" 
+                                   class="form-control text-center" 
+                                   value="1" 
+                                   min="1" 
+                                   max="${producto.stockActual}"
+                                   onchange="validarCantidad(this, ${producto.stockActual})"
+                                   onkeyup="validarCantidad(this, ${producto.stockActual})">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', 1, ${producto.stockActual})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="btn btn-sm btn-primary w-100" 
+                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")} )'>
+                            <i class="fas fa-cart-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+        // ============================================
+        // FUNCIONES DE CANTIDAD
+        // ============================================
+
+        function cambiarCantidad(inputId, cambio, stockMax) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            
+            let cantidad = parseInt(input.value) || 1;
+            cantidad += cambio;
+            
+            // Validar límites
+            if (cantidad < 1) cantidad = 1;
+            if (cantidad > stockMax) {
+                cantidad = stockMax;
+                showToast(`Stock máximo: ${stockMax} unidades`, 'warning');
+            }
+            
+            input.value = cantidad;
+        }
+
+        function validarCantidad(input, stockMax) {
+            let cantidad = parseInt(input.value) || 1;
+            
+            if (cantidad < 1) {
+                cantidad = 1;
+                showToast('La cantidad mínima es 1', 'warning');
+            }
+            
+            if (cantidad > stockMax) {
+                cantidad = stockMax;
+                showToast(`Stock máximo: ${stockMax} unidades`, 'warning');
+            }
+            
+            input.value = cantidad;
+        }
+
+        function agregarConCantidad(producto) {
+            const input = document.getElementById(`cantidad-${producto.id}`);
+            const cantidad = parseInt(input.value) || 1;
+            
+            // Validar stock
+            if (cantidad > producto.stockActual) {
+                showToast(`Solo hay ${producto.stockActual} unidades disponibles`, 'warning');
+                return;
+            }
+            
+            // Agregar al carrito con la cantidad seleccionada
+            agregarAlCarrito(producto, cantidad);
+            
+            // Resetear el input a 1
+            input.value = 1;
+        }
+
+        // ============================================
+        // ESTILOS ADICIONALES (Agregar al <style> del HTML)
+        // ============================================
+
+        // Agregar esto al <style> de tu index.html:
+        /*
+        .input-group input[type="number"]::-webkit-inner-spin-button,
+        .input-group input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 30px;
+        }
+
+        .input-group input[type="number"] {
+            -moz-appearance: textfield;
+            font-weight: bold;
+        }
+
+        .product-card .input-group {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .product-card .input-group .btn {
+            border: none;
+            background-color: #f8f9fa;
+        }
+
+        .product-card .input-group .btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .product-card .input-group input {
+            border-left: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            border-top: none;
+            border-bottom: none;
+        }
+        */
+
+        // ============================================
+        // FUNCIONES DEL CARRITO
+        // ============================================
+
+        function agregarAlCarrito(producto, cantidad = 1) {
+            try {
+                if (!producto || !producto.id) {
+                    showToast('Producto inválido', 'danger');
+                    return;
+                }
+
+                const existente = window.cart.find(item => item.id === producto.id);
+                
+                if (existente) {
+                    existente.cantidad += cantidad;
+                    showToast(`Cantidad actualizada`, 'info');
+                } else {
+                    window.cart.push({
+                        id: producto.id,
+                        nombre: producto.nombre,
+                        precio: producto.precioVenta,
+                        cantidad: cantidad,
+                        imagen: producto.imagenUrl || 'https://via.placeholder.com/80'
+                    });
+                    showToast(`${producto.nombre} agregado`, 'success');
+                }
+                
+                guardarCarrito();
+                actualizarContadorCarrito();
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al agregar producto', 'danger');
+            }
+        }
+
+        function mostrarCarrito() {
+            const content = document.getElementById('carritoContent');
+            const totalElement = document.getElementById('carritoTotal');
+            
+            if (!window.cart || window.cart.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h5>Tu carrito está vacío</h5>
+                        <button class="btn btn-primary mt-2" data-bs-dismiss="modal">Comenzar a Comprar</button>
+                    </div>
+                `;
+                totalElement.textContent = '0';
+            } else {
+                let html = '';
+                let total = 0;
+                
+                window.cart.forEach(item => {
+                    const subtotal = item.precio * item.cantidad;
+                    total += subtotal;
+                    html += `
+                        <div class="cart-item d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <img src="${item.imagen}" alt="${item.nombre}" class="rounded me-3" width="60" height="60">
+                                <div>
+                                    <h6 class="mb-1">${item.nombre}</h6>
+                                    <small class="text-muted">$${item.precio.toLocaleString()}</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="modificarCantidad(${item.id}, -1)">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="mx-2">${item.cantidad}</span>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="modificarCantidad(${item.id}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <span class="ms-2 fw-bold">$${subtotal.toLocaleString()}</span>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${item.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                content.innerHTML = html;
+                totalElement.textContent = total.toLocaleString();
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('carritoModal'));
+            modal.show();
+        }
+
+        function modificarCantidad(id, cambio) {
+            const item = window.cart.find(item => item.id === id);
+            if (item) {
+                item.cantidad += cambio;
+                if (item.cantidad <= 0) {
+                    eliminarDelCarrito(id);
+                } else {
+                    guardarCarrito();
+                    actualizarContadorCarrito();
+                    mostrarCarrito();
+                }
+            }
+        }
+
+        function eliminarDelCarrito(id) {
+            window.cart = window.cart.filter(item => item.id !== id);
+            guardarCarrito();
             actualizarContadorCarrito();
+            mostrarCarrito();
+        }
+
+        function procesarCompra() {
+            if (!window.cart || window.cart.length === 0) {
+                showToast('El carrito está vacío', 'warning');
+                return;
+            }
+            
+            const total = window.cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            
+            if (confirm(`¿Confirmar compra por $${total.toLocaleString()}?`)) {
+                showToast('¡Compra procesada exitosamente!', 'success');
+                window.cart = [];
+                guardarCarrito();
+                actualizarContadorCarrito();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('carritoModal'));
+                if (modal) modal.hide();
+            }
+        }
+
+        function actualizarContadorCarrito() {
+            const counter = document.getElementById('carritoCount');
+            if (counter) {
+                const total = window.cart.reduce((sum, item) => sum + item.cantidad, 0);
+                counter.textContent = total;
+                counter.style.display = total > 0 ? 'inline' : 'none';
+            }
+        }
+
+        function guardarCarrito() {
+            try {
+                localStorage.setItem('supermercado_cart', JSON.stringify(window.cart));
+            } catch (error) {
+                console.error('Error guardando carrito:', error);
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            const icons = {success: 'check-circle', danger: 'exclamation-circle', warning: 'exclamation-triangle', info: 'info-circle'};
+            
+            toastContainer.insertAdjacentHTML('beforeend', `
+                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${icons[type]} me-2"></i>${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `);
+            
+            const toast = new bootstrap.Toast(document.getElementById(toastId), {delay: 3000});
+            toast.show();
+            
+            document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
+                this.remove();
+            });
+        }
+
+        function verificarSesion() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                mostrarPerfil();
+            } else {
+                mostrarFormularioLogin();
+            }
+        }
+
+        function mostrarFormularioLogin() {
+    const contenedor = document.getElementById('contenidoPrincipal');
+    contenedor.innerHTML = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-primary text-white text-center py-3">
+                            <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</h4>
+                        </div>
+                        <div class="card-body p-4">
+                            <div id="loginAlert"></div>
+                            
+                            <form id="loginForm" onsubmit="procesarLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope me-1"></i> Email
+                                    </label>
+                                    <input type="email" class="form-control" id="loginEmail" required placeholder="tu@email.com">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock me-1"></i> Contraseña
+                                    </label>
+                                    <input type="password" class="form-control" id="loginPassword" required placeholder="••••••••">
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                                        <i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="text-center">
+                                <p class="mb-2">¿No tienes cuenta?</p>
+                                <button class="btn btn-outline-primary" onclick="mostrarFormularioRegistro()">
+                                    <i class="fas fa-user-plus me-1"></i> Registrarse
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function mostrarFormularioRegistro() {
+    const contenedor = document.getElementById('contenidoPrincipal');
+    contenedor.innerHTML = `
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-success text-white text-center py-3">
+                            <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Crear Cuenta</h4>
+                        </div>
+                        <div class="card-body p-4">
+                            <div id="registerAlert"></div>
+                            
+                            <form id="registerForm" onsubmit="procesarRegistro(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-user me-1"></i> Nombre Completo
+                                    </label>
+                                    <input type="text" class="form-control" id="regNombre" required placeholder="Juan Pérez">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope me-1"></i> Email
+                                    </label>
+                                    <input type="email" class="form-control" id="regEmail" required placeholder="tu@email.com">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-lock me-1"></i> Contraseña
+                                        </label>
+                                        <input type="password" class="form-control" id="regPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-lock me-1"></i> Confirmar Contraseña
+                                        </label>
+                                        <input type="password" class="form-control" id="regPasswordConfirm" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success" id="registerBtn">
+                                        <i class="fas fa-user-plus me-1"></i> Crear Cuenta
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="text-center">
+                                <p class="mb-2">¿Ya tienes cuenta?</p>
+                                <button class="btn btn-outline-success" onclick="mostrarFormularioLogin()">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function procesarLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('loginBtn');
+    const alert = document.getElementById('loginAlert');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Iniciando...';
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.currentUser = data.user;
+            
+            showToast(`¡Bienvenido ${data.user.nombre}!`, 'success');
+            cargarInicio();
+        } else {
+            alert.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al iniciar sesión'}</div>`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert.innerHTML = '<div class="alert alert-danger">Error de conexión con el servidor</div>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión';
+    }
+}
+
+async function procesarRegistro(event) {
+    event.preventDefault();
+    
+    const nombre = document.getElementById('regNombre').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+    const btn = document.getElementById('registerBtn');
+    const alert = document.getElementById('registerAlert');
+    
+    if (password !== passwordConfirm) {
+        alert.innerHTML = '<div class="alert alert-warning">Las contraseñas no coinciden</div>';
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert.innerHTML = '<div class="alert alert-warning">La contraseña debe tener al menos 6 caracteres</div>';
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creando cuenta...';
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.currentUser = data.user;
+            
+            showToast('¡Cuenta creada exitosamente!', 'success');
+            cargarInicio();
+        } else {
+            alert.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al crear cuenta'}</div>`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus me-1"></i> Crear Cuenta';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert.innerHTML = '<div class="alert alert-danger">Error de conexión con el servidor</div>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-plus me-1"></i> Crear Cuenta';
+    }
+}
+
+// ============================================
+// FUNCIONES DE PERFIL DE USUARIO
+// ============================================
+
+async function mostrarPerfil() {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const token = localStorage.getItem('token');
+    
+    if (!user || !token) {
+        mostrarFormularioLogin();
+        return;
+    }
+
+    const contenedor = document.getElementById('contenidoPrincipal');
+    const baseURL = window.location.origin;
+    
+    contenedor.innerHTML = `
+        <div class="profile-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <div class="profile-photo-container">
+                            <img id="profilePhoto" class="profile-photo" 
+                                 src="${user.foto_perfil || 'https://via.placeholder.com/150?text=Usuario'}" 
+                                 alt="Foto de perfil">
+                            <button class="photo-upload-btn" onclick="document.getElementById('photoInput').click()">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <input type="file" id="photoInput" accept="image/*" style="display: none" onchange="subirFotoPerfil(this)">
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h2>${user.nombre}</h2>
+                        <p class="mb-2">${user.email}</p>
+                        <span id="levelBadge" class="level-badge level-bronce">Nivel ${user.nivel || 1} - Bronce</span>
+                        <div class="mt-3">
+                            <div class="progress-custom">
+                                <div id="pointsProgress" class="progress-bar-custom" style="width: 0%">
+                                    <span id="pointsText">0 / 100 puntos</span>
+                                </div>
+                            </div>
+                            <small class="text-white">Próximo nivel: Plata (100 puntos)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container mb-5">
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-trophy text-warning"></i></div>
+                        <h3>${user.puntos || 0}</h3>
+                        <p class="text-muted mb-0">Puntos Totales</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-shopping-bag text-primary"></i></div>
+                        <h3>${user.cantidad_compras || 0}</h3>
+                        <p class="text-muted mb-0">Compras</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign text-success"></i></div>
+                        <h3>$${Number(user.total_compras || 0).toLocaleString()}</h3>
+                        <p class="text-muted mb-0">Total Gastado</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-percent text-danger"></i></div>
+                        <h3 id="statDescuento">0%</h3>
+                        <p class="text-muted mb-0">Descuento</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#datosPersonales">
+                        <i class="fas fa-user me-2"></i>Datos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#beneficios">
+                        <i class="fas fa-gift me-2"></i>Beneficios
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Datos Personales -->
+                <div id="datosPersonales" class="tab-pane fade show active">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between">
+                            <h5 class="mb-0">Información Personal</h5>
+                            <button class="btn btn-sm btn-primary" id="btnEditar" onclick="habilitarEdicion()">
+                                <i class="fas fa-edit me-1"></i>Editar
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Nombre</label>
+                                    <input type="text" class="form-control" id="inputNombre" value="${user.nombre || ''}" disabled>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Email</label>
+                                    <input type="email" class="form-control" id="inputEmail" value="${user.email || ''}" disabled>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Teléfono</label>
+                                    <input type="tel" class="form-control" id="inputTelefono" value="${user.telefono || ''}" disabled>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Dirección</label>
+                                    <input type="text" class="form-control" id="inputDireccion" value="${user.direccion || ''}" disabled>
+                                </div>
+                            </div>
+                            <div id="botonesEdicion" style="display: none;">
+                                <button class="btn btn-success" onclick="guardarCambiosPerfil()">
+                                    <i class="fas fa-save me-1"></i>Guardar
+                                </button>
+                                <button class="btn btn-secondary" onclick="cancelarEdicion()">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficios -->
+                <div id="beneficios" class="tab-pane fade">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Niveles y Beneficios</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="benefit-item">
+                                <div><span class="level-badge level-bronce">Bronce</span></div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>0 puntos</strong> - 0% descuento
+                                    <p class="mb-0 small text-muted">Cliente nuevo</p>
+                                </div>
+                                <i class="fas fa-trophy fa-2x text-warning"></i>
+                            </div>
+                            <div class="benefit-item">
+                                <div><span class="level-badge level-plata">Plata</span></div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>100 puntos</strong> - 5% descuento
+                                    <p class="mb-0 small text-muted">5% en todas tus compras</p>
+                                </div>
+                                <i class="fas fa-trophy fa-2x text-warning"></i>
+                            </div>
+                            <div class="benefit-item">
+                                <div><span class="level-badge level-oro">Oro</span></div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>500 puntos</strong> - 10% descuento
+                                    <p class="mb-0 small text-muted">10% + envío gratis</p>
+                                </div>
+                                <i class="fas fa-trophy fa-2x text-warning"></i>
+                            </div>
+                            <div class="benefit-item">
+                                <div><span class="level-badge level-platino">Platino</span></div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>1500 puntos</strong> - 15% descuento
+                                    <p class="mb-0 small text-muted">15% + envío gratis + regalos</p>
+                                </div>
+                                <i class="fas fa-trophy fa-2x text-warning"></i>
+                            </div>
+                            <div class="benefit-item">
+                                <div><span class="level-badge level-diamante">Diamante</span></div>
+                                <div class="flex-grow-1 ms-3">
+                                    <strong>5000 puntos</strong> - 20% descuento
+                                    <p class="mb-0 small text-muted">20% + todos los beneficios</p>
+                                </div>
+                                <i class="fas fa-trophy fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button class="btn btn-danger" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    `;
+
+    actualizarNivelYProgreso(user);
+}
+
+function actualizarNivelYProgreso(user) {
+    const niveles = [
+        { nivel: 1, nombre: 'Bronce', puntos: 0, descuento: 0, class: 'level-bronce' },
+        { nivel: 2, nombre: 'Plata', puntos: 100, descuento: 5, class: 'level-plata' },
+        { nivel: 3, nombre: 'Oro', puntos: 500, descuento: 10, class: 'level-oro' },
+        { nivel: 4, nombre: 'Platino', puntos: 1500, descuento: 15, class: 'level-platino' },
+        { nivel: 5, nombre: 'Diamante', puntos: 5000, descuento: 20, class: 'level-diamante' }
+    ];
+
+    const puntos = user.puntos || 0;
+    let nivelActual = niveles[0];
+    let nivelSiguiente = niveles[1];
+
+    for (let i = 0; i < niveles.length; i++) {
+        if (puntos >= niveles[i].puntos) {
+            nivelActual = niveles[i];
+            nivelSiguiente = niveles[i + 1] || niveles[i];
+        }
+    }
+
+    const badge = document.getElementById('levelBadge');
+    if (badge) {
+        badge.textContent = `Nivel ${nivelActual.nivel} - ${nivelActual.nombre}`;
+        badge.className = `level-badge ${nivelActual.class}`;
+    }
+
+    const descuento = document.getElementById('statDescuento');
+    if (descuento) descuento.textContent = `${nivelActual.descuento}%`;
+
+    const puntosParaSiguiente = nivelSiguiente.puntos - nivelActual.puntos;
+    const puntosActuales = puntos - nivelActual.puntos;
+    const porcentaje = nivelActual.nivel === 5 ? 100 : (puntosActuales / puntosParaSiguiente) * 100;
+
+    const progressBar = document.getElementById('pointsProgress');
+    const progressText = document.getElementById('pointsText');
+    
+    if (progressBar) progressBar.style.width = porcentaje + '%';
+    if (progressText) progressText.textContent = `${puntos} / ${nivelSiguiente.puntos} puntos`;
+}
+
+let datosOriginalesPerfil = {};
+
+function habilitarEdicion() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    datosOriginalesPerfil = { ...user };
+    
+    document.getElementById('inputNombre').disabled = false;
+    document.getElementById('inputTelefono').disabled = false;
+    document.getElementById('inputDireccion').disabled = false;
+    document.getElementById('btnEditar').style.display = 'none';
+    document.getElementById('botonesEdicion').style.display = 'block';
+}
+
+function cancelarEdicion() {
+    document.getElementById('inputNombre').value = datosOriginalesPerfil.nombre || '';
+    document.getElementById('inputTelefono').value = datosOriginalesPerfil.telefono || '';
+    document.getElementById('inputDireccion').value = datosOriginalesPerfil.direccion || '';
+    
+    document.getElementById('inputNombre').disabled = true;
+    document.getElementById('inputTelefono').disabled = true;
+    document.getElementById('inputDireccion').disabled = true;
+    document.getElementById('btnEditar').style.display = 'block';
+    document.getElementById('botonesEdicion').style.display = 'none';
+}
+
+async function guardarCambiosPerfil() {
+    const token = localStorage.getItem('token');
+    const datos = {
+        nombre: document.getElementById('inputNombre').value,
+        telefono: document.getElementById('inputTelefono').value,
+        direccion: document.getElementById('inputDireccion').value
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(datos)
+        });
+
+        if (!response.ok) throw new Error('Error');
+
+        const result = await response.json();
+        localStorage.setItem('user', JSON.stringify(result.user));
+        
+        showToast('✅ Cambios guardados', 'success');
+        cancelarEdicion();
+
+    } catch (error) {
+        showToast('❌ Error al guardar', 'danger');
+    }
+}
+
+function subirFotoPerfil(input) {
+    if (!input.files || !input.files[0]) return;
+    showToast('⚠️ Función de foto en desarrollo', 'info');
+}
+
+function cerrarSesion() {
+    if (confirm('¿Cerrar sesión?')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.currentUser = null;
+        showToast('Sesión cerrada', 'info');
+        cargarInicio();
+    }
+}
+        // Cargar carrito al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const saved = localStorage.getItem('supermercado_cart');
+                if (saved) {
+                    window.cart = JSON.parse(saved);
+                    actualizarContadorCarrito();
+                }
+            } catch (error) {
+                window.cart = [];
+            }
+            
+            // Cargar página de inicio
+            cargarInicio();
         });
     </script>
 </body>

@@ -1,11 +1,14 @@
 {
   "name": "supermercado-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend para sistema de supermercado",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "node test.js",
+    "test:dev": "nodemon test.js"
   },
   "engines": {
     "node": "18.x"
@@ -23,11 +26,12 @@
     "dotenv": "^16.0.3",
     "express": "^4.21.2",
     "express-rate-limit": "^6.7.0",
-    "helmet": "^6.1.5",
-    "jsonwebtoken": "^9.0.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^6.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.1",
-    "node": "^24.9.0",
-    "pg": "^8.11.0"
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

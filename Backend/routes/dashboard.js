@@ -1,127 +1,265 @@
-const express = require('express');
+import express from 'express';
+import db from '../db.js';
+
 const router = express.Router();
-const db = require('../db');
 
-// Asegurarnos de que la conexión a la base de datos está funcionando
-const pool = require('../db');
+// ============================================
+// MIDDLEWARES
+// ============================================
 
-// Middleware para verificar si es administrador
+/**
+ * Middleware para verificar si es administrador
+ * @TODO: Implementar lógica de autenticación real
+ */
 const verificarAdmin = async (req, res, next) => {
     try {
-        // Aquí puedes agregar la lógica de verificación de admin
-        // Por ahora pasamos directamente
+        // Por ahora pasamos directamente - implementar lógica real después
+        console.log('🔐 Middleware admin - acceso permitido temporalmente');
         next();
     } catch (error) {
-        res.status(403).json({ error: 'No autorizado' });
+        console.error('❌ Error en verificación admin:', error);
+        res.status(403).json({ 
+            success: false,
+            error: 'No autorizado' 
+        });
     }
 };
 
-// Obtener estadísticas generales
+// ============================================
+// RUTAS DE ESTADÍSTICAS
+// ============================================
+
+/**
+ * @route   GET /api/dashboard/estadisticas
+ * @desc    Obtener estadísticas generales del dashboard
+ * @access  Público (debería ser privado en producción)
+ */
 router.get('/estadisticas', async (req, res) => {
-    console.log('Ruta /estadisticas accedida');
+    console.log('📊 Ruta /estadisticas accedida');
+    
     try {
-        // Asegurarnos de que la respuesta será JSON
-        res.setHeader('Content-Type', 'application/json');
-        
-        // Verificar que podemos conectarnos a la base de datos
-        const testQuery = await db.query('SELECT NOW()');
-        console.log('Conexión a DB OK');
+        // Verificar conexión a la base de datos
+        const testQuery = await db.query('SELECT NOW() as tiempo_servidor');
+        console.log('✅ Conexión a DB OK - Tiempo servidor:', testQuery.rows[0].tiempo_servidor);
 
-        // Obtener total de productos
-        const productosQuery = await db.query('SELECT COUNT(*) as total FROM productos');
-        const totalProductos = parseInt(productosQuery.rows[0].total);
+        // Ejecutar todas las consultas en paralelo para mejor performance
+        const [
+            productosResult,
+            categoriasResult,
+            stockBajoResult,
+            ventasResult,
+            clientesResult
+        ] = await Promise.all([
+            // Total de productos
+            db.query('SELECT COUNT(*) as total FROM productos WHERE activo = true'),
+            
+            // Total de categorías únicas
+            db.query('SELECT COUNT(DISTINCT categoria_id) as total FROM productos WHERE activo = true'),
+            
+            // Productos con stock bajo
+            db.query('SELECT COUNT(*) as total FROM productos WHERE stock_actual < 10 AND activo = true'),
+            
+            // Ventas y órdenes
+            db.query(`
+                SELECT 
+                    COUNT(*) as total_ordenes, 
+                    COALESCE(SUM(total), 0) as total_ventas 
+                FROM ordenes 
+                WHERE fecha_creacion >= CURRENT_DATE
+            `),
+            
+            // Total de clientes
+            db.query('SELECT COUNT(*) as total FROM usuarios WHERE rol = \'cliente\' AND activo = true')
+        ]);
 
-        // Obtener total de categorías únicas (usando categoria_id en lugar de categoria)
-        const categoriasQuery = await db.query('SELECT COUNT(DISTINCT categoria_id) as total FROM productos');
-        const totalCategorias = parseInt(categoriasQuery.rows[0].total);
+        const estadisticas = {
+            totalProductos: parseInt(productosResult.rows[0].total),
+            totalCategorias: parseInt(categoriasResult.rows[0].total),
+            productosStockBajo: parseInt(stockBajoResult.rows[0].total),
+            ordenesHoy: parseInt(ventasResult.rows[0].total_ordenes),
+            ventasHoy: parseFloat(ventasResult.rows[0].total_ventas),
+            totalClientes: parseInt(clientesResult.rows[0].total)
+        };
 
-        // Obtener productos con stock bajo (menos de 10 unidades)
-        const stockBajoQuery = await db.query('SELECT COUNT(*) as total FROM productos WHERE stock_actual < 10 AND activo = true');
-        const productosStockBajo = parseInt(stockBajoQuery.rows[0].total);
-
-        // Por ahora, obtener total de ventas (sin filtrar por fecha)
-        const ventasHoyQuery = await db.query(`
-            SELECT COUNT(*) as total_ordenes, COALESCE(SUM(total), 0) as total_ventas 
-            FROM ordenes
-        `);
-        const ordenesHoy = parseInt(ventasHoyQuery.rows[0].total_ordenes);
-        const ventasHoy = parseFloat(ventasHoyQuery.rows[0].total_ventas);
-
-        // Obtener total de clientes
-        const clientesQuery = await db.query('SELECT COUNT(*) as total FROM usuarios WHERE rol = \'cliente\'');
-        const totalClientes = parseInt(clientesQuery.rows[0].total);
+        console.log('📈 Estadísticas calculadas:', estadisticas);
 
         res.json({
-            totalProductos,
-            totalCategorias,
-            totalClientes,
-            ordenesHoy,
-            ventasHoy,
-            productosStockBajo
+            success: true,
+            estadisticas,
+            timestamp: new Date().toISOString()
         });
         
     } catch (error) {
-        console.error('Error obteniendo estadísticas:', error);
-        res.status(500).json({ error: 'Error obteniendo estadísticas', details: error.message });
+        console.error('❌ Error obteniendo estadísticas:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error obteniendo estadísticas',
+            details: error.message 
+        });
     }
 });
 
-// Obtener últimas ventas
+/**
+ * @route   GET /api/dashboard/ultimas-ventas
+ * @desc    Obtener las últimas ventas realizadas
+ * @access  Privado (Admin)
+ */
 router.get('/ultimas-ventas', verificarAdmin, async (req, res) => {
     try {
+        console.log('💰 Solicitando últimas ventas');
+        
         const query = `
-            SELECT o.*, u.nombre as cliente_nombre
+            SELECT 
+                o.id,
+                o.total,
+                o.estado,
+                o.fecha_creacion,
+                u.nombre as cliente_nombre,
+                u.email as cliente_email
             FROM ordenes o
             LEFT JOIN usuarios u ON o.usuario_id = u.id
             ORDER BY o.fecha_creacion DESC
             LIMIT 10
         `;
+        
         const result = await db.query(query);
-        res.json(result.rows);
+        
+        console.log(`✅ Últimas ventas obtenidas: ${result.rows.length}`);
+        
+        res.json({
+            success: true,
+            ventas: result.rows
+        });
+        
     } catch (error) {
-        console.error('Error obteniendo últimas ventas:', error);
-        res.status(500).json({ error: 'Error obteniendo últimas ventas' });
+        console.error('❌ Error obteniendo últimas ventas:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error obteniendo últimas ventas',
+            details: error.message 
+        });
     }
 });
 
-// Asegurarnos de que el router se exporta correctamente
-module.exports = router;
-
-// Obtener productos con bajo stock
+/**
+ * @route   GET /api/dashboard/stock-bajo
+ * @desc    Obtener productos con stock bajo
+ * @access  Privado (Admin)
+ */
 router.get('/stock-bajo', verificarAdmin, async (req, res) => {
     try {
+        console.log('📦 Solicitando productos con stock bajo');
+        
         const query = `
-            SELECT id, nombre, stock_actual, precio_venta
+            SELECT 
+                id, 
+                nombre, 
+                stock_actual, 
+                precio_venta,
+                imagen_url
             FROM productos
             WHERE stock_actual < 10 AND activo = true
             ORDER BY stock_actual ASC
-            LIMIT 10
+            LIMIT 15
         `;
+        
         const result = await db.query(query);
-        res.json(result.rows);
+        
+        console.log(`✅ Productos con stock bajo obtenidos: ${result.rows.length}`);
+        
+        res.json({
+            success: true,
+            productos: result.rows
+        });
+        
     } catch (error) {
-        console.error('Error obteniendo productos con stock bajo:', error);
-        res.status(500).json({ error: 'Error obteniendo productos con stock bajo' });
+        console.error('❌ Error obteniendo productos con stock bajo:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error obteniendo productos con stock bajo',
+            details: error.message 
+        });
     }
 });
 
-// Obtener ventas por categoría
+/**
+ * @route   GET /api/dashboard/ventas-por-categoria
+ * @desc    Obtener ventas agrupadas por categoría
+ * @access  Privado (Admin)
+ */
 router.get('/ventas-por-categoria', verificarAdmin, async (req, res) => {
     try {
+        console.log('📊 Solicitando ventas por categoría');
+        
         const query = `
-            SELECT c.nombre as categoria, COUNT(*) as total_ventas, SUM(od.cantidad * od.precio) as total_ingresos
+            SELECT 
+                c.nombre as categoria, 
+                COUNT(*) as total_ventas, 
+                SUM(od.cantidad * od.precio) as total_ingresos,
+                AVG(od.cantidad * od.precio) as promedio_venta
             FROM orden_detalles od
             JOIN productos p ON od.producto_id = p.id
             JOIN categorias c ON p.categoria_id = c.id
             GROUP BY c.nombre
-            ORDER BY total_ventas DESC
+            ORDER BY total_ingresos DESC
         `;
+        
         const result = await db.query(query);
-        res.json(result.rows);
+        
+        console.log(`✅ Ventas por categoría obtenidas: ${result.rows.length} categorías`);
+        
+        res.json({
+            success: true,
+            categorias: result.rows
+        });
+        
     } catch (error) {
-        console.error('Error obteniendo ventas por categoría:', error);
-        res.status(500).json({ error: 'Error obteniendo ventas por categoría' });
+        console.error('❌ Error obteniendo ventas por categoría:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error obteniendo ventas por categoría',
+            details: error.message 
+        });
     }
 });
 
-module.exports = router;
+/**
+ * @route   GET /api/dashboard/tendencias
+ * @desc    Obtener tendencias de ventas (últimos 7 días)
+ * @access  Privado (Admin)
+ */
+router.get('/tendencias', verificarAdmin, async (req, res) => {
+    try {
+        console.log('📈 Solicitando tendencias de ventas');
+        
+        const query = `
+            SELECT 
+                DATE(fecha_creacion) as fecha,
+                COUNT(*) as total_ordenes,
+                COALESCE(SUM(total), 0) as total_ventas
+            FROM ordenes
+            WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY DATE(fecha_creacion)
+            ORDER BY fecha DESC
+        `;
+        
+        const result = await db.query(query);
+        
+        console.log(`✅ Tendencias obtenidas: ${result.rows.length} días`);
+        
+        res.json({
+            success: true,
+            tendencias: result.rows
+        });
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo tendencias:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error obteniendo tendencias',
+            details: error.message 
+        });
+    }
+});
+
+export default router;
