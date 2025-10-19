@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago con PSE - Wompi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .amount-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .amount-display h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .amount-display .amount {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🛒 Mi Tienda</h1>
+            <p>Pago seguro con PSE</p>
+        </div>
+
+        <div class="amount-display">
+            <h3>Total a pagar</h3>
+            <div class="amount">$<span id="displayAmount">50000</span> COP</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="info-box">
+            <strong>ℹ️ Modo de prueba:</strong> Este formulario usa las llaves de prueba de Wompi. Los pagos no son reales.
+        </div>
+
+        <!-- Resumen de productos -->
+        <div id="resumenProductos"></div>
+
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="email">Correo electrónico *</label>
+                <input type="email" id="email" required placeholder="tu@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="userType">Tipo de persona *</label>
+                <select id="userType" required>
+                    <option value="">Selecciona...</option>
+                    <option value="0">Persona Natural</option>
+                    <option value="1">Persona Jurídica</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="legalIdType">Tipo de documento *</label>
+                <select id="legalIdType" required>
+                    <option value="">Selecciona...</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="CE">Cédula de Extranjería</option>
+                    <option value="NIT">NIT</option>
+                    <option value="PP">Pasaporte</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="legalId">Número de documento *</label>
+                <input type="text" id="legalId" required placeholder="1234567890">
+            </div>
+
+            <div class="form-group">
+                <label for="bank">Banco *</label>
+                <select id="bank" required>
+                    <option value="">Cargando bancos...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Monto (COP) *</label>
+                <input type="number" id="amount" value="50000" min="1000" required>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                🔒 Pagar con PSE
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Procesando tu pago...</p>
+        </div>
+    </div>
+
+    <script src="js/wompi.js"></script>
+</body>
+</html>

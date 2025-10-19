@@ -473,7 +473,7 @@ function mostrarProductosDestacados(productos) {
                         </div>
                         
                         <button class="btn btn-primary w-100" 
-                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")} )'>
+                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")})'>
                             <i class="fas fa-cart-plus me-1"></i> Agregar al Carrito
                         </button>
                     </div>
@@ -791,25 +791,239 @@ function mostrarListaProductos(productos) {
             mostrarCarrito();
         }
 
-        function procesarCompra() {
-            if (!window.cart || window.cart.length === 0) {
-                showToast('El carrito está vacío', 'warning');
-                return;
-            }
-            
-            const total = window.cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            
-            if (confirm(`¿Confirmar compra por $${total.toLocaleString()}?`)) {
-                showToast('¡Compra procesada exitosamente!', 'success');
-                window.cart = [];
-                guardarCarrito();
-                actualizarContadorCarrito();
-                
-                const modal = bootstrap.Modal.getInstance(document.getElementById('carritoModal'));
-                if (modal) modal.hide();
-            }
-        }
+        // ============================================
+// FUNCIONES PARA INTEGRACIÓN DE PSE CON WOMPI
+// Agregar estas funciones a tu <script> del index.html
+// ============================================
 
+// Modificar la función procesarCompra existente
+function procesarCompra() {
+    if (!window.cart || window.cart.length === 0) {
+        showToast('El carrito está vacío', 'warning');
+        return;
+    }
+    
+    // Verificar si hay usuario logueado
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    
+    if (!token || !user) {
+        showToast('Debes iniciar sesión para continuar con la compra', 'warning');
+        setTimeout(() => {
+            mostrarFormularioLogin();
+        }, 1500);
+        return;
+    }
+    
+    // Calcular total
+    const total = window.cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    
+    // Guardar información de la compra antes de ir a pagar
+    const infoCompra = {
+        items: window.cart,
+        total: total,
+        userId: user.id,
+        userEmail: user.email,
+        userName: user.nombre,
+        fecha: new Date().toISOString()
+    };
+    
+    localStorage.setItem('compra_pendiente', JSON.stringify(infoCompra));
+    
+    // Cerrar modal del carrito
+    const modal = bootstrap.Modal.getInstance(document.getElementById('carritoModal'));
+    if (modal) modal.hide();
+    
+    // Ir a la página de pago
+    irAPaginaPago();
+}
+
+// Nueva función para ir a la página de pago
+function irAPaginaPago() {
+    const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
+    
+    if (!compra) {
+        showToast('Error: No hay información de compra', 'danger');
+        return;
+    }
+    
+    // Redirigir a la página de pago
+    window.location.href = '/pago.html';
+}
+
+// Función para cargar datos en la página de pago (usar en pago.html)
+function cargarDatosCompra() {
+    const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
+    
+    if (!compra) {
+        showToast('No hay compra pendiente', 'warning');
+        window.location.href = '/';
+        return null;
+    }
+    
+    return compra;
+}
+
+// Función para limpiar compra después de pago exitoso
+function limpiarCompraPendiente() {
+    localStorage.removeItem('compra_pendiente');
+    window.cart = [];
+    guardarCarrito();
+    actualizarContadorCarrito();
+}
+
+// Función alternativa: Mostrar resumen antes de ir a pagar
+function mostrarResumenCompra() {
+    const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
+    
+    if (!compra) return;
+    
+    const contenedor = document.getElementById('contenidoPrincipal');
+    contenedor.innerHTML = `
+        <div class="container mt-5 mb-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow-lg">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">
+                                <i class="fas fa-shopping-cart me-2"></i>Resumen de tu Compra
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h5>Productos:</h5>
+                                ${compra.items.map(item => `
+                                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                        <div>
+                                            <strong>${item.nombre}</strong>
+                                            <br>
+                                            <small class="text-muted">Cantidad: ${item.cantidad}</small>
+                                        </div>
+                                        <div>
+                                            <strong>$${(item.precio * item.cantidad).toLocaleString()}</strong>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                                <h5 class="mb-0">Total a Pagar:</h5>
+                                <h3 class="mb-0 text-primary">$${compra.total.toLocaleString()}</h3>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Serás redirigido a la pasarela de pago segura PSE
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <a href="/pago.html" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-lock me-2"></i>Continuar al Pago Seguro
+                                </a>
+                                <button class="btn btn-outline-secondary" onclick="cargarInicio()">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Función para botón de pago rápido desde productos
+function comprarAhora(producto) {
+    // Agregar al carrito
+    agregarAlCarrito(producto, 1);
+    
+    // Verificar sesión
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showToast('Debes iniciar sesión para comprar', 'warning');
+        setTimeout(() => mostrarFormularioLogin(), 1500);
+        return;
+    }
+    
+    // Procesar compra directamente
+    procesarCompra();
+}
+
+// ============================================
+// FUNCIÓN PARA VERIFICAR ESTADO DE PAGO AL REGRESAR
+// Agregar esta función y llamarla al cargar la página
+// ============================================
+function verificarPagoRetorno() {
+    // Obtener parámetros de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const transactionId = urlParams.get('id');
+    
+    if (status && transactionId) {
+        if (status === 'APPROVED') {
+            limpiarCompraPendiente();
+            showToast('¡Pago exitoso! Gracias por tu compra', 'success');
+            
+            // Mostrar confirmación
+            mostrarConfirmacionPago(transactionId, 'success');
+        } else if (status === 'PENDING') {
+            showToast('Tu pago está pendiente de confirmación', 'warning');
+            mostrarConfirmacionPago(transactionId, 'pending');
+        } else {
+            showToast('El pago no pudo ser procesado', 'danger');
+            mostrarConfirmacionPago(transactionId, 'error');
+        }
+        
+        // Limpiar URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+function mostrarConfirmacionPago(transactionId, estado) {
+    const contenedor = document.getElementById('contenidoPrincipal');
+    
+    const iconos = {
+        success: { icon: 'fa-check-circle', color: 'success', titulo: '¡Pago Exitoso!' },
+        pending: { icon: 'fa-clock', color: 'warning', titulo: 'Pago Pendiente' },
+        error: { icon: 'fa-times-circle', color: 'danger', titulo: 'Pago Rechazado' }
+    };
+    
+    const info = iconos[estado] || iconos.error;
+    
+    contenedor.innerHTML = `
+        <div class="container mt-5 mb-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card shadow-lg text-center">
+                        <div class="card-body p-5">
+                            <i class="fas ${info.icon} fa-5x text-${info.color} mb-4"></i>
+                            <h2 class="mb-3">${info.titulo}</h2>
+                            <p class="text-muted mb-4">ID de Transacción: ${transactionId}</p>
+                            
+                            ${estado === 'success' ? `
+                                <div class="alert alert-success">
+                                    Tu pedido será procesado en breve. Recibirás un correo de confirmación.
+                                </div>
+                            ` : estado === 'pending' ? `
+                                <div class="alert alert-warning">
+                                    Tu pago está siendo verificado. Te notificaremos cuando sea confirmado.
+                                </div>
+                            ` : `
+                                <div class="alert alert-danger">
+                                    Hubo un problema con tu pago. Por favor intenta nuevamente.
+                                </div>
+                            `}
+                            
+                            <button class="btn btn-primary btn-lg mt-3" onclick="cargarInicio()">
+                                <i class="fas fa-home me-2"></i>Volver al Inicio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
         function actualizarContadorCarrito() {
             const counter = document.getElementById('carritoCount');
             if (counter) {
@@ -1390,10 +1604,11 @@ function cerrarSesion() {
             } catch (error) {
                 window.cart = [];
             }
-            
-            // Cargar página de inicio
-            cargarInicio();
-        });
+
+                verificarPagoRetorno();
+    
+    cargarInicio();
+});
     </script>
 </body>
 </html>

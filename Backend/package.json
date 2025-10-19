@@ -21,9 +21,10 @@
   "author": "Kev",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-rate-limit": "^6.7.0",
     "express-validator": "^7.2.1",
