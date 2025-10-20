@@ -8,11 +8,12 @@ import dotenv from 'dotenv';
 import productosRoutes from './routes/productos.js';
 import dashboardRoutes from './routes/dashboard.js';
 import authRoutes from './routes/auth.js';
+import pagosRoutes from './routes/pagos.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Fix para __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -86,8 +87,13 @@ app.use('/api/auth', authRoutes);
 // Rutas de productos
 app.use('/api/productos', productosRoutes);
 
+
 // Rutas del dashboard
 app.use('/api/dashboard', dashboardRoutes);
+
+// Rutas de pagos PSE
+app.use('/api/pagos', pagosRoutes);
+
 
 // ============================================
 // RUTAS DE PRUEBA Y DIAGNÓSTICO
@@ -268,8 +274,19 @@ async function startServer() {
         console.warn('⚠️  Servidor iniciado sin conexión a base de datos');
     }
     
+    //REDIRECCION AUTOMATICA
+
+    app.use((req, res, next) => {
+        if (req.hostname === 'localhost') {
+            const newUrl = `http://127.0.0.1:${PORT}${req.originalUrl}`;
+            console.log(`🔄 Redirigiendo automáticamente: localhost → 127.0.0.1`);
+             return res.redirect(newUrl);
+        }
+        next();
+    });
+   
     app.listen(PORT, () => {
-        console.log('='.repeat(50));
+        console.log('='.repeat(50));    
         console.log(`🎉 Servidor ejecutándose en: http://localhost:${PORT}`);
         console.log(`📊 Entorno: ${process.env.NODE_ENV || 'development'}`);
         console.log(`🗄️  Base de datos: ${dbConnected ? '✅ Conectada' : '❌ Desconectada'}`);

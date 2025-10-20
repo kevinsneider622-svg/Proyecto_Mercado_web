@@ -338,11 +338,11 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
     <script>
+
         // Variables globales
-        const API_URL = 'http://localhost:3000/api';
+        const API_URL = 'http://127.0.0.1:3000/api';
+
         window.cart = [];
         window.currentUser = null;
 
@@ -838,6 +838,7 @@ function procesarCompra() {
     irAPaginaPago();
 }
 
+
 // Nueva función para ir a la página de pago
 function irAPaginaPago() {
     const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
@@ -848,7 +849,7 @@ function irAPaginaPago() {
     }
     
     // Redirigir a la página de pago
-    window.location.href = '/pago.html';
+    window.location.href = 'http://127.0.0.1:3000/pago.html';
 }
 
 // Función para cargar datos en la página de pago (usar en pago.html)
