@@ -81,15 +81,15 @@ app.use((req, res, next) => {
 // RUTAS DE LA API
 // ============================================
 
-// Rutas de autenticación
-app.use('/api/auth', authRoutes);
 
 // Rutas de productos
 app.use('/api/productos', productosRoutes);
 
-
 // Rutas del dashboard
 app.use('/api/dashboard', dashboardRoutes);
+
+// Rutas de autenticación
+app.use('/api/auth', authRoutes);
 
 // Rutas de pagos PSE
 app.use('/api/pagos', pagosRoutes);
