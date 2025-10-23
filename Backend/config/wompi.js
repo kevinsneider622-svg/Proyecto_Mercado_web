@@ -14,20 +14,36 @@ const wompiConfig = {
     ? 'https://production.wompi.co/v1' 
     : 'https://sandbox.wompi.co/v1',
   
-  // URL base de tu aplicación
-  baseUrl: process.env.BASE_URL || 'http://127.0.0.1:3000',
+  // URL base de tu aplicación - Detecta entorno de Render.com
+  baseUrl: process.env.BASE_URL || 
+          (process.env.RENDER_EXTERNAL_URL || 'http://127.0.0.1:3000'),
   
+  // URL para recibir webhooks de Wompi
+  webhookUrl: process.env.WOMPI_WEBHOOK_URL || 
+              `${process.env.RENDER_EXTERNAL_URL || 'http://127.0.0.1.3000'}/api/pagos/webhook`,
+
   // Información del entorno
   environment: process.env.WOMPI_ENV || 'production'
 };
 
+
 // Validar configuración
-if (!wompiConfig.publicKey || !wompiConfig.privateKey) {
-  console.error('❌ ERROR: Llaves de Wompi no configuradas');
+
+const missingVars = [];
+if (!wompiConfig.publicKey) missingVars.push('WOMPI_PUBLIC_KEY');
+if (!wompiConfig.privateKey) missingVars.push('WOMPI_PRIVATE_KEY');
+if (!wompiConfig.eventSecret) missingVars.push('WOMPI_EVENT_SECRET');
+if (!wompiConfig.integritySecret) missingVars.push('WOMPI_INTEGRITY_SECRET');
+
+if (missingVars.length > 0) {
+  console.error('❌ ERROR: Variables de Wompi faltantes:', missingVars.join(', '));
   process.exit(1);
 }
 
-console.log('🔑 Wompi configurado en modo:', wompiConfig.environment);
+console.log('✅ Wompi configurado correctamente');
+console.log('🔑 Entorno:', wompiConfig.environment);
 console.log('🔑 Llave pública:', wompiConfig.publicKey.substring(0, 20) + '...');
+console.log('🌐 Base URL:', wompiConfig.baseUrl);
+console.log('🪝 Webhook URL:', wompiConfig.webhookUrl);
 
 export default wompiConfig;
