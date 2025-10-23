@@ -1,4 +1,6 @@
-import 'dotenv/config';
+if (process.env.NODE_ENV !== 'production') {
+  await import('dotenv/config');
+}
 
 const wompiConfig = {
   // Llaves principales
@@ -14,21 +16,28 @@ const wompiConfig = {
     ? 'https://production.wompi.co/v1' 
     : 'https://sandbox.wompi.co/v1',
   
-  // URL base de tu aplicación - Detecta entorno de Render.com
+  // URL base de tu aplicación
   baseUrl: process.env.BASE_URL || 
-          (process.env.RENDER_EXTERNAL_URL || 'http://127.0.0.1:3000'),
+           process.env.RENDER_EXTERNAL_URL || 
+           'http://127.0.0.1:3000',
   
-  // URL para recibir webhooks de Wompi
+  // URL del webhook
   webhookUrl: process.env.WOMPI_WEBHOOK_URL || 
-              `${process.env.RENDER_EXTERNAL_URL || 'http://127.0.0.1.3000'}/api/pagos/webhook`,
-
+              `${process.env.RENDER_EXTERNAL_URL || process.env.BASE_URL || 'http://127.0.0.1:3000'}/api/pagos/webhook`,
+  
   // Información del entorno
   environment: process.env.WOMPI_ENV || 'production'
 };
 
+// Debug: Mostrar qué variables están disponibles
+console.log('🔍 DEBUG: Variables de entorno disponibles:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('WOMPI_PUBLIC_KEY existe:', !!process.env.WOMPI_PUBLIC_KEY);
+console.log('WOMPI_PRIVATE_KEY existe:', !!process.env.WOMPI_PRIVATE_KEY);
+console.log('WOMPI_EVENT_SECRET existe:', !!process.env.WOMPI_EVENT_SECRET);
+console.log('WOMPI_INTEGRITY_SECRET existe:', !!process.env.WOMPI_INTEGRITY_SECRET);
 
 // Validar configuración
-
 const missingVars = [];
 if (!wompiConfig.publicKey) missingVars.push('WOMPI_PUBLIC_KEY');
 if (!wompiConfig.privateKey) missingVars.push('WOMPI_PRIVATE_KEY');
@@ -37,6 +46,7 @@ if (!wompiConfig.integritySecret) missingVars.push('WOMPI_INTEGRITY_SECRET');
 
 if (missingVars.length > 0) {
   console.error('❌ ERROR: Variables de Wompi faltantes:', missingVars.join(', '));
+  console.error('💡 Verifica en Render Dashboard > Environment que estas variables existan');
   process.exit(1);
 }
 
