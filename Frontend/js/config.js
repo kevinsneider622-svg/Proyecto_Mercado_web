@@ -15,7 +15,7 @@ const CONFIG = {
             
             return isDevelopment 
                 ? 'http://localhost:3000/api'
-                : 'https://proyecto-mercado-web.omenelen.com/api';
+                : 'https://proyecto-mercado-web.onrender.com';
         })()
     },
 

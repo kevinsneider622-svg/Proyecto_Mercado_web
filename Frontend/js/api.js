@@ -1,5 +1,4 @@
-import { CONFIG } from './config.js';
-import { UTILS } from './config.js';
+import { CONFIG, UTILS, Logger } from './config.js';
 
 // ============================================
 // CLASE PRINCIPAL DE API
@@ -12,6 +11,7 @@ class ApiClient {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         };
+        Logger.info('ApiClient inicializado con baseURL:', this.baseURL);
     }
 
     // ============================================
@@ -57,10 +57,10 @@ class ApiClient {
     }
 
     // ============================================
-    // MÉTODO PRIVADO PARA FETCH
+    // MÉTODO PRIVADO PARA FETCH CON RETRY
     // ============================================
 
-    async _fetch(endpoint, options = {}) {
+    async _fetch(endpoint, options = {}, retryCount = 0) {
         const url = `${this.baseURL}${endpoint}`;
         const startTime = Date.now();
 
@@ -79,7 +79,8 @@ class ApiClient {
         const config = {
             ...options,
             headers,
-            credentials: 'include'
+            credentials: 'include',
+            mode: 'cors' // Importante para CORS
         };
 
         // Remover body si es GET o HEAD
@@ -88,13 +89,12 @@ class ApiClient {
         }
 
         try {
-            console.log(`🌐 API Request: ${config.method} ${url}`);
+            Logger.log(`🌐 API Request: ${config.method} ${url}`);
 
             const response = await fetch(url, config);
             const duration = Date.now() - startTime;
 
-            // Log de respuesta
-            console.log(`📨 API Response: ${response.status} - ${duration}ms`);
+            Logger.log(`📨 API Response: ${response.status} - ${duration}ms`);
 
             // Procesar respuesta
             const data = await this._handleResponse(response);
@@ -107,11 +107,18 @@ class ApiClient {
             };
 
         } catch (error) {
-            console.error(`❌ API Error: ${config.method} ${url}`, error);
-            
+            Logger.error(`❌ API Error: ${config.method} ${url}`, error);
+
+            // Retry logic para errores de red
+            if (retryCount < CONFIG.api.retryAttempts && this._shouldRetry(error)) {
+                Logger.warn(`🔄 Reintentando... (${retryCount + 1}/${CONFIG.api.retryAttempts})`);
+                await this._delay(CONFIG.api.retryDelay * (retryCount + 1));
+                return this._fetch(endpoint, options, retryCount + 1);
+            }
+
             return {
                 success: false,
-                error: error.message,
+                error: this._getErrorMessage(error),
                 status: error.status || 0,
                 details: error.details || null
             };
@@ -130,9 +137,9 @@ class ApiClient {
             const data = await response.json();
 
             if (!response.ok) {
-                const error = new Error(data.error || 'Error en la petición');
+                const error = new Error(data.error || data.message || 'Error en la petición');
                 error.status = response.status;
-                error.details = data.details;
+                error.details = data.details || data;
                 throw error;
             }
 
@@ -152,44 +159,94 @@ class ApiClient {
     }
 
     // ============================================
+    // UTILIDADES DE ERROR Y RETRY
+    // ============================================
+
+    _shouldRetry(error) {
+        // Reintentar solo en errores de red, no en errores del servidor
+        return error.message.includes('fetch') || 
+               error.message.includes('network') ||
+               error.message.includes('NetworkError') ||
+               error.status === 0;
+    }
+
+    _delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    _getErrorMessage(error) {
+        if (error.status === 0) {
+            return CONFIG.MESSAGES.NETWORK_ERROR;
+        } else if (error.status === 401) {
+            return CONFIG.MESSAGES.UNAUTHORIZED;
+        } else if (error.status === 404) {
+            return CONFIG.MESSAGES.NOT_FOUND;
+        } else if (error.status >= 500) {
+            return CONFIG.MESSAGES.SERVER_ERROR;
+        }
+        return error.message || 'Error desconocido';
+    }
+
+    // ============================================
     // MANEJO DE AUTENTICACIÓN
     // ============================================
 
     setToken(token) {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('auth_token', token);
-        }
+        Logger.info('🔑 Token establecido');
+        UTILS.storage.set(CONFIG.AUTH.TOKEN_KEY, token);
         this.token = token;
     }
 
     getToken() {
         if (this.token) return this.token;
-        
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('auth_token');
-        }
-        
-        return null;
+        return UTILS.storage.get(CONFIG.AUTH.TOKEN_KEY);
     }
 
     removeToken() {
+        Logger.info('🔓 Token removido');
         this.token = null;
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth_token');
-        }
+        UTILS.storage.remove(CONFIG.AUTH.TOKEN_KEY);
+        UTILS.storage.remove(CONFIG.AUTH.USER_KEY);
+    }
+
+    setUser(userData) {
+        UTILS.storage.set(CONFIG.AUTH.USER_KEY, userData);
+    }
+
+    getUser() {
+        return UTILS.storage.get(CONFIG.AUTH.USER_KEY);
     }
 
     // ============================================
-    // MÉTODOS ESPECÍFICOS DE LA APLICACIÓN
+    // MÉTODOS ESPECÍFICOS - AUTENTICACIÓN
     // ============================================
 
-    // 🔐 AUTENTICACIÓN
     async login(credentials) {
-        return this.post(CONFIG.endpoints.LOGIN, credentials);
+        const response = await this.post(CONFIG.endpoints.LOGIN, credentials);
+        
+        if (response.success && response.data.token) {
+            this.setToken(response.data.token);
+            if (response.data.user) {
+                this.setUser(response.data.user);
+            }
+            Logger.success('✅ Login exitoso');
+        }
+        
+        return response;
     }
 
     async register(userData) {
-        return this.post(CONFIG.endpoints.REGISTER, userData);
+        const response = await this.post(CONFIG.endpoints.REGISTER, userData);
+        
+        if (response.success && response.data.token) {
+            this.setToken(response.data.token);
+            if (response.data.user) {
+                this.setUser(response.data.user);
+            }
+            Logger.success('✅ Registro exitoso');
+        }
+        
+        return response;
     }
 
     async verifyToken() {
@@ -198,10 +255,14 @@ class ApiClient {
 
     async logout() {
         this.removeToken();
+        Logger.success('✅ Sesión cerrada');
         return { success: true, message: 'Sesión cerrada' };
     }
 
-    // 📦 PRODUCTOS
+    // ============================================
+    // MÉTODOS ESPECÍFICOS - PRODUCTOS
+    // ============================================
+
     async getProductos(page = 1, limit = CONFIG.PAGINATION.DEFAULT_LIMIT) {
         return this.get(`${CONFIG.endpoints.PRODUCTOS}?page=${page}&limit=${limit}`);
     }
@@ -211,7 +272,7 @@ class ApiClient {
     }
 
     async getProductosDestacados() {
-        return this.get(`${CONFIG.endpoints.PRODUCTOS}/destacados`);
+        return this.get(CONFIG.endpoints.PRODUCTOS_DESTACADOS);
     }
 
     async getProductosPorCategoria(categoriaId, page = 1) {
@@ -219,10 +280,26 @@ class ApiClient {
     }
 
     async buscarProductos(termino, page = 1) {
-        return this.get(`${CONFIG.endpoints.PRODUCTOS}/buscar/${encodeURIComponent(termino)}?page=${page}`);
+        const terminoEncoded = encodeURIComponent(termino);
+        return this.get(`${CONFIG.endpoints.PRODUCTOS_BUSCAR}/${terminoEncoded}?page=${page}`);
     }
 
-    // 📊 DASHBOARD
+    async crearProducto(productoData) {
+        return this.post(CONFIG.endpoints.PRODUCTOS, productoData);
+    }
+
+    async actualizarProducto(id, productoData) {
+        return this.put(`${CONFIG.endpoints.PRODUCTOS}/${id}`, productoData);
+    }
+
+    async eliminarProducto(id) {
+        return this.delete(`${CONFIG.endpoints.PRODUCTOS}/${id}`);
+    }
+
+    // ============================================
+    // MÉTODOS ESPECÍFICOS - DASHBOARD
+    // ============================================
+
     async getEstadisticas() {
         return this.get(CONFIG.endpoints.ESTADISTICAS);
     }
@@ -239,75 +316,90 @@ class ApiClient {
         return this.get(`${CONFIG.endpoints.DASHBOARD}/ventas-por-categoria`);
     }
 
-    // 🛒 CARRITO (si está implementado en el backend)
+    // ============================================
+    // MÉTODOS ESPECÍFICOS - CARRITO
+    // ============================================
+
     async getCarrito() {
-        return this.get('/carrito');
+        return this.get('/api/carrito');
     }
 
     async agregarAlCarrito(productoId, cantidad = 1) {
-        return this.post('/carrito/agregar', { productoId, cantidad });
+        return this.post('/api/carrito/agregar', { productoId, cantidad });
     }
 
     async actualizarCarrito(itemId, cantidad) {
-        return this.put(`/carrito/${itemId}`, { cantidad });
+        return this.put(`/api/carrito/${itemId}`, { cantidad });
     }
 
     async eliminarDelCarrito(itemId) {
-        return this.delete(`/carrito/${itemId}`);
+        return this.delete(`/api/carrito/${itemId}`);
     }
 
     async vaciarCarrito() {
-        return this.delete('/carrito');
+        return this.delete('/api/carrito');
+    }
+
+    // ============================================
+    // MÉTODOS ESPECÍFICOS - PAGOS
+    // ============================================
+
+    async crearTransaccion(datosTransaccion) {
+        return this.post(`${CONFIG.endpoints.PAGOS}/crear-transaccion`, datosTransaccion);
+    }
+
+    async verificarTransaccion(transaccionId) {
+        return this.get(`${CONFIG.endpoints.PAGOS}/verificar/${transaccionId}`);
     }
 
     // ============================================
     // UTILIDADES
     // ============================================
 
-    // Health check del servidor
     async healthCheck() {
-        return this.get('/health');
+        return this.get(CONFIG.endpoints.HEALTH);
     }
 
-    // Test de base de datos
     async testDB() {
-        return this.get('/test-db');
+        return this.get(CONFIG.endpoints.TEST_DB);
     }
 
-    // Subida de archivos
-    async subirArchivo(archivo, endpoint = '/upload') {
+    async subirArchivo(archivo, endpoint = CONFIG.FILES.UPLOAD_ENDPOINT) {
         const formData = new FormData();
         formData.append('archivo', archivo);
 
         return this._fetch(endpoint, {
             method: 'POST',
             body: formData,
-            headers: {
-                // No establecer Content-Type para FormData, el navegador lo hace automáticamente
-            }
+            headers: {} // No establecer Content-Type para FormData
         });
     }
 }
 
 // ============================================
-// INSTANCIA GLOBAL Y CONFIGURACIÓN
+// INSTANCIA GLOBAL
 // ============================================
 
-// Crear instancia global
 const api = new ApiClient();
 
-// Interceptores globales (opcional)
+// ============================================
+// INTERCEPTOR GLOBAL PARA ERRORES 401
+// ============================================
+
 if (typeof window !== 'undefined') {
-    // Interceptor para redireccionar en errores de autenticación
     const originalFetch = window.fetch;
     window.fetch = async function (...args) {
         const response = await originalFetch.apply(this, args);
         
         if (response.status === 401) {
-            console.warn('🔐 Sesión expirada, redirigiendo...');
+            Logger.warn('🔐 Sesión expirada, limpiando token...');
             api.removeToken();
-            // Opcional: redirigir a login
-            // window.location.href = '/login';
+            
+            // Opcional: redirigir a login si no estamos ya allí
+            if (!window.location.pathname.includes('/login')) {
+                Logger.info('🔄 Redirigiendo a login...');
+                // window.location.href = '/login';
+            }
         }
         
         return response;
@@ -318,13 +410,15 @@ if (typeof window !== 'undefined') {
 // FUNCIONES DE CONVENIENCIA
 // ============================================
 
-// Funciones de conveniencia para uso directo
 export const auth = {
     login: (credentials) => api.login(credentials),
     register: (userData) => api.register(userData),
     verify: () => api.verifyToken(),
     logout: () => api.logout(),
-    setToken: (token) => api.setToken(token)
+    setToken: (token) => api.setToken(token),
+    getToken: () => api.getToken(),
+    getUser: () => api.getUser(),
+    setUser: (userData) => api.setUser(userData)
 };
 
 export const productos = {
@@ -332,7 +426,10 @@ export const productos = {
     getById: (id) => api.getProductoById(id),
     getDestacados: () => api.getProductosDestacados(),
     getPorCategoria: (categoriaId, page) => api.getProductosPorCategoria(categoriaId, page),
-    buscar: (termino, page) => api.buscarProductos(termino, page)
+    buscar: (termino, page) => api.buscarProductos(termino, page),
+    crear: (data) => api.crearProducto(data),
+    actualizar: (id, data) => api.actualizarProducto(id, data),
+    eliminar: (id) => api.eliminarProducto(id)
 };
 
 export const dashboard = {
@@ -348,6 +445,11 @@ export const carrito = {
     actualizar: (itemId, cantidad) => api.actualizarCarrito(itemId, cantidad),
     eliminar: (itemId) => api.eliminarDelCarrito(itemId),
     vaciar: () => api.vaciarCarrito()
+};
+
+export const pagos = {
+    crear: (datos) => api.crearTransaccion(datos),
+    verificar: (id) => api.verificarTransaccion(id)
 };
 
 export const utils = {

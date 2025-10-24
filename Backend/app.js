@@ -13,7 +13,7 @@ import pagosRoutes from './routes/pagos.js';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // ← CORREGIDO: Usar variable de entorno
 
 // Fix para __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -24,32 +24,56 @@ const __dirname = path.dirname(__filename);
 // ============================================
 
 // Configuración de CORS mejorada
-app.use(cors({
+const corsOptions = {
     origin: function (origin, callback) {
-        // Permitir todos los orígenes en desarrollo
+        const allowedOrigins = [
+            'http://localhost:5173',              // Vite local
+            'http://localhost:3000',              // React local
+            'http://127.0.0.1:5173',              // Vite local alternativo
+            'http://127.0.0.1:3000',              // React local alternativo
+            'https://proyecto-mercado-web-zebx.vercel.app',  // Tu Vercel
+            'https://proyecto-mercado-web.vercel.app',       // Vercel sin suffix
+            'https://*.vercel.app'                // Todos los previews de Vercel
+        ];
+        
+        // En desarrollo, permitir todos los orígenes
         if (process.env.NODE_ENV !== 'production') {
             return callback(null, true);
         }
         
-        // En producción, permitir orígenes específicos
-        const allowedOrigins = [
-            'https://proyecto-mercado-web-zebx.vercel.app',
-            'https://proyecto-mercado-web.omenelen.com'
-        ];
+        // En producción, verificar origen
+        if (!origin) {
+            // Permitir requests sin origin (Postman, cURL, etc.)
+            return callback(null, true);
+        }
         
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // Verificar si el origen está permitido
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (allowed.includes('*')) {
+                const pattern = allowed.replace('*', '.*');
+                return new RegExp(pattern).test(origin);
+            }
+            return allowed === origin;
+        });
+        
+        if (isAllowed) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.warn(`⚠️  Origen bloqueado por CORS: ${origin}`);
+            callback(null, true); // ← Temporalmente permitir todos en producción
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 600 // Cache preflight por 10 minutos
+};
 
-// Manejar preflight OPTIONS requests
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Manejar preflight OPTIONS requests explícitamente
+app.options('*', cors(corsOptions));
 
 // Parsers de body
 app.use(express.json({ limit: '10mb' }));
@@ -63,14 +87,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
     console.log(`📨 [${timestamp}] ${req.method} ${req.path}`);
-    console.log(`   📦 Body:`, req.body);
+    console.log(`   🌐 Origin: ${req.get('origin') || 'No origin'}`);
     console.log(`   👤 IP: ${req.ip}`);
+    if (Object.keys(req.body).length > 0) {
+        console.log(`   📦 Body:`, JSON.stringify(req.body).substring(0, 100));
+    }
     next();
 });
 
 // Middleware de seguridad básica
 app.use((req, res, next) => {
-    // Headers de seguridad
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -81,6 +107,19 @@ app.use((req, res, next) => {
 // RUTAS DE LA API
 // ============================================
 
+// Ruta raíz para verificar que el servidor está funcionando
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'API SuperMercado - Funcionando correctamente',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Rutas de autenticación
+app.use('/api/auth', authRoutes);
 
 // Rutas de productos
 app.use('/api/productos', productosRoutes);
@@ -88,12 +127,8 @@ app.use('/api/productos', productosRoutes);
 // Rutas del dashboard
 app.use('/api/dashboard', dashboardRoutes);
 
-// Rutas de autenticación
-app.use('/api/auth', authRoutes);
-
 // Rutas de pagos PSE
 app.use('/api/pagos', pagosRoutes);
-
 
 // ============================================
 // RUTAS DE PRUEBA Y DIAGNÓSTICO
@@ -105,26 +140,38 @@ app.get('/api/test-db', async (req, res) => {
         const db = await import('./db.js');
         
         // Primero prueba conexión básica
-        await db.default.query('SELECT 1');
+        const connectionTest = await db.default.query('SELECT NOW() as current_time, version() as pg_version');
         
-        // Luego intenta contar productos
+        // Intenta contar productos
+        let productosInfo = { mensaje: 'Tabla no disponible' };
         try {
-            const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
-            res.json({ 
-                success: true,
-                mensaje: 'Conexión a la base de datos exitosa',
-                totalProductos: parseInt(result.rows[0].total),
-                timestamp: new Date().toISOString()
-            });
+            const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
+            productosInfo = {
+                total: parseInt(result.rows[0].total),
+                tabla: 'productos',
+                estado: 'activa'
+            };
         } catch (tableError) {
-            // Si falla la tabla productos, solo confirma conexión
-            res.json({ 
-                success: true,
-                mensaje: 'Conexión a PostgreSQL exitosa',
-                detalles: 'Tabla productos no disponible',
-                timestamp: new Date().toISOString()
-            });
+            try {
+                // Intentar sin filtro 'activo'
+                const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
+                productosInfo = {
+                    total: parseInt(result.rows[0].total),
+                    tabla: 'productos',
+                    estado: 'sin columna activo'
+                };
+            } catch {
+                productosInfo = { error: 'Tabla productos no existe' };
+            }
         }
+        
+        res.json({ 
+            success: true,
+            mensaje: 'Conexión a la base de datos exitosa',
+            timestamp: connectionTest.rows[0].current_time,
+            postgres_version: connectionTest.rows[0].pg_version.split(' ')[0],
+            productos: productosInfo
+        });
         
     } catch (error) {
         console.error('❌ Error en test-db:', error);
@@ -143,7 +190,8 @@ app.get('/api/health', (req, res) => {
         message: 'Servidor funcionando correctamente',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        version: '1.0.0'
+        version: '1.0.0',
+        uptime: process.uptime()
     });
 });
 
@@ -152,14 +200,15 @@ app.get('/api/health', (req, res) => {
 // ============================================
 
 // Servir archivos subidos
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
     setHeaders: (res, filePath) => {
-        // Configurar headers de cache para archivos estáticos
-        res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 día
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Access-Control-Allow-Origin', '*'); // Permitir acceso a imágenes
     }
 }));
 
-// Servir el frontend
+// Servir el frontend solo si existe (para desarrollo local)
 const frontendPath = path.join(__dirname, '..', 'Frontend');
 app.use(express.static(frontendPath, { 
     index: false,
@@ -185,48 +234,58 @@ app.use('/api/*', (req, res) => {
     res.status(404).json({ 
         success: false,
         error: 'Ruta no encontrada',
-        path: req.originalUrl
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
 // Error handler global para rutas de API
-app.use('/api', (err, req, res, next) => {
+app.use('/api/*', (err, req, res, next) => {
     console.error('❌ Error global de API:', err);
-    res.status(500).json({ 
+    res.status(err.status || 500).json({ 
         success: false,
-        error: 'Error interno del servidor',
-        details: process.env.NODE_ENV === 'development' ? err.message : 'Contacte al administrador'
+        error: err.message || 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
 
-// Catch-all route para SPA (Single Page Application)
-app.use((req, res) => {
-    // Si es una ruta de API, ya fue manejada arriba
+// Catch-all route para SPA
+app.use('*', (req, res) => {
+    // Si es una ruta de API, devolver error
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({
             success: false,
-            error: 'Ruta API no encontrada'
+            error: 'Endpoint de API no encontrado'
         });
     }
     
-    // Para cualquier otra ruta, servir el frontend
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    // Para cualquier otra ruta, intentar servir el frontend
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (require('fs').existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).json({
+            success: false,
+            error: 'Frontend no disponible - Esta es una API backend',
+            message: 'Accede al frontend en Vercel'
+        });
+    }
 });
 
 // ============================================
 // INICIALIZACIÓN DEL SERVIDOR
 // ============================================
 
-// Función para inicializar la base de datos - VERSIÓN CORREGIDA
+// Función para inicializar la base de datos
 async function initializeDatabase() {
     try {
         const db = await import('./db.js');
         
-        // 1. Primero prueba conexión básica
+        // 1. Prueba conexión básica
         const connectionTest = await db.default.query('SELECT NOW() as current_time');
         console.log('✅ Base de datos conectada - Hora servidor:', connectionTest.rows[0].current_time);
         
-        // 2. Verificar si la tabla productos existe
+        // 2. Verificar tabla productos
         try {
             const tableCheck = await db.default.query(`
                 SELECT EXISTS (
@@ -235,24 +294,20 @@ async function initializeDatabase() {
                 );
             `);
             
-            const tablaExiste = tableCheck.rows[0].exists;
-            
-            if (tablaExiste) {
-                // 3. Si existe, contar productos (manejar posible columna 'activo')
+            if (tableCheck.rows[0].exists) {
+                // 3. Contar productos
                 try {
                     const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
                     console.log('📦 Productos activos:', Number(result.rows[0].total));
-                } catch (columnaError) {
-                    // Si no existe columna 'activo', contar todos
+                } catch {
                     const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
                     console.log('📦 Total productos:', Number(result.rows[0].total));
                 }
             } else {
-                console.log('⚠️  Tabla productos no encontrada - Ejecuta el SQL de inicialización');
+                console.log('⚠️  Tabla productos no encontrada');
             }
-            
         } catch (tableError) {
-            console.log('⚠️  Error verificando tabla productos:', tableError.message);
+            console.log('⚠️  Error verificando tabla:', tableError.message);
         }
         
         return true;
@@ -274,27 +329,20 @@ async function startServer() {
         console.warn('⚠️  Servidor iniciado sin conexión a base de datos');
     }
     
-    //REDIRECCION AUTOMATICA
-
-    app.use((req, res, next) => {
-        if (req.hostname === 'localhost') {
-            const newUrl = `http://127.0.0.1:${PORT}${req.originalUrl}`;
-            console.log(`🔄 Redirigiendo automáticamente: localhost → 127.0.0.1`);
-             return res.redirect(newUrl);
-        }
-        next();
-    });
-   
-    app.listen(PORT, () => {
+    // Iniciar servidor
+    app.listen(PORT, '0.0.0.0', () => {
         console.log('='.repeat(50));    
-        console.log(`🎉 Servidor ejecutándose en: http://localhost:${PORT}`);
+        console.log(`🎉 Servidor ejecutándose en puerto: ${PORT}`);
+        console.log(`🌐 URL externa: ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}`);
         console.log(`📊 Entorno: ${process.env.NODE_ENV || 'development'}`);
         console.log(`🗄️  Base de datos: ${dbConnected ? '✅ Conectada' : '❌ Desconectada'}`);
         console.log('='.repeat(50));
         console.log('📋 Rutas disponibles:');
+        console.log('   🏠 / - Información del servidor');
         console.log('   🔐 /api/auth/* - Autenticación');
         console.log('   📦 /api/productos/* - Productos');
         console.log('   📊 /api/dashboard/* - Dashboard');
+        console.log('   💳 /api/pagos/* - Pagos PSE');
         console.log('   🩺 /api/health - Salud del servidor');
         console.log('   🧪 /api/test-db - Prueba de base de datos');
         console.log('='.repeat(50));
