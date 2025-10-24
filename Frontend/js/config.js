@@ -6,13 +6,19 @@ const CONFIG = {
     api: {
         // URL base de la API - detecta automáticamente el entorno
         baseUrl: (() => {
-            const isDevelopment = window.location.hostname === 'localhost' || 
-                                window.location.hostname === '127.0.0.1' ||
-                                window.location.hostname.includes('8080') ||
-                                window.location.hostname.includes('8081') ||
-                                window.location.hostname.includes('8082') ||
-                                window.location.hostname.includes('8083');
+            //Verificar si hay variable de entorno en (vercel)
             
+            if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
+                return window.ENV.VITE_API_URL;
+            }           
+
+
+            // Detectar entorno por hostname (Local)
+            const isDevelopment =window.location.hostname === 'localhost' ||
+                                window.location.hostname === '127.0.0.1'; 
+
+
+            // Retornar URL según entorno
             return isDevelopment 
                 ? 'http://localhost:3000/api'
                 : 'https://proyecto-mercado-web.onrender.com';

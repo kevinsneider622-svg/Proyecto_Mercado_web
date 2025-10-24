@@ -1,2 +1,8 @@
 # Ignorar archivos de configuración de variables de entorno
 .env
+.env.production
+
+# Archivos de build
+dist/
+build/
+.vercel/
