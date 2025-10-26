@@ -29,8 +29,8 @@ const corsOptions = {
         const allowedOrigins = [
             'http://localhost:5173',              // Vite local
             'http://localhost:3000',              // React local
-            'http://127.0.0.1:5173',              // Vite local alternativo
-            'http://127.0.0.1:3000',              // React local alternativo
+            'http://127.0.0.1:5500',             // Vite local alternativo
+            'http://127.0.0.1:3000',             // Alternativo local
             'https://proyecto-mercado-web-zebx.vercel.app',  // Tu Vercel
             'https://proyecto-mercado-web.vercel.app',       // Vercel sin suffix
             'https://*.vercel.app'                // Todos los previews de Vercel
@@ -43,45 +43,53 @@ const corsOptions = {
         
         // En producción, verificar origen
         if (!origin) {
-            // Permitir requests sin origin (Postman, cURL, etc.)
             return callback(null, true);
         }
         
         // Verificar si el origen está permitido
         const isAllowed = allowedOrigins.some(allowed => {
             if (allowed.includes('*')) {
-                const pattern = allowed.replace('*', '.*');
-                return new RegExp(pattern).test(origin);
+                return origin.endsWith(allowed.replace('*', ''));
             }
-            return allowed === origin;
+            return origin === allowed;
         });
         
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.warn(`⚠️  Origen bloqueado por CORS: ${origin}`);
-            callback(null, true); // ← Temporalmente permitir todos en producción
+            callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 600 // Cache preflight por 10 minutos
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+// Aplicar CORS
 app.use(cors(corsOptions));
 
-// Manejar preflight OPTIONS requests explícitamente
+// Permitir preflight para todas las rutas (CORS)
 app.options('*', cors(corsOptions));
 
 // Parsers de body
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ============================================
-// MIDDLEWARES PERSONALIZADOS
-// ============================================
+// Servir el frontend correctamente (index:true para SPA)
+const frontendPath = path.join(__dirname, '..', 'Frontend');
+app.use(express.static(frontendPath, {
+    index: 'index.html',
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache');
+        } else if (filePath.endsWith('.css')) {
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+        } else if (filePath.endsWith('.js')) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
+    }
+}));
 
 // Middleware para logging de requests
 app.use((req, res, next) => {
@@ -199,28 +207,14 @@ app.get('/api/health', (req, res) => {
 // SERVICIÓN DE ARCHIVOS ESTÁTICOS
 // ============================================
 
-// Servir archivos subidos
-const uploadsPath = path.join(__dirname, 'uploads');
+// Servir archivos subidos (corrige la ruta para que funcione en producción y desarrollo)
+const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath, {
     setHeaders: (res, filePath) => {
         res.setHeader('Cache-Control', 'public, max-age=86400');
-        res.setHeader('Access-Control-Allow-Origin', '*'); // Permitir acceso a imágenes
-    }
-}));
-
-// Servir el frontend solo si existe (para desarrollo local)
-const frontendPath = path.join(__dirname, '..', 'Frontend');
-app.use(express.static(frontendPath, { 
-    index: false,
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-cache');
-        } else if (filePath.endsWith('.css')) {
-            res.setHeader('Cache-Control', 'public, max-age=86400');
-        } else if (filePath.endsWith('.js')) {
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-        }
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     }
 }));
 
