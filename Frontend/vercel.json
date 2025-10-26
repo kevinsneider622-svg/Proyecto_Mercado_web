@@ -1,10 +1,15 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "outputDirectory": "Frontend",
-  "framework": null,
-  "installCommand": null,
-  "env": {
-    "VITE_API_URL": "https://proyecto-mercado-web.onrender.com"
-  } 
- }
+  "builds": [
+    {
+      "src": "Frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/Frontend/$1"
+    }
+  ]
+}
