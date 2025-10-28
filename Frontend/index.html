@@ -1509,10 +1509,24 @@ function actualizarNivelYProgreso(user) {
         { nivel: 5, nombre: 'Diamante', puntos: 5000, descuento: 20, class: 'level-diamante' }
     ];
 
+
+    const usuario = { puntos: 6000 }; // Más puntos que el nivel Diamante
+    const resultado = actualizarNivelYProgreso(usuario);
+
+    console.log(`Nivel actual: ${resultado.nivelActual.nombre}`);
+    console.log(`Progreso: ${resultado.progreso.toFixed(2)}%`);
+
+    if (resultado.nivelSiguiente) {
+    console.log(`Siguiente nivel: ${resultado.nivelSiguiente.nombre}`);
+    } else {
+    console.log(`¡Felicidades! Has alcanzado el nivel máximo`);
+    }
+
+
     const puntos = user.puntos || 0;
     let nivelActual = niveles[0];
     let nivelSiguiente = niveles[1];
-
+   
     for (let i = niveles.length - 1; i>= 0; i--) {
         if (puntos >= niveles[i].puntos) {
             nivelActual = niveles[i];
@@ -1520,6 +1534,7 @@ function actualizarNivelYProgreso(user) {
             break;
         }
     }
+
 
     // Calcular progreso hacia el siguiente nivel
     let progreso = 0;
