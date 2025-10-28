@@ -8,7 +8,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "dev:3000": "set PORT=3000 && nodemon app.js",
-    "start:3000": "set PORT=3000 && node app.js", 
+    "start:3000": "set PORT=3000 && node app.js",
     "test": "node test.js",
     "test:dev": "nodemon test.js"
   },

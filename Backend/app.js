@@ -15,6 +15,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000; // ← CORREGIDO: Usar variable de entorno
 
+
+app.use(cors({
+    origin:[
+        'https://https://proyecto-mercado-web-zebx-8rx9dkm73.vercel.app',
+        'https://https://proyecto-mercado-web.onrender.com',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://*.vercel.app'
+    ],
+
+    credentials: true
+}));
+
 // Fix para __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
