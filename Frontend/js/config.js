@@ -20,7 +20,7 @@ const CONFIG = {
 
             // Retornar URL según entorno
             return isDevelopment 
-                ? 'http://localhost:3000/api'
+                ? 'http://localhost:3000'
                 : 'https://proyecto-mercado-web.onrender.com';
         })()
     },
@@ -28,35 +28,35 @@ const CONFIG = {
     // URLs específicas
     endpoints: {
         // Autenticación
-        LOGIN: '/auth/login',
-        REGISTER: '/auth/register',
-        VERIFY_TOKEN: '/auth/verify',
-        PROFILE: '/auth/profile',
+        LOGIN: '/api/auth/login',
+        REGISTER: '/api/auth/register',
+        VERIFY_TOKEN: '/api/auth/verify',
+        PROFILE: '/api/auth/profile',
         
         // Productos
-        PRODUCTOS: '/productos',
-        PRODUCTOS_DESTACADOS: '/productos/destacados',
-        PRODUCTOS_CATEGORIA: '/productos/categoria',
-        PRODUCTOS_BUSCAR: '/productos/buscar',
+        PRODUCTOS: '/api/productos',
+        PRODUCTOS_DESTACADOS: '/api/productos/destacados',
+        PRODUCTOS_CATEGORIA: '/api/productos/categoria',
+        PRODUCTOS_BUSCAR: '/api/productos/buscar',
         
         // Categorías
-        CATEGORIAS: '/categorias',
+        CATEGORIAS: '/api/categorias',
         
         // Proveedores
-        PROVEEDORES: '/proveedores',
+        PROVEEDORES: '/api/proveedores',
         
         // Clientes
-        CLIENTES: '/clientes',
+        CLIENTES: '/api/clientes',
         
         // Órdenes
-        ORDENES: '/ordenes',
+        ORDENES: '/api/ordenes',
         
         // Dashboard
-        DASHBOARD: '/dashboard',
-        ESTADISTICAS: '/dashboard/estadisticas',
-        ULTIMAS_VENTAS: '/dashboard/ultimas-ventas',
-        STOCK_BAJO: '/dashboard/stock-bajo',
-        VENTAS_CATEGORIA: '/dashboard/ventas-por-categoria'
+        DASHBOARD: '/api/dashboard',
+        ESTADISTICAS: '/api/dashboard/estadisticas',
+        ULTIMAS_VENTAS: '/api/dashboard/ultimas-ventas',
+        STOCK_BAJO: '/api/dashboard/stock-bajo',
+        VENTAS_CATEGORIA: '/api/dashboard/ventas-por-categoria'
     },
 
     // Configuración de UI
@@ -657,6 +657,27 @@ function showToast(message, type = 'info', duration = CONFIG.ui.TOAST_DURATION) 
 // ============================================
 
 // Inicializar cuando el DOM esté listo
+if (typeof window !== 'undefined') {
+    window.CONFIG = CONFIG;
+    window.UTILS = UTILS;
+    window.currentUser = currentUser;
+    window.currentPage = currentPage;
+    window.cart = cart;
+    window.initializeApp = initializeApp;
+    window.showToast = showToast;
+    window.updateCartCounter = updateCartCounter;
+    window.saveCartToStorage = saveCartToStorage;
+    window.setTheme = setTheme;
+    
+    console.log('%c✅ CONFIG CARGADO GLOBALMENTE', 'color: #00ff00; font-weight: bold; font-size: 14px');
+    console.log('🌐 Backend URL:', CONFIG.api.baseUrl);
+    console.log('📍 Hostname:', window.location.hostname);
+}
+
+// ============================================
+// INICIALIZACIÓN AUTOMÁTICA
+// ============================================
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
@@ -664,7 +685,7 @@ if (document.readyState === 'loading') {
 }
 
 // ============================================
-// EXPORTACIONES
+// EXPORTACIONES ES6 (para módulos)
 // ============================================
 
 export {
@@ -680,7 +701,6 @@ export {
     setTheme
 };
 
-// Exportar por defecto para compatibilidad
 export default {
     CONFIG,
     UTILS,
