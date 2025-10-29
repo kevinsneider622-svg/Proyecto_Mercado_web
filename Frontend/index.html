@@ -357,11 +357,24 @@
     <script>
 
         // Variables globales
-        const API_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://proyecto-mercado-web.onrender.com' 
-        : 'http://127.0.0.1:3000';
-        window.cart = [];
-        window.currentUser = null;
+        const isProduction = window.location.hostname.includes('vercel.app') || 
+                     window.location.hostname.includes('onrender.com') ||
+                     window.location.hostname.includes('github.io') ||
+                     (window.location.hostname !== 'localhost' && 
+                      window.location.hostname !== '127.0.0.1');
+
+            const API_URL = window.ENV?.NEXT_PUBLIC_API_URL || 
+                (isProduction 
+                    ? 'https://proyecto-mercado-web.onrender.com' 
+                    : 'http://127.0.0.1:3000');
+
+            window.cart = [];
+            window.currentUser = null;
+            
+        console.log ('🌐 Aplicacion iniciada en:', window.location.hostname);
+        console.log ('🔗 API URL configurada en:', API_URL);
+
+
 
         // ============================================
         // FUNCIONES DE NAVEGACIÓN
@@ -544,7 +557,7 @@ function mostrarListaProductos(productos) {
         console.error('❌ productos no es un array válido:', productos);
         container.innerHTML = '<div class="col-12 text-center alert alert-danger">Error: Datos de productos inválidos</div>';
         return;
-        
+
     }
     
     if (!productos || productos.length === 0) {
