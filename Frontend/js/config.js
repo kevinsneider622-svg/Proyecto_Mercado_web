@@ -208,7 +208,6 @@ const CONFIG = {
 // ============================================
 
 export { CONFIG };
-export default CONFIG;
 
 // ============================================
 // VARIABLES GLOBALES
