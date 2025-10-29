@@ -424,21 +424,47 @@
             `;
 
             try {
-                const response = await fetch(`${API_URL}/productos/destacados`);
+                console.log('Cargando productos destacados...');
+                const response = await fetch(`${window.API_URL}/api/productos/destacados`);
+                console.log('📊 Status:', response.status, response.statusText);
+                
+                if (!response.ok){
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                // Verificar que la respuesta sea JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+                    throw new Error('El servidor devolvió una respuesta no JSON');
+                }
+                
                 const data = await response.json();
+                console.log('✅ Productos destacados recibidos:', data);
                 
                 if (data.success && data.productos) {
                     mostrarProductosDestacados(data.productos);
+                } else {
+                    throw new Error('Formato de respuesta inválido');
                 }
+                
             } catch (error) {
-                console.error('Error cargando productos destacados:', error);
+                console.error('❌ Error cargando productos destacados:', error);
                 document.getElementById('productosDestacados').innerHTML = `
                     <div class="col-12 text-center">
-                        <div class="alert alert-danger">Error cargando productos. Verifica tu conexión.</div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No se pudieron cargar los productos destacados
+                        </div>
+                        <button class="btn btn-outline-primary mt-2" onclick="cargarInicio()">
+                            <i class="fas fa-redo me-1"></i> Reintentar
+                        </button>
                     </div>
                 `;
             }
         }
+                        
 // ============================================
 // FUNCIÓN MEJORADA PARA MOSTRAR PRODUCTOS
 // ============================================

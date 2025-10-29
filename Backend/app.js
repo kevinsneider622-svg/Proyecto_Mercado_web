@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 // Importar rutas
 import productosRoutes from './routes/productos.js';
@@ -14,19 +15,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000; // ← CORREGIDO: Usar variable de entorno
-
-
-app.use(cors({
-    origin:[
-        'https://https://proyecto-mercado-web-zebx-8rx9dkm73.vercel.app',
-        'https://https://proyecto-mercado-web.onrender.com',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://*.vercel.app'
-    ],
-
-    credentials: true
-}));
 
 // Fix para __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -44,9 +32,11 @@ const corsOptions = {
             'http://localhost:3000',              // React local
             'http://127.0.0.1:5500',             // Vite local alternativo
             'http://127.0.0.1:3000',             // Alternativo local
-            'https://proyecto-mercado-web-zebx.vercel.app',  // Tu Vercel
-            'https://proyecto-mercado-web.vercel.app',       // Vercel sin suffix
-            'https://*.vercel.app'                // Todos los previews de Vercel
+            'https://proyecto-mercado-web-zebx-8rx9dkm73.vercel.app',  // Tu Vercel específico
+            'https://proyecto-mercado-web-zebx.vercel.app',            // Sin el ID largo
+            'https://proyecto-mercado-web.vercel.app',                 // Vercel sin suffix
+            'https://proyecto-mercado-web.onrender.com',               // Tu backend
+            'https://*.vercel.app'                    // Permitir subdominios Vercel
         ];
         
         // En desarrollo, permitir todos los orígenes
@@ -70,21 +60,15 @@ const corsOptions = {
         if (isAllowed) {
             callback(null, true);
         } else {
+            console.log('❌ Origen bloqueado por CORS:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
-export const CONFIG = {
-    api:{
-        baseUrl: process.env.NODE_ENV === 'production'
-            ? 'https://proyecto-mercado-web-zebx.vercel.app/api'
-            : 'http://localhost:3000'
-    },
-};
 
 // Aplicar CORS
 app.use(cors(corsOptions));
