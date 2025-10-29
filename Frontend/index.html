@@ -534,7 +534,18 @@ async function cargarProductos() {
 }
 
 function mostrarListaProductos(productos) {
+
+    console.log('📦 Productos recibidos:', productos);
+
+
     const container = document.getElementById('productosLista');
+
+       if (!productos || !Array.isArray(productos)) {
+        console.error('❌ productos no es un array válido:', productos);
+        container.innerHTML = '<div class="col-12 text-center alert alert-danger">Error: Datos de productos inválidos</div>';
+        return;
+        
+    }
     
     if (!productos || productos.length === 0) {
         container.innerHTML = '<div class="col-12 text-center"><p>No hay productos disponibles</p></div>';
@@ -594,7 +605,7 @@ function mostrarListaProductos(productos) {
                         </div>
                         
                         <button class="btn btn-sm btn-primary w-100" 
-                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")} )'>
+                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")})'>
                             <i class="fas fa-cart-plus"></i> Agregar
                         </button>
                     </div>
