@@ -78,6 +78,14 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+export const CONFIG = {
+    api:{
+        baseUrl: processsss.env.NODE_ENV === 'production'
+            ? 'https://proyecto-mercado-web-zebx.vercel.app/api'
+            : 'http://localhost:3000'
+    },
+};
+
 // Aplicar CORS
 app.use(cors(corsOptions));
 

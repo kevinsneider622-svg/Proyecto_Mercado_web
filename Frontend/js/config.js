@@ -6,11 +6,12 @@ const CONFIG = {
     api: {
         // URL base de la API - detecta automáticamente el entorno
         baseUrl: (() => {
-            //Verificar si hay variable de entorno en (vercel)
-            
-            if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
-                return window.ENV.VITE_API_URL;
-            }           
+           
+            // Verificar si existe variable de entorno (Front) 
+            if (typeof window !== 'undefined') {
+                if (window.ENV?.VITE_API_URL) {
+                    return window.ENV.VITE_API_URL;
+            }
 
 
             // Detectar entorno por hostname (Local)
@@ -22,10 +23,26 @@ const CONFIG = {
             return isDevelopment 
                 ? 'http://localhost:3000'
                 : 'https://proyecto-mercado-web.onrender.com';
-        })()
-    },
+        }
 
-    // URLs específicas
+        // Verificar si existeb variable de entorno (Back)
+        
+        if (typeof process !== 'undefined') {
+            return process.env.NODE_ENV === 'production'    
+                ? 'https://proyecto-mercado-web.onrender.com'
+                : 'http://localhost:3000';
+        }
+
+        //FallBack
+        return 'http://localhost:3000';
+
+        })()
+
+      },
+    };  
+
+
+        // URLs específicas
     endpoints: {
         // Autenticación
         LOGIN: '/api/auth/login',
