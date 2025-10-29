@@ -38,11 +38,10 @@ const CONFIG = {
 
         })()
 
-      },
-    };  
+    },
+     
 
-
-        // URLs específicas
+    // URLs específicas
     endpoints: {
         // Autenticación
         LOGIN: '/api/auth/login',
@@ -202,6 +201,14 @@ const CONFIG = {
         AUTO: 'auto'
     }
 };
+
+
+// ============================================
+// EXPORTACIONES
+// ============================================
+
+export { CONFIG };
+export default CONFIG;
 
 // ============================================
 // VARIABLES GLOBALES
@@ -706,19 +713,6 @@ if (document.readyState === 'loading') {
 // ============================================
 
 export {
-    CONFIG,
-    UTILS,
-    currentUser,
-    currentPage,
-    cart,
-    initializeApp,
-    showToast,
-    updateCartCounter,
-    saveCartToStorage,
-    setTheme
-};
-
-export default {
     CONFIG,
     UTILS,
     currentUser,
