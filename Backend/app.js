@@ -80,7 +80,7 @@ const corsOptions = {
 
 export const CONFIG = {
     api:{
-        baseUrl: processsss.env.NODE_ENV === 'production'
+        baseUrl: process.env.NODE_ENV === 'production'
             ? 'https://proyecto-mercado-web-zebx.vercel.app/api'
             : 'http://localhost:3000'
     },
