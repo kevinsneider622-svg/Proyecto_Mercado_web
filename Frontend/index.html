@@ -1535,66 +1535,7 @@ function actualizarNivelYProgreso(user) {
         { nivel: 5, nombre: 'Diamante', puntos: 5000, descuento: 20, class: 'level-diamante' }
     ];
 
-
-    const usuario = { puntos: 6000 }; // Más puntos que el nivel Diamante
-    const resultado = actualizarNivelYProgreso(usuario);
-
-    console.log(`Nivel actual: ${resultado.nivelActual.nombre}`);
-    console.log(`Progreso: ${resultado.progreso.toFixed(2)}%`);
-
-    if (resultado.nivelSiguiente) {
-    console.log(`Siguiente nivel: ${resultado.nivelSiguiente.nombre}`);
-    } else {
-    console.log(`¡Felicidades! Has alcanzado el nivel máximo`);
-    }
-
-
-    const puntos = user.puntos || 0;
-    let nivelActual = niveles[0];
-    let nivelSiguiente = niveles[1];
-   
-    for (let i = niveles.length - 1; i>= 0; i--) {
-        if (puntos >= niveles[i].puntos) {
-            nivelActual = niveles[i];
-            nivelSiguiente = niveles[i + 1] || null;
-            break;
-        }
-    }
-
-
-    // Calcular progreso hacia el siguiente nivel
-    let progreso = 0;
-    if (nivelSiguiente) {
-        const puntosNivelActual = nivelActual.puntos;
-        const puntosParaSiguienteNivel = nivelSiguiente.puntos - puntosNivelActual;
-        const puntosObtenidos = puntos - puntosNivelActual;
-        progreso = (puntosObtenidos / puntosParaSiguienteNivel) * 100;
-    } else {
-        progreso = 100; // Nivel máximo alcanzado
-    }
-
-    // Aquí deberías actualizar tu HTML con los valores calculados
-    return {
-        nivelActual: nivelActual,
-        nivelSiguiente: nivelSiguiente,
-        progreso: Math.min(100, Math.max(0, progreso))
-    };
 }
-
-
-    const badge = document.getElementById('levelBadge');
-    if (badge) {
-        badge.textContent = `Nivel ${nivelActual.nivel} - ${nivelActual.nombre}`;
-        badge.className = `level-badge ${nivelActual.class}`;
-    }
-
-    const descuento = document.getElementById('statDescuento');
-    if (descuento) descuento.textContent = `${nivelActual.descuento}%`;
-
-    const puntosParaSiguiente = nivelSiguiente.puntos - nivelActual.puntos;
-    const puntosActuales = puntos - nivelActual.puntos;
-    const porcentaje = nivelActual.nivel === 5 ? 100 : (puntosActuales / puntosParaSiguiente) * 100;
-
     const progressBar = document.getElementById('pointsProgress');
     const progressText = document.getElementById('pointsText');
     
