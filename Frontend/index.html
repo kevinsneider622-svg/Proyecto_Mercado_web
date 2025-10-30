@@ -429,7 +429,7 @@
                 //Punto para Fetch mejorado
                 
                 const response = await fetchAPI('/api/productos/destacados');
-                console.log('✅ Productos destacados recibidos:', productos);
+                console.log('✅ Productos destacados recibidos:', data);
                 
                 if (productos.success && productos.productos) {
                      mostrarProductosDestacados(productos.productos);
