@@ -431,8 +431,8 @@
                 const response = await fetchAPI('/api/productos/destacados');
                 console.log('✅ Productos destacados recibidos:', data);
                 
-                if (productos.success && productos.productos) {
-                     mostrarProductosDestacados(productos.productos);
+                if (data.success && data.productos) {
+                     mostrarProductosDestacados(data.productos);
                 } else {
                      throw new Error('Formato de respuesta inválido');
                 }
@@ -583,7 +583,7 @@ async function cargarProductos() {
         console.log('✅ Productos recibidos:', data);
         
         if (data.success && data.productos) {
-            mostrarProductos(data.productos);
+            mostrarListaProductos(data.productos);
 
             // Configurar buscador y filtros...
         } else {
@@ -593,7 +593,7 @@ async function cargarProductos() {
 
        } catch (error) {
         console.error('❌ Error cargando productos:', error);
-        document.getElementById('listaProductos').innerHTML = `
+        document.getElementById('productosLista').innerHTML = `
             <div class="col-12 text-center">
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>
@@ -1611,41 +1611,65 @@ function actualizarNivelYProgreso(user) {
         { nivel: 2, nombre: 'Plata', puntos: 100, descuento: 5, class: 'level-plata' },
         { nivel: 3, nombre: 'Oro', puntos: 500, descuento: 10, class: 'level-oro' },
         { nivel: 4, nombre: 'Platino', puntos: 1500, descuento: 15, class: 'level-platino' },
-        { nivel: 5, nombre: 'Diamante', puntos: 5000, descuento: 20, class: 'level-diamante' }
+        { nivel: 5, nombre: 'Diamante', puntos: 5000, descuento: 20, class: 'level-diamante' }   
     ];
 
-}
+ const puntos = user.puntos || 0;
+    let nivelActual = niveles[0];
+    let nivelSiguiente = niveles[1];
+    
+    // Encontrar nivel actual y siguiente
+    for (let i = 0; i < niveles.length; i++) {
+        if (puntos >= niveles[i].puntos) {
+            nivelActual = niveles[i];
+            nivelSiguiente = niveles[i + 1] || niveles[i];
+        } else {
+            break;
+        }
+    }
+    
+    // Calcular progreso
+    const rangoPuntos = nivelSiguiente.puntos - nivelActual.puntos;
+    const progreso = puntos - nivelActual.puntos;
+    const porcentaje = rangoPuntos > 0 ? (progreso / rangoPuntos) * 100 : 100;
+    
+    // Actualizar UI
+    const badge = document.getElementById('levelBadge');
     const progressBar = document.getElementById('pointsProgress');
     const progressText = document.getElementById('pointsText');
+    const statDescuento = document.getElementById('statDescuento');
+    
+    if (badge) {
+        badge.textContent = `Nivel ${nivelActual.nivel} - ${nivelActual.nombre}`;
+        badge.className = `level-badge ${nivelActual.class}`;
+    }
     
     if (progressBar) progressBar.style.width = porcentaje + '%';
     if (progressText) progressText.textContent = `${puntos} / ${nivelSiguiente.puntos} puntos`;
-    
+    if (statDescuento) statDescuento.textContent = `${nivelActual.descuento}%`;
+    }
+    function habilitarEdicion() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        datosOriginalesPerfil = { ...user };
+        
+        document.getElementById('inputNombre').disabled = false;
+        document.getElementById('inputTelefono').disabled = false;
+        document.getElementById('inputDireccion').disabled = false;
+        document.getElementById('btnEditar').style.display = 'none';
+        document.getElementById('botonesEdicion').style.display = 'block';
+    }
 
-let datosOriginalesPerfil = {};
-
-function habilitarEdicion() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    datosOriginalesPerfil = { ...user };
-    
-    document.getElementById('inputNombre').disabled = false;
-    document.getElementById('inputTelefono').disabled = false;
-    document.getElementById('inputDireccion').disabled = false;
-    document.getElementById('btnEditar').style.display = 'none';
-    document.getElementById('botonesEdicion').style.display = 'block';
-}
-
-function cancelarEdicion() {
-    document.getElementById('inputNombre').value = datosOriginalesPerfil.nombre || '';
-    document.getElementById('inputTelefono').value = datosOriginalesPerfil.telefono || '';
-    document.getElementById('inputDireccion').value = datosOriginalesPerfil.direccion || '';
-    
-    document.getElementById('inputNombre').disabled = true;
-    document.getElementById('inputTelefono').disabled = true;
-    document.getElementById('inputDireccion').disabled = true;
-    document.getElementById('btnEditar').style.display = 'block';
-    document.getElementById('botonesEdicion').style.display = 'none';
-}
+    function cancelarEdicion() {
+        document.getElementById('inputNombre').value = datosOriginalesPerfil.nombre || '';
+        document.getElementById('inputTelefono').value = datosOriginalesPerfil.telefono || '';
+        document.getElementById('inputDireccion').value = datosOriginalesPerfil.direccion || '';
+        
+        document.getElementById('inputNombre').disabled = true;
+        document.getElementById('inputTelefono').disabled = true;
+        document.getElementById('inputDireccion').disabled = true;
+        document.getElementById('btnEditar').style.display = 'block';
+        document.getElementById('botonesEdicion').style.display = 'none';
+    }
 
 async function guardarCambiosPerfil() {
     const token = localStorage.getItem('token');
