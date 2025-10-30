@@ -39,7 +39,6 @@ const CONFIG = {
         })()
 
     },
-     
 
     // URLs específicas
     endpoints: {

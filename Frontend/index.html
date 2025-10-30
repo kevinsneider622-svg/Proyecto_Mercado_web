@@ -425,30 +425,18 @@
 
             try {
                 console.log('Cargando productos destacados...');
-                const response = await fetch(`${window.API_URL}/api/productos/destacados`);
-                console.log('📊 Status:', response.status, response.statusText);
                 
-                if (!response.ok){
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
+                //Punto para Fetch mejorado
                 
-                // Verificar que la respuesta sea JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
-                    throw new Error('El servidor devolvió una respuesta no JSON');
-                }
+                const response = await fetchAPI('/api/productos/destacados');
+                console.log('✅ Productos destacados recibidos:', productos);
                 
-                const data = await response.json();
-                console.log('✅ Productos destacados recibidos:', data);
-                
-                if (data.success && data.productos) {
-                    mostrarProductosDestacados(data.productos);
+                if (productos.success && productos.productos) {
+                     mostrarProductosDestacados(productos.productos);
                 } else {
-                    throw new Error('Formato de respuesta inválido');
+                     throw new Error('Formato de respuesta inválido');
                 }
-                
+       
             } catch (error) {
                 console.error('❌ Error cargando productos destacados:', error);
                 document.getElementById('productosDestacados').innerHTML = `
@@ -464,6 +452,37 @@
                 `;
             }
         }
+
+
+        // 📍 FUNCIÓN FETCH MEJORADA - AGREGA ESTA FUNCIÓN EN TU ARCHIVO
+async function fetchAPI(endpoint) {
+    const url = `${CONFIG.api.baseUrl}${endpoint}`;
+    console.log('🌐 API Call:', url);
+    
+    try {
+        const response = await fetch(url);
+        console.log('📊 Status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // Verificar que la respuesta sea JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
+            throw new Error('El servidor devolvió una respuesta no JSON');
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error(`❌ API Error [${endpoint}]:`, error);
+        throw error;
+    }
+}
                         
 // ============================================
 // FUNCIÓN MEJORADA PARA MOSTRAR PRODUCTOS
@@ -557,21 +576,55 @@ async function cargarProductos() {
     `;
 
     try {
-        const response = await fetch(`${API_URL}/productos`);
-        const data = await response.json();
+        console.log('Cargando todos los productos...');
+        
+        // 📍 USANDO EL FETCH MEJORADO AQUÍ TAMBIÉN
+        const data = await fetchAPI('/api/productos');
+        console.log('✅ Productos recibidos:', data);
         
         if (data.success && data.productos) {
-            mostrarListaProductos(data.productos);
+            mostrarProductos(data.productos);
+
+            // Configurar buscador y filtros...
+        } else {
+            throw new Error('Formato de respuesta inválido');
         }
-    } catch (error) {
-        console.error('Error cargando productos:', error);
-        document.getElementById('productosLista').innerHTML = `
+
+
+       } catch (error) {
+        console.error('❌ Error cargando productos:', error);
+        document.getElementById('listaProductos').innerHTML = `
             <div class="col-12 text-center">
-                <div class="alert alert-danger">Error cargando productos</div>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los productos: ${error.message}
+                </div>
+                <button class="btn btn-outline-primary mt-2" onclick="cargarProductos()">
+                    <i class="fas fa-redo me-1"></i> Reintentar
+                </button>
             </div>
         `;
     }
 }
+
+async function cargarOfertas() {
+    try {
+        console.log('Cargando productos en oferta...');
+        
+        // 📍 USANDO EL FETCH MEJORADO
+        const data = await fetchAPI('/api/productos/ofertas');
+        
+        if (data.success && data.productos) {
+            mostrarProductosOfertas(data.productos);
+        } else {
+            throw new Error('Formato de respuesta inválido');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando ofertas:', error);
+        // Manejar error...
+    }
+}  
 
 function mostrarListaProductos(productos) {
 
