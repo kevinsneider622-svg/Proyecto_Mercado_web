@@ -45,10 +45,16 @@ const corsOptions = {
 
         console.log('🌐 Origen de la petición:', origin);
 
+        //Permitir requests sin origen (mismo servidor, Postman, etc.)
+
+        if (!origin) {
+            console.log('🔓 Permitiendo request sin origen');
+            return callback(null, true);
+        }    
 
         // En desarrollo, permitir todos los orígenes
         if (process.env.NODE_ENV !== 'production') {
-        console.log('⚙️  Modo desarrollo - Origen permitido:', origin);
+            console.log('⚙️  Modo desarrollo - Origen permitido:', origin);
             return callback(null, true);
         }
      
@@ -58,7 +64,7 @@ const corsOptions = {
                 return true;
             }
 
-            if (origin.endsWith('.vercel.app')) {
+            if (origin && origin.endsWith('.vercel.app')) {
                 return true;
             }
                 return false;
