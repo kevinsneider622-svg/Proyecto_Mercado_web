@@ -39,7 +39,8 @@ const corsOptions = {
             'https://proyecto-mercado-web-zebx.vercel.app',            // Sin el ID largo
             'https://proyecto-mercado-web.vercel.app',                 // Vercel sin suffix
             'https://proyecto-mercado-web.onrender.com',               // Tu backend
-            'https://*.vercel.app'                    // Permitir subdominios Vercel
+            'https://*.vercel.app', 
+            'https://proyecto-mercado-web.onrender.com/api/productos'                   // Permitir subdominios Vercel
         ];
 
         console.log('🌐 Origen de la petición:', origin);
