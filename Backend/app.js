@@ -26,7 +26,6 @@ const __dirname = path.dirname(__filename);
 
 app.use(express.json()); // Para parsear JSON
 app.use(express.urlencoded({ extended: true })); // Para parsear form data
-app.use(express.static(path.join(__dirname, 'public'))); // Archivos estáticos
 
 // Configuración de CORS mejorada
 const corsOptions = {
@@ -42,7 +41,10 @@ const corsOptions = {
             'https://proyecto-mercado-web.onrender.com',               // Tu backend
             'https://*.vercel.app'                    // Permitir subdominios Vercel
         ];
-        
+
+        console.log('🌐 Origen de la petición:', origin);
+
+
         // En desarrollo, permitir todos los orígenes
         if (process.env.NODE_ENV !== 'production') {
         console.log('⚙️  Modo desarrollo - Origen permitido:', origin);
@@ -50,20 +52,23 @@ const corsOptions = {
         }
      
         // En producción, verificar origen
-        const isAllowed = allowedPatterns.some(pattern => {
-            if (pattern.includes(':*')) {
-                // Para patrones con wildcard de puerto
-                const basePattern = pattern.replace(':*', '');
-                return origin.startsWith(basePattern);
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (origin === allowed) {
+                return true;
             }
-            return origin.includes(pattern);
+
+            if (origin.endsWith('.vercel.app')) {
+                return true;
+            }
+                return false;
         });
 
             if (isAllowed) {
-                console.log('✅ Origen permitido:', origin);
+                console.log('✅ Origen permitido por CORS:', origin);
                 callback(null, true);
             } else {
-                console.log('❌ Origen bloqueado:', origin);
+                console.log('❌ Origen bloqueado por CORS:', origin);
+                console.log('📋 Orígenes permitidos:', allowedOrigins);
                 callback(new Error('Not allowed by CORS'));
             }
         },
@@ -72,6 +77,7 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
+
 // Aplicar CORS
 app.use(cors(corsOptions));
 
