@@ -228,7 +228,7 @@ app.get('/api/health', (req, res) => {
 // ============================================
 
 // Servir archivos subidos (corrige la ruta para que funcione en producción y desarrollo)
-const uploadsPath = path.join(__dirname, '../uploads');
+const uploadsPath = path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath, {
     setHeaders: (res, filePath) => {
         res.setHeader('Cache-Control', 'public, max-age=86400');
