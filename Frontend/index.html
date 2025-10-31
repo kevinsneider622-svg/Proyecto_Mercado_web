@@ -369,12 +369,21 @@
                     ? 'https://proyecto-mercado-web.onrender.com' 
                     : 'http://127.0.0.1:3000');
 
+            //Configuración Global
+
+            window.CONFIG = {
+                api: {
+                    baseUrl: API_URL    
+                }
+            }
+
+            window.API_URL =API_URL
             window.cart = [];
             window.currentUser = null;
             
         console.log ('🌐 Aplicacion iniciada en:', window.location.hostname);
         console.log ('🔗 API URL configurada en:', API_URL);
-
+        console.log ('🌍 Entorno:', isProduction ? 'Producción' : 'Desarrollo');    
 
 
         // ============================================

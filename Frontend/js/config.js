@@ -8,38 +8,30 @@ const CONFIG = {
         baseUrl: (() => {
            
             // Verificar si existe variable de entorno (Front) 
-            if (typeof window !== 'undefined') {
-                if (window.ENV?.VITE_API_URL) {
-                    return window.ENV.VITE_API_URL;
+            if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
+                return window.ENV.VITE_API_URL;
             }
 
 
             // Detectar entorno por hostname (Local)
-            const isDevelopment =window.location.hostname === 'localhost' ||
-                                window.location.hostname === '127.0.0.1'; 
+            
+            const hostname = window.location.hostname;
+            const isDevelopment = hostname === 'localhost' ||
+                                hostname === '127.0.0.1' ||
+                                hostname.includes('local'); 
 
 
             // Retornar URL según entorno
-            return isDevelopment 
-                ? 'http://localhost:3000'
-                : 'https://proyecto-mercado-web.onrender.com';
-        }
-
-        // Verificar si existeb variable de entorno (Back)
-        
-        if (typeof process !== 'undefined') {
-            return process.env.NODE_ENV === 'production'    
-                ? 'https://proyecto-mercado-web.onrender.com'
-                : 'http://localhost:3000';
-        }
-
-        //FallBack
-        return 'http://localhost:3000';
-
+            if (isDevelopment) {
+                return 'http://localhost:3000';
+            } else if (hostname.includes('vercel.app')) {
+                return 'https://proyecto-mercado-web.onrender.com';
+            } else {
+                return 'https://proyecto-mercado-web.onrender.com';    
+            }      
         })()
-
     },
-
+     
     // URLs específicas
     endpoints: {
         // Autenticación
