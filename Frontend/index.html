@@ -369,15 +369,7 @@
                     ? 'https://proyecto-mercado-web.onrender.com' 
                     : 'http://127.0.0.1:3000');
 
-            //Configuración Global
-
-            window.CONFIG = {
-                api: {
-                    baseUrl: API_URL    
-                }
-            }
-
-            window.API_URL =API_URL
+           
             window.cart = [];
             window.currentUser = null;
             
@@ -437,7 +429,7 @@
                 
                 //Punto para Fetch mejorado
                 
-                const response = await fetchAPI('/api/productos/destacados');
+                const data = await fetchAPI('/api/productos/destacados');
                 console.log('✅ Productos destacados recibidos:', data);
                 
                 if (data.success && data.productos) {
@@ -465,7 +457,7 @@
 
         // 📍 FUNCIÓN FETCH MEJORADA - AGREGA ESTA FUNCIÓN EN TU ARCHIVO
 async function fetchAPI(endpoint) {
-    const url = `${CONFIG.api.baseUrl}${endpoint}`;
+    const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
     console.log('🌐 API Call:', url);
     
     try {
@@ -1335,7 +1327,7 @@ async function procesarLogin(event) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Iniciando...';
     
     try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const response = await fetch(`${window.CONFIG.api.baseUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
