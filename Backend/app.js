@@ -165,7 +165,7 @@ app.use('/api/pagos', pagosRoutes);
 // Ruta de prueba de base de datos
 app.get('/api/test-db', async (req, res) => {
     try {
-        const db = await import('./db.js');
+        const db = await import('/db.js');
         
         // Primero prueba conexión básica
         const connectionTest = await db.default.query('SELECT NOW() as current_time, version() as pg_version');

@@ -106,7 +106,11 @@ router.post('/register', async (req, res) => {
 // ============================================
 router.post('/login', async (req, res) => {
     try {
-        console.log('🔐 Solicitud de login recibida:', { email: req.body.email });
+        console.log('=== 🔐 INICIO LOGIN BACKEND ===');
+        console.log('📨 Headers:', req.headers);
+        console.log('📦 Body completo:', req.body);
+        console.log('📧 Email recibido:', req.body?.email);
+        console.log('🔑 Password recibido:', req.body?.password ? '***' : 'NO RECIBIDO');
         
         const { email, password } = req.body;
 

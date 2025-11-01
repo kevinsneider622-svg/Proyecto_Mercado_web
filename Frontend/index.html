@@ -496,7 +496,7 @@ function mostrarProductosDestacados(productos) {
         return;
     }
 
-    const baseURL = window.location.origin; // http://localhost:3000 o 3001
+    const baseUrl = window.location.origin; // http://localhost:3000 o 3001
 
     container.innerHTML = productos.map(producto => {
         // Construir URL de imagen correctamente
@@ -505,12 +505,12 @@ function mostrarProductosDestacados(productos) {
             if (producto.imagenUrl.startsWith('http')) {
                 imagenUrl = producto.imagenUrl;
             } else if (producto.imagenUrl.startsWith('/')) {
-                imagenUrl = `${baseURL}${producto.imagenUrl}`;
+                imagenUrl = `${baseUrl}${producto.imagenUrl}`;
             } else {
-                imagenUrl = `${baseURL}/uploads/productos/${producto.imagenUrl}`;
+                imagenUrl = `${baseUrl}/uploads/productos/${producto.imagenUrl}`;
             }
         } else {
-            imagenUrl = `${baseURL}/uploads/productos/default.jpg`;
+            imagenUrl = `${baseUrl}/uploads/productos/default.jpg`;
         }
 
         return `
@@ -646,7 +646,7 @@ function mostrarListaProductos(productos) {
         return;
     }
 
-    const baseURL = window.location.origin;
+    const baseUrl = window.location.origin;
 
     container.innerHTML = productos.map(producto => {
         let imagenUrl;
@@ -654,12 +654,12 @@ function mostrarListaProductos(productos) {
             if (producto.imagenUrl.startsWith('http')) {
                 imagenUrl = producto.imagenUrl;
             } else if (producto.imagenUrl.startsWith('/')) {
-                imagenUrl = `${baseURL}${producto.imagenUrl}`;
+                imagenUrl = `${baseUrl}${producto.imagenUrl}`;
             } else {
-                imagenUrl = `${baseURL}/uploads/productos/${producto.imagenUrl}`;
+                imagenUrl = `${baseUrl}/uploads/productos/${producto.imagenUrl}`;
             }
         } else {
-            imagenUrl = `${baseURL}/uploads/productos/default.jpg`;
+            imagenUrl = `${baseUrl}/uploads/productos/default.jpg`;
         }
 
         return `
@@ -1323,16 +1323,24 @@ async function procesarLogin(event) {
     const btn = document.getElementById('loginBtn');
     const alert = document.getElementById('loginAlert');
     
+    console.log('=== 🖥️ INICIO LOGIN FRONTEND ===');
+    console.log('📧 Email a enviar:', email);
+    console.log('🔑 Password a enviar:', password ? '***' : 'VACÍO');
+    
+    // Guardar estado original del botón
+    const originalBtnText = btn.innerHTML;
+    const originalBtnState = btn.disabled;
+
+    // Mostrar loading
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Iniciando...';
-    alert.innerHTML = ''; // Limpiar alertas previas
-
+    alert.innerHTML = '';
 
     try {
          console.log ('🔍 Intentando login con:', { email });   
 
 
-        const response = await fetch(`${window.CONFIG.api.baseUrl}/auth/login`, {
+        const response = await fetch(`${window.CONFIG.api.baseUrl}api/auth/login`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -1344,7 +1352,7 @@ async function procesarLogin(event) {
             console.log('📡 Respuesta del servidor:', {
             status: response.status,
             ok: response.ok,
-            url: `${window.CONFIG.api.baseUrl}/auth/login`
+            url: `${window.CONFIG.api.baseUrl}api/auth/login`
         });
 
         // Verificar si la respuesta es JSON válido
@@ -1437,7 +1445,7 @@ async function procesarRegistro(event) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creando cuenta...';
     
     try {
-        const response = await fetch(`${API_URL}/auth/register`, {
+        const response = await fetch(`${window.CONFIG.api.baseURL}api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, email, password })
@@ -1479,7 +1487,7 @@ async function mostrarPerfil() {
     }
 
     const contenedor = document.getElementById('contenidoPrincipal');
-    const baseURL = window.location.origin;
+    const baseUrl = window.location.origin;
     
     contenedor.innerHTML = `
         <div class="profile-header">
@@ -1739,7 +1747,7 @@ async function guardarCambiosPerfil() {
     };
 
     try {
-        const response = await fetch(`${API_URL}/auth/profile`, {
+        const response = await fetch(`${window.CONFIG.api.baseUrl}api/auth/profile`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
