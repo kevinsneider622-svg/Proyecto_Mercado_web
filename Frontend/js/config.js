@@ -25,7 +25,7 @@ const CONFIG = {
             if (isDevelopment) {
                 return 'http://localhost:3000';
             } else if (hostname.includes('vercel.app')) {
-                return 'https://https://proyecto-mercado-web-zebx.vercel.app';
+                return 'https://proyecto-mercado-web-zebx.vercel.app';
             } else {
                 return 'https://proyecto-mercado-web.onrender.com';    
             }      

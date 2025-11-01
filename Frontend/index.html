@@ -364,17 +364,13 @@
                      (window.location.hostname !== 'localhost' && 
                       window.location.hostname !== '127.0.0.1');
 
-            const API_URL = window.ENV?.NEXT_PUBLIC_API_URL || 
-                (isProduction 
-                    ? 'https://proyecto-mercado-web.onrender.com' 
-                    : 'http://127.0.0.1:3000');
-
-           
+            const API_BASE_URL = window.CONFIG.api.baseUrl; 
+                
             window.cart = [];
             window.currentUser = null;
             
         console.log ('🌐 Aplicacion iniciada en:', window.location.hostname);
-        console.log ('🔗 API URL configurada en:', API_URL);
+        console.log ('🔗 API URL configurada en:', API_BASE_URL);
         console.log ('🌍 Entorno:', isProduction ? 'Producción' : 'Desarrollo');    
 
 
@@ -1327,6 +1323,13 @@ async function procesarLogin(event) {
     console.log('📧 Email a enviar:', email);
     console.log('🔑 Password a enviar:', password ? '***' : 'VACÍO');
     
+    //Usar CONFIG que ya está definido globalmente
+    const API_BASE_URL =  window.CONFIG.api.baseUrl;
+    const loginURL = `${API_BASE_URL}/api/auth/login`;
+
+    console.log('🌐 URL base desde CONFIG:', API_BASE_URL);
+    console.log('🎯 URL de login completa:', loginURL);
+
     // Guardar estado original del botón
     const originalBtnText = btn.innerHTML;
     const originalBtnState = btn.disabled;
@@ -1337,10 +1340,9 @@ async function procesarLogin(event) {
     alert.innerHTML = '';
 
     try {
-         console.log ('🔍 Intentando login con:', { email });   
+        console.log ('🔍 Intentando login con:', { email });   
 
-
-        const response = await fetch(`${window.CONFIG.api.baseUrl}api/auth/login`, {
+        const response = await fetch(loginURL, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -1352,7 +1354,7 @@ async function procesarLogin(event) {
             console.log('📡 Respuesta del servidor:', {
             status: response.status,
             ok: response.ok,
-            url: `${window.CONFIG.api.baseUrl}api/auth/login`
+            
         });
 
         // Verificar si la respuesta es JSON válido
@@ -1362,45 +1364,61 @@ async function procesarLogin(event) {
             console.error('❌ El servidor no devolvió JSON:', textResponse.substring(0, 200));
 
         
-              // Mostrar error específico según el status
+            // Mostrar error específico según el status
+
+
+            let errorMessage = 'Error del servidor';
             if (response.status === 404) {
-                throw new Error('Ruta de login no encontrada (404)');
+                 errorMessage = 'Servicio de autenticación no disponible (404)';
             } else if (response.status === 500) {
-                throw new Error('Error interno del servidor (500)');
+                errorMessage = 'Error interno del servidor (500)';
             } else {
-                throw new Error(`Error del servidor: ${response.status}`);
+                errorMessage = `Error ${response.status}: ${response.statusText}`;
             }
+
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
         console.log('📊 Datos recibidos:', data);
 
         if (response.ok && data.success) {
+            console.log('✅ Login exitoso');
+
+            // Guardar token y usuario
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             window.currentUser = data.user;
             
             showToast(`¡Bienvenido ${data.user.nombre}!`, 'success');
             
+            // Limpiar alertas
+            alert.innerHTML = '';
+
             // Cerrar modal de login si existe
             const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
             if (loginModal) {
                 loginModal.hide();
             }
             
-            cargarInicio();
-        } else {
-            const errorMessage = data.error || data.message || 'Error al iniciar sesión';
+
+            // Recargar la página o contenido
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
             
-            alert.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
+        } else {
             console.error('❌ Error en login:', errorMessage);
+            const errorMessage = data.error || data.message || 'Error al iniciar sesión';
+            alert.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
         }    
 
 
 
         } catch (error) {
             console.error('💥 Error en login:', error);
-             let errorMessage = 'Error de conexión con el servidor';
+         
+            let errorMessage = 'Error de conexión con el servidor';
             
             if (error.message.includes('404')) {
                 errorMessage = 'Servicio de autenticación no disponible';
@@ -1445,7 +1463,7 @@ async function procesarRegistro(event) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creando cuenta...';
     
     try {
-        const response = await fetch(`${window.CONFIG.api.baseURL}api/auth/register`, {
+        const response = await fetch(`${window.CONFIG.api.baseUrl}api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, email, password })
