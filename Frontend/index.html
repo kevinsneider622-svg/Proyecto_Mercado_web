@@ -1325,35 +1325,93 @@ async function procesarLogin(event) {
     
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Iniciando...';
-    
+    alert.innerHTML = ''; // Limpiar alertas previas
+
+
     try {
+         console.log ('🔍 Intentando login con:', { email });   
+
+
         const response = await fetch(`${window.CONFIG.api.baseUrl}/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({ email, password })
         });
+
+            console.log('📡 Respuesta del servidor:', {
+            status: response.status,
+            ok: response.ok,
+            url: `${window.CONFIG.api.baseUrl}/auth/login`
+        });
+
+        // Verificar si la respuesta es JSON válido
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            console.error('❌ El servidor no devolvió JSON:', textResponse.substring(0, 200));
+
         
+              // Mostrar error específico según el status
+            if (response.status === 404) {
+                throw new Error('Ruta de login no encontrada (404)');
+            } else if (response.status === 500) {
+                throw new Error('Error interno del servidor (500)');
+            } else {
+                throw new Error(`Error del servidor: ${response.status}`);
+            }
+        }
+
         const data = await response.json();
-        
+        console.log('📊 Datos recibidos:', data);
+
         if (response.ok && data.success) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             window.currentUser = data.user;
             
             showToast(`¡Bienvenido ${data.user.nombre}!`, 'success');
+            
+            // Cerrar modal de login si existe
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (loginModal) {
+                loginModal.hide();
+            }
+            
             cargarInicio();
         } else {
-            alert.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al iniciar sesión'}</div>`;
+            const errorMessage = data.error || data.message || 'Error al iniciar sesión';
+            
+            alert.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
+            console.error('❌ Error en login:', errorMessage);
+        }    
+
+
+
+        } catch (error) {
+            console.error('💥 Error en login:', error);
+             let errorMessage = 'Error de conexión con el servidor';
+            
+            if (error.message.includes('404')) {
+                errorMessage = 'Servicio de autenticación no disponible';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'Error interno del servidor';
+            } else if (error.message.includes('JSON')) {
+                errorMessage = 'Error en la respuesta del servidor';
+            } else if (error.name === 'TypeError') {
+                errorMessage = 'No se pudo conectar con el servidor';
+            }    
+
+             alert.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
+       } finally {
+            // Siempre restaurar el botón
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión';
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert.innerHTML = '<div class="alert alert-danger">Error de conexión con el servidor</div>';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión';
     }
-}
+
 
 async function procesarRegistro(event) {
     event.preventDefault();
