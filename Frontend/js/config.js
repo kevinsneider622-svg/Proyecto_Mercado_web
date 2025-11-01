@@ -19,6 +19,13 @@ const CONFIG = {
             const hostname = window.location.hostname;
             console.log('🏠 Hostname detectado:', hostname);
 
+              // Si estamos en Vercel, usar el backend en Render
+            if (hostname.includes('vercel.app')) {
+                console.log('🎯 Entorno: Frontend en Vercel');
+                return 'https://proyecto-mercado-web.onrender.com';
+            }
+
+            // Si estamos en localhost, usar localhost
             const isDevelopment = hostname === 'localhost' ||
                                 hostname === '127.0.0.1' ||
                                 hostname.includes('local'); 
@@ -670,15 +677,8 @@ function showToast(message, type = 'info', duration = CONFIG.ui.TOAST_DURATION) 
 // ============================================
 
 // Crear API_BASE_URL como alias de CONFIG.api.baseUrl
-const API_BASE_URL = CONFIG.api.baseUrl;
 
-// Hacerla global para compatibilidad
-if (typeof window !== 'undefined') {
-    window.API_BASE_URL = API_BASE_URL;
-}
-
-console.log('🔗 API_BASE_URL definida:', API_BASE_URL);
-
+const getAPI_BASE_URL = () => CONFIG.api.baseUrl;
 
 // ============================================
 // INICIALIZACIÓN AUTOMÁTICA
@@ -688,7 +688,7 @@ console.log('🔗 API_BASE_URL definida:', API_BASE_URL);
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
     window.UTILS = UTILS;
-    window.API_BASE_URL = API_BASE_URL;
+    window.API_BASE_URL = CONFIG.api.baseUrl;
     window.currentUser = currentUser;
     window.currentPage = currentPage;
     window.cart = cart;
@@ -720,7 +720,7 @@ if (document.readyState === 'loading') {
 export {
     CONFIG,
     UTILS,
-    API_BASE_URL,
+    getAPI_BASE_URL,
     currentUser,
     currentPage,
     cart,

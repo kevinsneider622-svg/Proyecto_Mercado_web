@@ -9,18 +9,26 @@
     
         <script type="module"> 
         
-        import { CONFIG, UTILS } from './js/config.js';
+        import { CONFIG, UTILS, getAPI_BASE_URL } from './js/config.js';
         
         // Hacer disponible globalmente
         window.CONFIG = CONFIG;
         window.UTILS = UTILS;
-        
+        window.API_BASE_URL = getAPI_BASE_URL();
+
         window.cart = [];
         window.currentUser = null;
 
         console.log('✅ Módulos cargados');
         console.log('🌐 API URL:', CONFIG.api.baseUrl);
-                
+              
+          // ✅ INICIALIZAR INMEDIATAMENTE DESPUÉS DE CARGAR CONFIG
+        setTimeout(() => {
+            if (typeof cargarInicio === 'function') {
+                cargarInicio();
+            }
+        }, 100);
+        
         </script>
     
     <style>
@@ -389,8 +397,15 @@
 
         async function cargarInicio() {
             console.log('🔍 INICIANDO cargarInicio()');
+
+              // ✅ VERIFICAR QUE CONFIG ESTÉ LISTO
+                if (typeof window.CONFIG === 'undefined' || !window.CONFIG.api) {
+                    console.error('❌ CONFIG no está cargado aún, reintentando...');
+                    setTimeout(cargarInicio, 100);
+                    return;
+                }
             console.log('📌 window.CONFIG:', window.CONFIG);
-            console.log('🌐 API Base URL:', window.CONFIG?.api?.baseUrl);
+            console.log('🌐 API Base URL:', window.CONFIG.api.baseUrl);
                 
     const contenedor = document.getElementById('contenidoPrincipal');
     if (!contenedor) {
@@ -452,6 +467,13 @@
 
         // 📍 FUNCIÓN FETCH MEJORADA - AGREGA ESTA FUNCIÓN EN TU ARCHIVO
 async function fetchAPI(endpoint) {
+
+    // ✅ VERIFICAR PRIMERO QUE CONFIG ESTÉ LISTO
+    if (typeof window.CONFIG === 'undefined' || !window.CONFIG.api || !window.CONFIG.api.baseUrl) {
+        console.error('❌ CONFIG no está disponible en fetchAPI');
+        throw new Error('Configuración de la aplicación no cargada');
+    }
+    
     const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
     console.log('🌐 API Call:', url);
     
@@ -480,7 +502,34 @@ async function fetchAPI(endpoint) {
         throw error;
     }
 }
-                        
+              
+
+// ============================================
+// VERIFICACIÓN INICIAL DE CONFIGURACIÓN
+// ============================================
+
+function verificarConfiguracionInicial() {
+    if (typeof window.CONFIG === 'undefined' || !window.CONFIG.api) {
+        console.log('⏳ Esperando configuración inicial...');
+        setTimeout(verificarConfiguracionInicial, 100);
+        return;
+    }
+    
+    console.log('🔗 API URL configurada en:', window.CONFIG.api.baseUrl);
+    const isProduction = !window.location.hostname.includes('localhost') && 
+                         !window.location.hostname.includes('127.0.0.1');
+    console.log('🌍 Entorno:', isProduction ? 'Producción' : 'Desarrollo');
+    
+    // Ahora sí cargar la página inicial
+    cargarInicio();
+}
+
+// Reemplaza el console.log inicial por esto:
+console.log('🌐 Aplicacion iniciada en:', window.location.hostname);
+verificarConfiguracionInicial();
+
+
+
 // ============================================
 // FUNCIÓN MEJORADA PARA MOSTRAR PRODUCTOS
 // ============================================
@@ -1400,6 +1449,11 @@ async function procesarLogin(event) {
                 loginModal.hide();
             }
             
+
+            // Recargar la página o contenido
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
             
         } else {
             console.error('❌ Error en login:', errorMessage);
@@ -1808,9 +1862,10 @@ function cerrarSesion() {
             }
 
                 verificarPagoRetorno();
+
+                verificarConfiguracionInicial();
     
-    cargarInicio();
-});
+    });
     </script>
 </body>
 </html>
