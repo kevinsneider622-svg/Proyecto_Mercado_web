@@ -24,7 +24,7 @@ const CONFIG = {
                                 hostname.includes('local'); 
 
             console.log('🎯 Entorno:', isDevelopment ? 'Desarrollo' : 'Producción');
-            
+
             // Retornar URL según entorno
             if (isDevelopment) {
                 return 'http://localhost:3000';
@@ -664,6 +664,22 @@ function showToast(message, type = 'info', duration = CONFIG.ui.TOAST_DURATION) 
     });
 }
 
+
+// ============================================
+// ALIAS PARA COMPATIBILIDAD - API_BASE_URL
+// ============================================
+
+// Crear API_BASE_URL como alias de CONFIG.api.baseUrl
+const API_BASE_URL = CONFIG.api.baseUrl;
+
+// Hacerla global para compatibilidad
+if (typeof window !== 'undefined') {
+    window.API_BASE_URL = API_BASE_URL;
+}
+
+console.log('🔗 API_BASE_URL definida:', API_BASE_URL);
+
+
 // ============================================
 // INICIALIZACIÓN AUTOMÁTICA
 // ============================================
@@ -672,6 +688,7 @@ function showToast(message, type = 'info', duration = CONFIG.ui.TOAST_DURATION) 
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
     window.UTILS = UTILS;
+    window.API_BASE_URL = API_BASE_URL;
     window.currentUser = currentUser;
     window.currentPage = currentPage;
     window.cart = cart;
@@ -703,6 +720,7 @@ if (document.readyState === 'loading') {
 export {
     CONFIG,
     UTILS,
+    API_BASE_URL,
     currentUser,
     currentPage,
     cart,
