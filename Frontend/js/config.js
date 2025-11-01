@@ -9,6 +9,7 @@ const CONFIG = {
            
             // Verificar si existe variable de entorno (Front) 
             if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
+                console.log('✅ Usando VITE_API_URL');
                 return window.ENV.VITE_API_URL;
             }
 
@@ -16,11 +17,14 @@ const CONFIG = {
             // Detectar entorno por hostname (Local)
             
             const hostname = window.location.hostname;
+            console.log('🏠 Hostname detectado:', hostname);
+
             const isDevelopment = hostname === 'localhost' ||
                                 hostname === '127.0.0.1' ||
                                 hostname.includes('local'); 
 
-
+            console.log('🎯 Entorno:', isDevelopment ? 'Desarrollo' : 'Producción');
+            
             // Retornar URL según entorno
             if (isDevelopment) {
                 return 'http://localhost:3000';

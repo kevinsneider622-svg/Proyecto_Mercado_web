@@ -97,19 +97,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir el frontend correctamente (index:true para SPA)
 const frontendPath = path.join(__dirname, '..', 'Frontend');
-app.use(express.static(frontendPath, {
-    index: 'index.html',
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-cache');
-        } else if (filePath.endsWith('.css')) {
-            res.setHeader('Cache-Control', 'public, max-age=86400');
-        } else if (filePath.endsWith('.js')) {
-            res.setHeader('Cache-Control', 'public, max-age=3600');
+
+if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath, {
+        index: 'index.html',
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.html')) {
+                res.setHeader('Cache-Control', 'no-cache');
+            }
         }
-    }
-}));
+    }));
+    console.log('✅ Frontend configurado en:', frontendPath);
+} else {
+    console.log('⚠️  Frontend no encontrado en:', frontendPath);
+}
 
 // Middleware para logging de requests
 app.use((req, res, next) => {
@@ -165,10 +166,10 @@ app.use('/api/pagos', pagosRoutes);
 // Ruta de prueba de base de datos
 app.get('/api/test-db', async (req, res) => {
     try {
-        const db = await import('/db.js');
+        const db = await import('./db.js');
         
         // Primero prueba conexión básica
-        const connectionTest = await db.default.query('SELECT NOW() as current_time, version() as pg_version');
+        const connectionTest = await db.default.query('SELECT NOW() as current_time');
         
         // Intenta contar productos
         let productosInfo = { mensaje: 'Tabla no disponible' };
@@ -249,7 +250,6 @@ app.use('/api/*', (req, res) => {
         success: false,
         error: 'Ruta no encontrada',
         path: req.originalUrl,
-        method: req.method
     });
 });
 
@@ -259,7 +259,6 @@ app.use('/api/*', (err, req, res, next) => {
     res.status(err.status || 500).json({ 
         success: false,
         error: err.message || 'Error interno del servidor',
-        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
 
@@ -275,13 +274,14 @@ app.use('*', (req, res) => {
     
     // Para cualquier otra ruta, intentar servir el frontend
     const indexPath = path.join(frontendPath, 'index.html');
-    if (require('fs').existsSync(indexPath)) {
+    if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).json({
-            success: false,
-            error: 'Frontend no disponible - Esta es una API backend',
-            message: 'Accede al frontend en Vercel'
+        res.json({
+            success: true,
+            message: 'Backend funcionando - Frontend en Vercel',
+            api: 'https://proyecto-mercado-web.onrender.com',
+            frontend: 'https://proyecto-mercado-web.vercel.app'
         });
     }
 });
@@ -369,10 +369,6 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-process.on('SIGTERM', () => {
-    console.log('\n🛑 Servidor recibió SIGTERM, cerrando...');
-    process.exit(0);
-});
 
 // Iniciar la aplicación
 startServer().catch(error => {
