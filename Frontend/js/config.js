@@ -9,7 +9,7 @@ const CONFIG = {
            
             // Verificar si existe variable de entorno (Front) 
             if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
-                console.log('✅ Usando VITE_API_URL');
+                console.log('✅ Usando VITE_API_URL', window.ENV.VITE_API_URL);
                 return window.ENV.VITE_API_URL;
             }
 
@@ -21,7 +21,7 @@ const CONFIG = {
 
               // Si estamos en Vercel, usar el backend en Render
             if (hostname.includes('vercel.app')) {
-                console.log('🎯 Entorno: Frontend en Vercel');
+                console.log('🎯 Entorno: Frontend en Vercel → Backend en Render');
                 return 'https://proyecto-mercado-web.onrender.com';
             }
 
@@ -33,13 +33,9 @@ const CONFIG = {
             console.log('🎯 Entorno:', isDevelopment ? 'Desarrollo' : 'Producción');
 
             // Retornar URL según entorno
-            if (isDevelopment) {
-                return 'http://localhost:3000';
-            } else if (hostname.includes('vercel.app')) {
-                return 'https://proyecto-mercado-web-zebx.vercel.app';
-            } else {
-                return 'https://proyecto-mercado-web.onrender.com';    
-            }      
+            return isDevelopment
+                ? 'http://localhost:3000'  // Desarrollo
+                : 'https://proyecto-mercado-web.onrender.com'; // Producción  
         })()
     },
      

@@ -21,13 +21,12 @@
 
         console.log('✅ Módulos cargados');
         console.log('🌐 API URL:', CONFIG.api.baseUrl);
-              
-          // ✅ INICIALIZAR INMEDIATAMENTE DESPUÉS DE CARGAR CONFIG
-        setTimeout(() => {
-            if (typeof cargarInicio === 'function') {
-                cargarInicio();
-            }
-        }, 100);
+        console.log('📍 Hostname:', window.location.hostname);  
+
+           // ✅ DISPARAR EVENTO CUANDO CONFIG ESTÉ LISTO
+        window.dispatchEvent(new CustomEvent('configLoaded', { 
+            detail: { config: CONFIG } 
+        }));
         
         </script>
     
@@ -367,141 +366,152 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-            
-        console.log ('🌐 Aplicacion iniciada en:', window.location.hostname);
-        console.log ('🔗 API URL configurada en:', API_BASE_URL);
-        console.log ('🌍 Entorno:', isProduction ? 'Producción' : 'Desarrollo');    
 
+  // ============================================
+    // VARIABLES GLOBALES
+    // ============================================
+    
+    window.cart = window.cart || [];
+    window.currentUser = null;
+    let configReady = false;
 
-        // ============================================
-        // FUNCIONES DE NAVEGACIÓN
-        // ============================================
+    // ============================================
+    // ESPERAR A QUE CONFIG ESTÉ LISTO
+    // ============================================
+    
+    window.addEventListener('configLoaded', () => {
+        console.log('✅ CONFIG listo para usar');
+        configReady = true;
+    });
 
-        function cargarPagina(pagina) {
-            console.log('Cargando página:', pagina);
-            
-            switch(pagina) {
-                case 'inicio':
-                    cargarInicio();
-                    break;
-                case 'productos':
-                    cargarProductos();
-                    break;
-                case 'ofertas':
-                    cargarOfertas();
-                    break;
-                default:
-                    cargarInicio();
-            }
+    // ============================================
+    // FUNCIÓN FETCH MEJORADA
+    // ============================================
+    
+    async function fetchAPI(endpoint, options = {}) {
+        // Esperar a que CONFIG esté listo
+        if (!configReady || !window.CONFIG?.api?.baseUrl) {
+            console.log('⏳ Esperando CONFIG...');
+            await new Promise(resolve => {
+                const checkConfig = setInterval(() => {
+                    if (window.CONFIG?.api?.baseUrl) {
+                        clearInterval(checkConfig);
+                        configReady = true;
+                        resolve();
+                    }
+                }, 50);
+            });
         }
-
-        async function cargarInicio() {
-            console.log('🔍 INICIANDO cargarInicio()');
-
-              // ✅ VERIFICAR QUE CONFIG ESTÉ LISTO
-                if (typeof window.CONFIG === 'undefined' || !window.CONFIG.api) {
-                    console.error('❌ CONFIG no está cargado aún, reintentando...');
-                    setTimeout(cargarInicio, 100);
-                    return;
+        
+        const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
+        console.log('🌐 Fetch:', url);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options?.headers
                 }
-            console.log('📌 window.CONFIG:', window.CONFIG);
-            console.log('🌐 API Base URL:', window.CONFIG.api.baseUrl);
-                
-    const contenedor = document.getElementById('contenidoPrincipal');
-    if (!contenedor) {
-        console.error('❌ No se encontró contenedorPrincipal');
-        return;
+            });
+            
+            console.log('📊 Status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType?.includes('application/json')) {
+                throw new Error('Respuesta no es JSON');
+            }
+            
+            const data = await response.json();
+            console.log('✅ Data:', data);
+            return data;
+            
+        } catch (error) {
+            console.error(`❌ Error en ${endpoint}:`, error);
+            throw error;
+        }
     }
-            contenedor.innerHTML = `
-                <!-- Hero Section -->
-                <div class="hero-section">
-                    <div class="container">
-                        <h1 class="display-4 fw-bold">Bienvenido a SuperMarket</h1>
-                        <p class="lead">Los mejores productos al mejor precio</p>
-                        <button class="btn btn-primary btn-lg mt-3" onclick="cargarPagina('productos')">Ver Ofertas</button>
-                    </div>
-                </div>
 
-                <div class="container mb-5">
-                    <h2 class="text-center mb-4">Nuestros Productos Destacados</h2>
-                    <div id="productosDestacados" class="row g-4">
-                        <div class="loading-spinner">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
-                            </div>
+    // ============================================
+    // FUNCIONES DE NAVEGACIÓN
+    // ============================================
+
+    function cargarPagina(pagina) {
+        console.log('📄 Cargando página:', pagina);
+        
+        switch(pagina) {
+            case 'inicio':
+                cargarInicio();
+                break;
+            case 'productos':
+                cargarProductos();
+                break;
+            case 'ofertas':
+                cargarOfertas();
+                break;
+            default:
+                cargarInicio();
+        }
+    }
+
+    async function cargarInicio() {
+        console.log('🏠 Cargando inicio...');
+        
+        const contenedor = document.getElementById('contenidoPrincipal');
+        if (!contenedor) {
+            console.error('❌ Contenedor no encontrado');
+            return;
+        }
+        
+        contenedor.innerHTML = `
+            <div class="hero-section">
+                <div class="container">
+                    <h1 class="display-4 fw-bold">Bienvenido a SuperMarket</h1>
+                    <p class="lead">Los mejores productos al mejor precio</p>
+                    <button class="btn btn-primary btn-lg mt-3" onclick="cargarPagina('productos')">Ver Ofertas</button>
+                </div>
+            </div>
+
+            <div class="container mb-5">
+                <h2 class="text-center mb-4">Nuestros Productos Destacados</h2>
+                <div id="productosDestacados" class="row g-4">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        `;
+
+        try {
+            const data = await fetchAPI('/api/productos/destacados');
+            
+            if (data.success && data.productos) {
+                mostrarProductosDestacados(data.productos);
+            } else {
+                throw new Error('Formato de respuesta inválido');
+            }
+        } catch (error) {
+            console.error('❌ Error:', error);
+            document.getElementById('productosDestacados').innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No se pudieron cargar los productos
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="cargarInicio()">
+                        <i class="fas fa-redo me-1"></i> Reintentar
+                    </button>
                 </div>
             `;
-
-            try {
-                console.log('Cargando productos destacados...');
-                
-                //Punto para Fetch mejorado
-                
-                const data = await fetchAPI('/api/productos/destacados');
-                console.log('✅ Productos destacados recibidos:', data);
-
-                if (data.success && data.productos) {
-                     mostrarProductosDestacados(data.productos);
-                } else {
-                     throw new Error('Formato de respuesta inválido');
-                }
-       
-            } catch (error) {
-                console.error('❌ Error cargando productos destacados:', error);
-                document.getElementById('productosDestacados').innerHTML = `
-                    <div class="col-12 text-center">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            No se pudieron cargar los productos destacados
-                        </div>
-                        <button class="btn btn-outline-primary mt-2" onclick="cargarInicio()">
-                            <i class="fas fa-redo me-1"></i> Reintentar
-                        </button>
-                    </div>
-                `;
-            }
         }
-
-
-        // 📍 FUNCIÓN FETCH MEJORADA - AGREGA ESTA FUNCIÓN EN TU ARCHIVO
-async function fetchAPI(endpoint) {
-
-    // ✅ VERIFICAR PRIMERO QUE CONFIG ESTÉ LISTO
-    if (typeof window.CONFIG === 'undefined' || !window.CONFIG.api || !window.CONFIG.api.baseUrl) {
-        console.error('❌ CONFIG no está disponible en fetchAPI');
-        throw new Error('Configuración de la aplicación no cargada');
     }
-    
-    const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-    console.log('🌐 API Call:', url);
-    
-    try {
-        const response = await fetch(url);
-        console.log('📊 Status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        // Verificar que la respuesta sea JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.error('❌ La respuesta no es JSON:', text.substring(0, 200));
-            throw new Error('El servidor devolvió una respuesta no JSON');
-        }
-        
-        const data = await response.json();
-        console.log('✅ Fetch exitoso:', data);
-        return data;
-        
-    } catch (error) {
-        console.error(`❌ API Error [${endpoint}]:`, error);
-        throw error;
-    }
-}
+
               
 
 // ============================================
@@ -1375,7 +1385,7 @@ async function procesarLogin(event) {
     //Usar CONFIG que ya está definido globalmente
     const loginURL = `${window.CONFIG.api.baseUrl}/api/auth/login`;
 
-    console.log('🌐 URL base desde CONFIG:', API_BASE_URL);
+    console.log('🌐 URL base desde CONFIG:', window.CONFIG.api.baseUrl);
     console.log('🎯 URL de login completa:', loginURL);
 
     // Guardar estado original del botón
@@ -1497,6 +1507,8 @@ async function procesarRegistro(event) {
     const btn = document.getElementById('registerBtn');
     const alert = document.getElementById('registerAlert');
     
+    alert.innerHTML = '';
+
     if (password !== passwordConfirm) {
         alert.innerHTML = '<div class="alert alert-warning">Las contraseñas no coinciden</div>';
         return;
@@ -1507,37 +1519,133 @@ async function procesarRegistro(event) {
         return;
     }
     
+    if (!nombre || !email) {
+        alert.innerHTML = '<div class="alert alert-warning">Todos los campos son obligatorios</div>';
+        return;
+    }
+  
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creando cuenta...';
     
     try {
-        const response = await fetch(`${window.CONFIG.api.baseUrl}api/auth/register`, {
+
+        // ✅ USAR fetchAPI EN LUGAR DE FETCH DIRECTO
+        const data = await fetchAPI('/api/auth/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, email, password })
         });
         
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
+        if (data.success) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             window.currentUser = data.user;
             
             showToast('¡Cuenta creada exitosamente!', 'success');
             cargarInicio();
+
+        console.log('🔄 Iniciando registro...');
+        console.log('📧 Email:', email);
+        console.log('👤 Nombre:', nombre);
+     
         } else {
+ 
+            // Manejar errores del servidor
             alert.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al crear cuenta'}</div>`;
+            console.error('❌ Error del servidor:', errorMessage);                       
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-user-plus me-1"></i> Crear Cuenta';
         }
+
     } catch (error) {
-        console.error('Error:', error);
-        alert.innerHTML = '<div class="alert alert-danger">Error de conexión con el servidor</div>';
+        console.error('💥 Error en registro:', error);
+        
+        let errorMessage = 'Error de conexión con el servidor';
+        
+        if (error.message.includes('Configuración')) {
+            errorMessage = 'Error de configuración de la aplicación';
+        } else if (error.message.includes('JSON')) {
+            errorMessage = 'Error en la respuesta del servidor';
+        } else if (error.name === 'TypeError') {
+            errorMessage = 'No se pudo conectar con el servidor';
+        }
+        
+        alert.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-user-plus me-1"></i> Crear Cuenta';
     }
 }
+
+async function verificarYRenovarToken() {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    
+    if (!token || !user) {
+        return false;
+    }
+    
+    try {
+        const response = await fetch(`${window.CONFIG.api.baseUrl}/api/auth/verify`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            return true;
+        } else {
+            // Token inválido o expirado
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.currentUser = null;
+            return false;
+        }
+    } catch (error) {
+        console.error('Error verificando token:', error);
+        return false;
+    }
+}
+
+// Función para fetch con autenticación automática
+async function fetchAutenticado(url, options = {}) {
+    // Verificar token primero
+    const tokenValido = await verificarYRenovarToken();
+    const token = localStorage.getItem('token');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    // Agregar token si está disponible y es válido
+    if (tokenValido && token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+        
+        if (response.status === 401) {
+            // Token expirado o inválido
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.currentUser = null;
+            showToast('Tu sesión ha expirado, por favor inicia sesión nuevamente', 'warning');
+            mostrarFormularioLogin();
+            throw new Error('Unauthorized');
+        }
+        
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+
 
 // ============================================
 // FUNCIONES DE PERFIL DE USUARIO
@@ -1849,23 +1957,31 @@ function cerrarSesion() {
         cargarInicio();
     }
 }
-        // Cargar carrito al iniciar
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                const saved = localStorage.getItem('supermercado_cart');
-                if (saved) {
-                    window.cart = JSON.parse(saved);
-                    actualizarContadorCarrito();
-                }
-            } catch (error) {
-                window.cart = [];
-            }
-
-                verificarPagoRetorno();
-
-                verificarConfiguracionInicial();
+           // ============================================
+    // INICIALIZACIÓN
+    // ============================================
     
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ DOM listo');
+        
+        // Cargar carrito
+        try {
+            const saved = localStorage.getItem('supermercado_cart');
+            if (saved) {
+                window.cart = JSON.parse(saved);
+                actualizarContadorCarrito();
+            }
+        } catch (error) {
+            window.cart = [];
+        }
+        
+        // Verificar pago de retorno
+        verificarPagoRetorno();
+        
+        // Cargar página inicial
+        cargarInicio();
     });
+    
     </script>
 </body>
 </html>
