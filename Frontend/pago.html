@@ -6,17 +6,27 @@
     <title>Pago con PSE - SuperMarket</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script type="module">
-        import { CONFIG, UTILS } from './js/config.js';
-        window.CONFIG = CONFIG;
-        window.UTILS = UTILS;
+      <script type="module">
+        // Determinar la URL base automáticamente
+        const isProduction = window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost';
+        const BASE_URL = isProduction 
+            ? 'https://tu-backend.onrender.com'  // Reemplaza con tu URL de Render
+            : 'http://127.0.0.1:3000';
+
+        // Configuración dinámica
+        window.CONFIG = {
+            api: {
+                baseUrl: BASE_URL
+            }
+        };
+        
         console.log('✅ CONFIG cargado en pago.html');
-        console.log('🌐 API URL:', CONFIG.api.baseUrl);
+        console.log('🌐 API URL:', window.CONFIG.api.baseUrl);
+        console.log('📍 Hostname:', window.location.hostname);
         
         window.dispatchEvent(new CustomEvent('configLoaded'));
     </script>
 </head>
-<body>
 
      <!-- Tu HTML de la página de pago -->
     
@@ -54,7 +64,91 @@
         
         // Tu código de pago aquí...
     </script>
+    <body>
+          <!-- Tu HTML de la página de pago -->
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de Wompi -->
+    <script src="https://checkout.wompi.co/widget.js"></script>
+    
+    <script>
+        // ✅ Función fetchAPI mejorada
+        async function fetchAPI(endpoint, options = {}) {
+            if (!window.CONFIG?.api?.baseUrl) {
+                await new Promise(resolve => {
+                    window.addEventListener('configLoaded', resolve, { once: true });
+                });
+            }
+            
+            const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
+            console.log('🌐 Fetching:', url);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options?.headers
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('❌ Error en fetchAPI:', error);
+                throw error;
+            }
+        }
+
+        // Función para obtener parámetros de URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Iniciando página de pago...');
+            
+            try {
+                // Obtener amount de la URL
+                const amount = getQueryParam('amount');
+                if (amount) {
+                    document.getElementById('displayAmount').textContent = 
+                        parseInt(amount).toLocaleString();
+                }
+
+                // Mostrar formulario
+                document.getElementById('paymentForm').style.display = 'block';
+
+                // Cargar bancos
+                await cargarBancos();
+
+                // Cargar resumen de productos si existe en localStorage
+                cargarResumenProductos();
+
+            } catch (error) {
+                console.error('Error inicializando página:', error);
+                mostrarError('Error al cargar la página: ' + error.message);
+            }
+        });
+
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = mensaje;
+            errorDiv.classList.add('active');
+        }
+
+        function volverAlCarrito() {
+            // Redirigir al carrito o página principal
+            window.location.href = window.CONFIG.api.baseUrl;
+        }
+    </script>
+
     <style>
         * {
             margin: 0;
