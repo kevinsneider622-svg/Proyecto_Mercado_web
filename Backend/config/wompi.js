@@ -43,7 +43,7 @@ if (process.env.BASE_URL) {
   }
 } else {
   // 4. Desarrollo local
-  BASE_URL = 'http://127.0.0.1:3000';
+  BASE_URL = 'https://proyecto-mercado-web.onrender.com';
 }
 
 // ============================================

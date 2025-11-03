@@ -1,10 +1,8 @@
 import express from 'express';
-import axios from 'axios';
 import crypto from 'crypto';
 import wompiConfig from '../config/wompi.js';
-import {crearTransaccion} from '../controllers/pagosController.js';
-const router = express.Router();
 
+const router = express.Router();
 
 // ============================================
 // MIDDLEWARE: Verificar configuración de Wompi
@@ -21,24 +19,17 @@ function verificarConfigWompi(req, res, next) {
 
 // ============================================
 // 1. ENDPOINT: Obtener configuración pública
-// GET /api/pagos/config
 // ============================================
-
-
 router.get('/config', verificarConfigWompi, (req, res) => {
- 
-  try{
- 
-    console.log('📋 Solicitando configuración de Wompi');
- 
-    res.json({
-          success: true,
-          publicKey: wompiConfig.publicKey,
-          apiUrl: wompiConfig.apiUrl,        
-          environment: wompiConfig.environment,
-          baseUrl: wompiConfig.baseUrl
+    try {
+        console.log('📋 Solicitando configuración de Wompi');
+        res.json({
+            success: true,
+            publicKey: wompiConfig.publicKey,
+            apiUrl: wompiConfig.apiUrl,        
+            environment: wompiConfig.environment,
+            baseUrl: wompiConfig.baseUrl
         });
-
     } catch (error) {
         console.error('❌ Error en /config:', error);
         res.status(500).json({
@@ -46,24 +37,20 @@ router.get('/config', verificarConfigWompi, (req, res) => {
             error: 'Error al obtener configuración'
         });
     }
-  });     
-        
+});
 
-  // ============================================
+// ============================================
 // 2. ENDPOINT: Obtener lista de bancos PSE
-// GET /api/pagos/bancos-pse
 // ============================================
 router.get('/bancos-pse', verificarConfigWompi, async (req, res) => {
     try {
         console.log('🏦 Solicitando lista de bancos PSE...');
         
-        // URL del endpoint de Wompi para obtener bancos
         const url = `${wompiConfig.apiUrl}/pse/financial_institutions`;
         
         console.log('🔗 URL:', url);
         console.log('🔑 Public Key:', wompiConfig.publicKey.substring(0, 20) + '...');
         
-        // Hacer request a Wompi
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -81,8 +68,6 @@ router.get('/bancos-pse', verificarConfigWompi, async (req, res) => {
         }
         
         const data = await response.json();
-        
-        // Wompi retorna los bancos en data.data
         const bancos = data.data || [];
         
         console.log(`✅ ${bancos.length} bancos obtenidos de Wompi`);
@@ -104,13 +89,54 @@ router.get('/bancos-pse', verificarConfigWompi, async (req, res) => {
 });
 
 // ============================================
-// 3. ENDPOINT: Crear transacción PSE
-// POST /api/pagos/crear-transaccion
+// 3. ENDPOINT: Obtener acceptance token
 // ============================================
+router.get('/acceptance-token', verificarConfigWompi, async (req, res) => {
+    try {
+        console.log('📝 Obteniendo acceptance token...');
+        
+        const url = `${wompiConfig.apiUrl}/merchants/${wompiConfig.publicKey}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${wompiConfig.publicKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error obteniendo acceptance token:', errorText);
+            throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        
+        res.json({
+            success: true,
+            acceptanceToken: data.data?.presigned_acceptance?.acceptance_token,
+            permalink: data.data?.presigned_acceptance?.permalink
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en acceptance token:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener acceptance token',
+            message: error.message
+        });
+    }
+});
 
+// ============================================
+// 4. ENDPOINT: Crear transacción PSE
+// ============================================
 router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
     try {
-        console.log('💳 Creando transacción PSE...');
+        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('💳 CREANDO TRANSACCIÓN PSE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('📦 Datos recibidos:', JSON.stringify(req.body, null, 2));
         
         const {
@@ -125,20 +151,63 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
         } = req.body;
 
         // ============================================
-        // VALIDACIONES
+        // VALIDACIONES EXHAUSTIVAS
         // ============================================
         
-        if (!amount_in_cents || !customer_email || !reference) {
+        const errores = [];
+        
+        if (!acceptance_token) errores.push('acceptance_token es requerido');
+        if (!amount_in_cents) errores.push('amount_in_cents es requerido');
+        if (!customer_email) errores.push('customer_email es requerido');
+        if (!reference) errores.push('reference es requerido');
+        
+        // Validar payment_method
+        if (!payment_method) {
+            errores.push('payment_method es requerido');
+        } else {
+            if (payment_method.type !== 'PSE') {
+                errores.push('payment_method.type debe ser "PSE"');
+            }
+            if (!payment_method.user_type) {
+                errores.push('payment_method.user_type es requerido (0=Persona, 1=Empresa)');
+            }
+            if (!payment_method.user_legal_id_type) {
+                errores.push('payment_method.user_legal_id_type es requerido (CC, CE, NIT, etc.)');
+            }
+            if (!payment_method.user_legal_id) {
+                errores.push('payment_method.user_legal_id es requerido');
+            }
+            if (!payment_method.financial_institution_code) {
+                errores.push('payment_method.financial_institution_code es requerido');
+            }
+        }
+        
+        if (errores.length > 0) {
+            console.error('❌ Errores de validación:', errores);
             return res.status(400).json({
                 success: false,
-                error: 'Faltan campos requeridos: amount_in_cents, customer_email, reference'
+                error: 'Datos inválidos',
+                errores: errores
             });
         }
 
-        if (!payment_method?.type || payment_method.type !== 'PSE') {
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(customer_email)) {
             return res.status(400).json({
                 success: false,
-                error: 'payment_method.type debe ser "PSE"'
+                error: 'Email inválido',
+                errores: ['customer_email debe ser un email válido']
+            });
+        }
+
+        // Validar monto
+        const amount = parseInt(amount_in_cents);
+        if (isNaN(amount) || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Monto inválido',
+                errores: ['amount_in_cents debe ser un número positivo']
             });
         }
 
@@ -146,13 +215,24 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
         // GENERAR FIRMA DE INTEGRIDAD
         // ============================================
         
-        // Ahora wompiConfig.integrityKey existe ✅
         const integrityKey = wompiConfig.integrityKey;
-        const cadena = `${reference}${amount_in_cents}${currency}${integrityKey}`;
+        
+        if (!integrityKey) {
+            console.error('❌ WOMPI_INTEGRITY_SECRET no está configurado');
+            return res.status(500).json({
+                success: false,
+                error: 'Configuración de Wompi incompleta'
+            });
+        }
+        
+        const cadena = `${reference}${amount}${currency}${integrityKey}`;
         const signature = crypto.createHash('sha256').update(cadena).digest('hex');
 
-        console.log('🔐 Cadena:', cadena);
-        console.log('🔐 Firma generada:', signature);
+        console.log('🔐 Generando firma:');
+        console.log('   Referencia:', reference);
+        console.log('   Monto:', amount);
+        console.log('   Moneda:', currency);
+        console.log('   Firma:', signature);
 
         // ============================================
         // PREPARAR PAYLOAD PARA WOMPI
@@ -160,35 +240,38 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
         
         const wompiPayload = {
             acceptance_token,
-            amount_in_cents: parseInt(amount_in_cents),
+            amount_in_cents: amount,
             currency,
             customer_email,
             payment_method: {
                 type: 'PSE',
-                user_type: payment_method.user_type || '0',
-                user_legal_id_type: payment_method.user_legal_id_type || 'CC',
+                user_type: payment_method.user_type.toString(),
+                user_legal_id_type: payment_method.user_legal_id_type,
                 user_legal_id: payment_method.user_legal_id,
                 financial_institution_code: payment_method.financial_institution_code,
                 payment_description: payment_method.payment_description || 'Compra en línea'
             },
             redirect_url: redirect_url || wompiConfig.redirectUrl,
-            reference,
+            reference: reference,
             customer_data: customer_data || {
                 phone_number: '',
-                full_name: ''
+                full_name: customer_email.split('@')[0]
             },
             signature: {
                 integrity: signature
             }
         };
 
-        console.log('📤 Enviando a Wompi:', JSON.stringify(wompiPayload, null, 2));
+        console.log('📤 Payload para Wompi:', JSON.stringify(wompiPayload, null, 2));
 
         // ============================================
         // CREAR TRANSACCIÓN EN WOMPI
         // ============================================
         
-        const wompiResponse = await fetch(`${wompiConfig.apiUrl}/transactions`, {
+        const wompiUrl = `${wompiConfig.apiUrl}/transactions`;
+        console.log('🌐 URL Wompi:', wompiUrl);
+        
+        const wompiResponse = await fetch(wompiUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${wompiConfig.publicKey}`,
@@ -199,25 +282,44 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
 
         const responseData = await wompiResponse.json();
 
-        console.log('📥 Respuesta de Wompi:', JSON.stringify(responseData, null, 2));
-        console.log('📊 Status Code:', wompiResponse.status);
+        console.log('📥 Respuesta Wompi:');
+        console.log('   Status:', wompiResponse.status);
+        console.log('   Data:', JSON.stringify(responseData, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
         // ============================================
-        // MANEJAR RESPUESTA DE WOMPI
+        // MANEJAR RESPUESTA
         // ============================================
         
         if (!wompiResponse.ok) {
-            console.error('❌ Error de Wompi:', responseData);
+            console.error('❌ ERROR DE WOMPI:', responseData);
+            
+            let errorMessage = 'Error al crear transacción';
+            let errorDetails = [];
+            
+            if (responseData.error) {
+                errorMessage = responseData.error.type || responseData.error.reason || errorMessage;
+                
+                if (responseData.error.messages) {
+                    errorDetails = Object.values(responseData.error.messages).flat();
+                } else if (responseData.error.messages_list) {
+                    errorDetails = responseData.error.messages_list;
+                }
+            }
+            
             return res.status(wompiResponse.status).json({
                 success: false,
-                error: responseData.error?.type || 'Error al crear transacción',
-                message: responseData.error?.messages_list || responseData.error?.reason,
-                details: responseData
+                error: errorMessage,
+                details: errorDetails,
+                rawError: responseData
             });
         }
 
-        // Respuesta exitosa
-        console.log('✅ Transacción creada exitosamente');
+        // ============================================
+        // RESPUESTA EXITOSA
+        // ============================================
+        
+        console.log('✅ TRANSACCIÓN CREADA');
         
         res.json({
             success: true,
@@ -229,8 +331,8 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error creando transacción PSE:', error);
-        console.error('Stack trace:', error.stack);
+        console.error('❌ Error creando transacción:', error);
+        console.error('Stack:', error.stack);
         
         res.status(500).json({
             success: false,
@@ -238,6 +340,92 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
             message: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// ============================================
+// 5. ENDPOINT: Consultar transacción
+// ============================================
+router.get('/transaccion/:transactionId', verificarConfigWompi, async (req, res) => {
+    try {
+        const { transactionId } = req.params;
+        
+        console.log('🔍 Consultando transacción:', transactionId);
+        
+        const response = await fetch(`${wompiConfig.apiUrl}/transactions/${transactionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${wompiConfig.publicKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        
+        res.json({
+            success: true,
+            data: data.data
+        });
+
+    } catch (error) {
+        console.error('❌ Error consultando transacción:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al consultar transacción',
+            message: error.message
+        });
+    }
+});
+
+// ============================================
+// 6. ENDPOINT: Webhook de Wompi
+// ============================================
+router.post('/webhook', async (req, res) => {
+    try {
+        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔔 WEBHOOK RECIBIDO');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        const signature = req.headers['x-signature'];
+        const event = req.body;
+        
+        console.log('📋 Signature:', signature);
+        console.log('📦 Event:', JSON.stringify(event, null, 2));
+        
+        // Validar firma si existe
+        if (wompiConfig.eventSecret && signature) {
+            const isValid = wompiConfig.validateWebhookSignature(signature, event);
+            
+            if (!isValid) {
+                console.error('❌ Firma inválida');
+                return res.status(401).json({ success: false, error: 'Firma inválida' });
+            }
+            
+            console.log('✅ Firma válida');
+        }
+        
+        // Procesar evento
+        if (event.event === 'transaction.updated') {
+            const transaction = event.data.transaction;
+            console.log('📊 Transacción actualizada:');
+            console.log('   ID:', transaction.id);
+            console.log('   Estado:', transaction.status);
+            console.log('   Referencia:', transaction.reference);
+            
+            // TODO: Actualizar base de datos aquí
+        }
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        
+        res.status(200).json({ received: true });
+        
+    } catch (error) {
+        console.error('❌ Error en webhook:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
