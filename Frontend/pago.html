@@ -7,149 +7,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
       <script type="module">
-        // Determinar la URL base automáticamente
-        const isProduction = window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost';
-        const BASE_URL = isProduction 
-            ? 'https://tu-backend.onrender.com'  // Reemplaza con tu URL de Render
-            : 'http://127.0.0.1:3000';
+         import { CONFIG, UTILS, getAPI_BASE_URL } from './js/config.js';
 
-        // Configuración dinámica
-        window.CONFIG = {
-            api: {
-                baseUrl: BASE_URL
-            }
-        };
+       // Hacer disponible globalmente
+        window.CONFIG = CONFIG;
+        window.UTILS = UTILS;
+        window.API_BASE_URL = getAPI_BASE_URL();
+
+        console.log('✅CONFIG cargado en pago.html');
+        console.log('🌐 API URL:', CONFIG.api.baseUrl);
+        console.log('📍 Hostname:', window.location.hostname);  
         
-        console.log('✅ CONFIG cargado en pago.html');
-        console.log('🌐 API URL:', window.CONFIG.api.baseUrl);
-        console.log('📍 Hostname:', window.location.hostname);
+        window.dispatchEvent(new CustomEvent('configLoaded', { 
+            detail: { config: CONFIG } 
+        }));
         
-        window.dispatchEvent(new CustomEvent('configLoaded'));
-    </script>
-</head>
+        </script>
 
-     <!-- Tu HTML de la página de pago -->
+
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script de Wompi -->
-    <script src="https://checkout.wompi.co/widget.js"></script>
-    
-        <script>
-        // ✅ Función fetchAPI (igual que en index.html)
-        async function fetchAPI(endpoint, options = {}) {
-            if (!window.CONFIG?.api?.baseUrl) {
-                await new Promise(resolve => {
-                    window.addEventListener('configLoaded', resolve, { once: true });
-                });
-            }
-            
-            const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-            console.log('🌐 Fetch:', url);
-            
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options?.headers
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            return await response.json();
-        }
-        
-        // Tu código de pago aquí...
-    </script>
-    <body>
-          <!-- Tu HTML de la página de pago -->
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script de Wompi -->
-    <script src="https://checkout.wompi.co/widget.js"></script>
-    
-    <script>
-        // ✅ Función fetchAPI mejorada
-        async function fetchAPI(endpoint, options = {}) {
-            if (!window.CONFIG?.api?.baseUrl) {
-                await new Promise(resolve => {
-                    window.addEventListener('configLoaded', resolve, { once: true });
-                });
-            }
-            
-            const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-            console.log('🌐 Fetching:', url);
-            
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options?.headers
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('❌ Error en fetchAPI:', error);
-                throw error;
-            }
-        }
-
-        // Función para obtener parámetros de URL
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        // Cargar datos al iniciar la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 Iniciando página de pago...');
-            
-            try {
-                // Obtener amount de la URL
-                const amount = getQueryParam('amount');
-                if (amount) {
-                    document.getElementById('displayAmount').textContent = 
-                        parseInt(amount).toLocaleString();
-                }
-
-                // Mostrar formulario
-                document.getElementById('paymentForm').style.display = 'block';
-
-                // Cargar bancos
-                await cargarBancos();
-
-                // Cargar resumen de productos si existe en localStorage
-                cargarResumenProductos();
-
-            } catch (error) {
-                console.error('Error inicializando página:', error);
-                mostrarError('Error al cargar la página: ' + error.message);
-            }
-        });
-
-        function mostrarError(mensaje) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = mensaje;
-            errorDiv.classList.add('active');
-        }
-
-        function volverAlCarrito() {
-            // Redirigir al carrito o página principal
-            window.location.href = window.CONFIG.api.baseUrl;
-        }
-    </script>
-
-    <style>
+  <style>
+        /* ... tus estilos ... */
         * {
             margin: 0;
             padding: 0;
@@ -186,26 +64,11 @@
             margin-bottom: 10px;
         }
 
-        .logo h1 i {
-            margin-right: 10px;
-        }
-
-        .logo p {
-            color: #666;
-            font-size: 14px;
-        }
-
         .resumen-compra {
             background: #f8f9fa;
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 25px;
-        }
-
-        .resumen-compra h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
         }
 
         .item-compra {
@@ -235,16 +98,9 @@
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
         }
 
-        .amount-display h3 {
-            font-size: 16px;
-            margin-bottom: 10px;
-            opacity: 0.9;
-        }
-
         .amount-display .amount {
             font-size: 42px;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .form-group {
@@ -256,12 +112,6 @@
             margin-bottom: 8px;
             color: #333;
             font-weight: 600;
-            font-size: 14px;
-        }
-
-        label i {
-            margin-right: 5px;
-            color: #2ecc71;
         }
 
         input, select {
@@ -270,13 +120,6 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #2ecc71;
-            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
         }
 
         .btn {
@@ -289,28 +132,11 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
             margin-top: 10px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
         }
 
         .btn-secondary {
             background: #95a5a6;
-            margin-top: 10px;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
         }
 
         .loading {
@@ -345,7 +171,6 @@
             border-radius: 8px;
             margin-bottom: 20px;
             display: none;
-            font-size: 14px;
         }
 
         .error-message.active {
@@ -360,30 +185,6 @@
             font-size: 13px;
             color: #2e7d32;
             border-left: 4px solid #2ecc71;
-        }
-
-        .info-box strong {
-            color: #1b5e20;
-        }
-
-        .security-badge {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .security-badge i {
-            color: #2ecc71;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .security-badge p {
-            color: #666;
-            font-size: 12px;
-            margin-top: 5px;
         }
     </style>
 </head>
@@ -403,7 +204,7 @@
 
         <div class="info-box">
             <strong><i class="fas fa-info-circle"></i> Modo de prueba:</strong> 
-            Estás usando llaves de prueba de Wompi. Los pagos no son reales.
+            Estás usando llaves de prueba de Wompi.
         </div>
 
         <!-- Resumen de productos -->
@@ -477,14 +278,211 @@
                 Serás redirigido al banco en un momento
             </p>
         </div>
-
-        <div class="security-badge">
-            <i class="fas fa-shield-halved"></i>
-            <p><strong>Pago 100% seguro</strong></p>
-            <p>Tu información está protegida con encriptación SSL</p>
-        </div>
     </div>
 
+    
+    <!-- ========================================
+     SCRIPTS 
+    ======================================== -->
+
+     <!-- HTML de la página de pago -->
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de Wompi -->
+    <script src="https://checkout.wompi.co/widget.js"></script>
+    
+
+    <!-- 3. ✅ SCRIPT INLINE - Funciones auxiliares y setup -->
+    <script>
+        // ============================================
+        // FUNCIÓN FETCHAPI - ÚNICA Y MEJORADA
+        // ============================================
+        async function fetchAPI(endpoint, options = {}) {
+            // Esperar CONFIG con timeout
+            if (!window.CONFIG?.api?.baseUrl) {
+                console.log('⏳ Esperando CONFIG...');
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.error('❌ Timeout esperando CONFIG');
+                        resolve();
+                    }, 5000);
+                    
+                    window.addEventListener('configLoaded', () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    }, { once: true });
+                });
+            }
+            
+            if (!window.CONFIG?.api?.baseUrl) {
+                throw new Error('CONFIG no disponible');
+            }
+            
+            const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
+            console.log('🌐 Fetching:', url);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options?.headers
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('❌ Error en fetchAPI:', error);
+                throw error;
+            }
+        }
+
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+        
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = mensaje;
+            errorDiv.classList.add('active');
+            
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 8000);
+        }
+
+        function volverAlCarrito() {
+            if (confirm('¿Deseas volver al carrito?')) {
+                window.location.href = window.CONFIG?.api?.baseUrl || '/';
+            }
+        }
+
+        // ============================================
+        // CARGAR RESUMEN DE PRODUCTOS
+        // ============================================
+        function cargarResumenProductos() {
+            try {
+                const compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
+                
+                if (!compraInfo || !compraInfo.items) {
+                    console.warn('⚠️ No hay información de compra');
+                    return;
+                }
+                
+                const container = document.getElementById('resumenProductos');
+                if (!container) return;
+                
+                const html = `
+                    <div class="resumen-compra">
+                        <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
+                        ${compraInfo.items.map(item => `
+                            <div class="item-compra">
+                                <span>${item.nombre} <small>(x${item.cantidad})</small></span>
+                                <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
+                            </div>
+                        `).join('')}
+                        <div class="item-compra">
+                            <span>TOTAL</span>
+                            <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+                // Actualizar display de monto
+                document.getElementById('displayAmount').textContent = 
+                    compraInfo.total.toLocaleString('es-CO');
+                
+            } catch (error) {
+                console.error('❌ Error cargando resumen:', error);
+            }
+        }
+
+        // ============================================
+        // CARGAR BANCOS PSE
+        // ============================================
+        async function cargarBancos() {
+            try {
+                console.log('🏦 Cargando bancos PSE...');
+                const data = await fetchAPI('/api/pagos/bancos-pse');
+                
+                const bankSelect = document.getElementById('bank');
+                
+                if (data.success && data.banks && data.banks.length > 0) {
+                    bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
+                    
+                    data.banks.forEach(bank => {
+                        const option = document.createElement('option');
+                        option.value = bank.financial_institution_code;
+                        option.textContent = bank.financial_institution_name;
+                        bankSelect.appendChild(option);
+                    });
+                    
+                    console.log(`✅ ${data.banks.length} bancos cargados`);
+                } else {
+                    throw new Error('No se recibieron bancos');
+                }
+            } catch (error) {
+                console.error('❌ Error cargando bancos:', error);
+                document.getElementById('bank').innerHTML = 
+                    '<option value="">Error cargando bancos</option>';
+                throw error;
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN AL CARGAR LA PÁGINA
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Iniciando página de pago...');
+            
+            try {
+                // 1. Verificar que existe información de compra
+                const compraInfo = localStorage.getItem('compra_pendiente');
+                if (!compraInfo) {
+                    mostrarError('No hay compra pendiente. Redirigiendo...');
+                    setTimeout(() => {
+                        window.location.href = window.CONFIG?.api?.baseUrl || '/';
+                    }, 2000);
+                    return;
+                }
+
+                // 2. Cargar resumen de productos
+                cargarResumenProductos();
+
+                // 3. Cargar bancos
+                await cargarBancos();
+
+                // 4. Prellenar email si existe
+                const compra = JSON.parse(compraInfo);
+                if (compra.userEmail) {
+                    document.getElementById('email').value = compra.userEmail;
+                }
+
+                // 5. Mostrar formulario
+                document.getElementById('paymentForm').style.display = 'block';
+
+                console.log('✅ Página de pago lista');
+
+            } catch (error) {
+                console.error('❌ Error inicializando página:', error);
+                mostrarError('Error al cargar la página: ' + error.message);
+            }
+        });
+    </script>
+    
+    <!-- 4. ✅ SCRIPT EXTERNO - Lógica de pago de wompi.js -->
     <script src="js/wompi.js"></script>
 </body>
 </html>
