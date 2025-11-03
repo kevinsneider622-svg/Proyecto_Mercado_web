@@ -1,14 +1,14 @@
 // ============================================
 // WOMPI.JS - FRONTEND (Lógica de Pago)
-// 100% Compatible con wompi.js Backend
+// Compatible con Backend PSE
 // ============================================
 
 // ============================================
 // VARIABLES GLOBALES
 // ============================================
 let wompiPublicKey = '';
-let wompiApiUrl = ''; // ✅ Nueva: URL de API de Wompi
-let wompiEnvironment = ''; // ✅ Nueva: sandbox o production
+let wompiApiUrl = '';
+let wompiEnvironment = '';
 let acceptanceToken = '';
 let compraInfo = null;
 
@@ -25,7 +25,7 @@ const legalIdInput = document.getElementById('legalId');
 // VERIFICAR QUE LOS ELEMENTOS EXISTAN
 // ============================================
 if (!form || !submitBtn || !loading) {
-    console.error('❌ Elementos del DOM no encontrados. Verifica que estés en pago.html');
+    console.error('❌ Elementos del DOM no encontrados');
 }
 
 // ============================================
@@ -35,18 +35,15 @@ async function loadWompiConfig() {
     try {
         console.log('🔑 Cargando configuración de Wompi...');
         
-        // Usar fetchAPI que ya está definida en pago.html
         const data = await fetchAPI('/api/pagos/config');
         
-        // ✅ Validar respuesta completa
         if (!data.publicKey) {
             throw new Error('No se recibió la llave pública');
         }
         
-        // ✅ Guardar todas las configuraciones del backend
         wompiPublicKey = data.publicKey;
-        wompiApiUrl = data.apiUrl || 'https://sandbox.wompi.co/v1'; // ✅ URL desde backend
-        wompiEnvironment = data.environment || 'sandbox'; // ✅ Entorno desde backend
+        wompiApiUrl = data.apiUrl || 'https://sandbox.wompi.co/v1';
+        wompiEnvironment = data.environment || 'sandbox';
         
         console.log('✅ Configuración de Wompi cargada:');
         console.log('   Public Key:', wompiPublicKey.substring(0, 20) + '...');
@@ -59,40 +56,29 @@ async function loadWompiConfig() {
         return true;
         
     } catch (error) {
-        console.error('❌ Error cargando configuración de Wompi:', error);
-        mostrarError('Error al inicializar el sistema de pagos. Verifica tu conexión.');
+        console.error('❌ Error cargando configuración:', error);
+        mostrarError('Error al inicializar el sistema de pagos.');
         return false;
     }
 }
 
 // ============================================
-// OBTENER TOKEN DE ACEPTACIÓN DE WOMPI
+// OBTENER TOKEN DE ACEPTACIÓN
 // ============================================
 async function getAcceptanceToken() {
     try {
-        console.log('📝 Obteniendo token de aceptación...');
+        console.log('📝 Obteniendo acceptance token...');
         
-        // ✅ Usar wompiApiUrl en lugar de URL hardcoded
-        const url = `${wompiApiUrl}/merchants/${wompiPublicKey}`;
-        console.log('🔗 URL de merchant:', url);
+        const data = await fetchAPI('/api/pagos/acceptance-token');
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Error ${response.status} al obtener token`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.data && data.data.presigned_acceptance) {
-            acceptanceToken = data.data.presigned_acceptance.acceptance_token;
-            console.log('✅ Token de aceptación obtenido');
+        if (data.success && data.acceptanceToken) {
+            acceptanceToken = data.acceptanceToken;
+            console.log('✅ Acceptance token obtenido');
         } else {
-            console.warn('⚠️  No se pudo obtener el token de aceptación');
+            console.warn('⚠️ No se pudo obtener acceptance token');
         }
     } catch (error) {
-        console.error('❌ Error obteniendo token de aceptación:', error);
-        // No es crítico, continuar sin él
+        console.error('❌ Error obteniendo acceptance token:', error);
     }
 }
 
@@ -105,15 +91,12 @@ function setupPaymentListeners() {
         return;
     }
     
-    // Enviar formulario
     form.addEventListener('submit', handlePaymentSubmit);
     
-    // Validación en tiempo real del email
     if (emailInput) {
         emailInput.addEventListener('blur', validateEmail);
     }
     
-    // Validación del documento (solo números)
     if (legalIdInput) {
         legalIdInput.addEventListener('input', validateLegalId);
     }
@@ -141,7 +124,6 @@ function validateEmail() {
 }
 
 function validateLegalId(e) {
-    // Solo permitir números
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 }
 
@@ -151,8 +133,9 @@ function validateLegalId(e) {
 async function handlePaymentSubmit(e) {
     e.preventDefault();
     
-    console.log('💳 Procesando pago...');
-    console.log('🔧 Entorno Wompi:', wompiEnvironment);
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💳 PROCESANDO PAGO PSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     // Validar formulario
     if (!form.checkValidity()) {
@@ -178,8 +161,11 @@ async function handlePaymentSubmit(e) {
         return;
     }
     
+    // Verificar acceptance token
     if (!acceptanceToken) {
-        console.warn('⚠️  No hay token de aceptación, continuando sin él');
+        console.error('❌ No hay acceptance token');
+        mostrarError('Error: No se pudo obtener el token de aceptación. Recarga la página.');
+        return;
     }
     
     // Mostrar loading
@@ -189,65 +175,118 @@ async function handlePaymentSubmit(e) {
         // Generar referencia única
         const reference = generateReference();
         
-        // ✅ Preparar datos de la transacción (formato compatible con backend)
+        // Obtener valores del formulario
+        const email = document.getElementById('email').value.trim();
+        const userType = document.getElementById('userType').value;
+        const legalIdType = document.getElementById('legalIdType').value;
+        const legalId = document.getElementById('legalId').value.trim();
+        const bankCode = document.getElementById('bank').value;
+        
+        // ✅ IMPORTANTE: Convertir a centavos
+        const amountInCents = Math.round(compraInfo.total * 100);
+        
+        console.log('📋 Datos del formulario:');
+        console.log('   Email:', email);
+        console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
+        console.log('   Tipo doc:', legalIdType);
+        console.log('   Num doc:', legalId);
+        console.log('   Banco:', bankCode);
+        console.log('   Monto:', compraInfo.total, 'COP');
+        console.log('   Monto centavos:', amountInCents);
+        console.log('   Referencia:', reference);
+        console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
+        
+        // ✅ Estructura correcta según la API de Wompi
         const transactionData = {
-            acceptance_token: acceptanceToken || '',
-            amount: compraInfo.total,
+            acceptance_token: acceptanceToken,
+            amount_in_cents: amountInCents,
             currency: 'COP',
-            customerEmail: document.getElementById('email').value.trim(),
+            customer_email: email,
+            payment_method: {
+                type: 'PSE',
+                user_type: userType,
+                user_legal_id_type: legalIdType,
+                user_legal_id: legalId,
+                financial_institution_code: bankCode,
+                payment_description: `Compra en SuperMarket - ${compraInfo.items?.length || 0} productos`
+            },
             reference: reference,
-            customerData: {
-                userType: document.getElementById('userType').value,
-                legalIdType: document.getElementById('legalIdType').value,
-                legalId: document.getElementById('legalId').value.trim(),
-                bankCode: document.getElementById('bank').value,
-                description: `Compra SuperMarket - ${compraInfo.items?.length || 0} producto(s)`
+            customer_data: {
+                phone_number: '',
+                full_name: email.split('@')[0]
             }
         };
         
-        console.log('📤 Enviando transacción:');
-        console.log('   Reference:', reference);
-        console.log('   Amount:', transactionData.amount);
-        console.log('   Currency:', transactionData.currency);
-        console.log('   Bank:', transactionData.customerData.bankCode);
-        console.log('   Acceptance Token:', acceptanceToken ? '✅' : '❌');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📤 ENVIANDO A BACKEND:');
+        console.log(JSON.stringify(transactionData, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
-        // Crear transacción en Wompi usando fetchAPI de pago.html
+        // Enviar al backend
         const result = await fetchAPI('/api/pagos/crear-transaccion', {
             method: 'POST',
             body: JSON.stringify(transactionData)
         });
         
-        console.log('📥 Respuesta del servidor:', result);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📥 RESPUESTA DEL BACKEND:');
+        console.log(JSON.stringify(result, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
-        if (result.success && result.data) {
-            const paymentUrl = result.data.data?.payment_method?.extra?.async_payment_url;
+        if (result.success) {
+            const paymentUrl = result.paymentUrl;
             
-            if (paymentUrl) {
-                // Guardar info de transacción
-                localStorage.setItem('transaction_id', result.data.data.id);
-                localStorage.setItem('transaction_reference', reference);
-                localStorage.setItem('transaction_status', 'PENDING');
-                
-                console.log('✅ Transacción creada exitosamente');
-                console.log('   ID:', result.data.data.id);
-                console.log('   Status:', result.data.data.status);
-                console.log('🔗 Redirigiendo al banco...');
-                
-                // Redirigir al banco después de 1 segundo
-                setTimeout(() => {
-                    window.location.href = paymentUrl;
-                }, 1000);
-            } else {
-                throw new Error('No se recibió URL de redirección del banco');
+            if (!paymentUrl) {
+                throw new Error('No se recibió URL de pago del banco');
             }
+            
+            // Guardar info de transacción
+            localStorage.setItem('transaction_id', result.transactionId);
+            localStorage.setItem('transaction_reference', reference);
+            localStorage.setItem('transaction_status', 'PENDING');
+            
+            console.log('✅ TRANSACCIÓN CREADA EXITOSAMENTE');
+            console.log('   ID:', result.transactionId);
+            console.log('   Status:', result.status);
+            console.log('   URL Pago:', paymentUrl);
+            console.log('🔗 Redirigiendo al banco en 2 segundos...');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            
+            // Mostrar mensaje de éxito
+            const loadingText = loading.querySelector('p');
+            if (loadingText) {
+                loadingText.innerHTML = '<strong>✅ Transacción creada!</strong><br>Redirigiendo al banco...';
+            }
+            
+            // Redirigir al banco
+            setTimeout(() => {
+                window.location.href = paymentUrl;
+            }, 2000);
+            
         } else {
             throw new Error(result.error || result.message || 'Error al procesar el pago');
         }
         
     } catch (error) {
-        console.error('❌ Error procesando pago:', error);
-        mostrarError(error.message || 'Error al procesar el pago. Por favor intenta nuevamente.');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ ERROR AL PROCESAR PAGO:');
+        console.error('   Mensaje:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        
+        let errorMessage = 'Error al procesar el pago. ';
+        
+        if (error.message.includes('400')) {
+            errorMessage += 'Verifica que todos los datos sean correctos.';
+        } else if (error.message.includes('401')) {
+            errorMessage += 'Error de autenticación con Wompi.';
+        } else if (error.message.includes('500')) {
+            errorMessage += 'Error del servidor. Intenta nuevamente.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        mostrarError(errorMessage);
         setLoading(false);
     }
 }
@@ -279,8 +318,7 @@ function setLoading(isLoading) {
     }
 }
 
-// Nota: mostrarError ya está definida en pago.html
-// Pero la redefinimos aquí por si acaso
+// Definir mostrarError si no existe
 if (typeof mostrarError === 'undefined') {
     window.mostrarError = function(mensaje) {
         const errorDiv = document.getElementById('errorMessage');
@@ -301,11 +339,10 @@ if (typeof mostrarError === 'undefined') {
 // ============================================
 (async function initWompiPayment() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎨 Wompi PSE Integration v4.0');
-    console.log('📦 Compatible con Backend wompi.js');
+    console.log('🎨 Wompi PSE Integration v5.0');
+    console.log('📦 Compatible con Backend PSE');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    // Esperar a que el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
@@ -314,36 +351,35 @@ if (typeof mostrarError === 'undefined') {
     
     async function init() {
         try {
-            console.log('🚀 Inicializando lógica de pago...');
+            console.log('🚀 Inicializando sistema de pago...');
             
-            // Esperar a que CONFIG esté listo con timeout
+            // Esperar CONFIG
             if (!window.CONFIG?.api?.baseUrl) {
                 console.log('⏳ Esperando CONFIG...');
                 await new Promise((resolve) => {
                     const timeout = setTimeout(() => {
-                        console.warn('⚠️  Timeout esperando CONFIG (5s)');
+                        console.warn('⚠️ Timeout esperando CONFIG');
                         resolve();
                     }, 5000);
                     
                     window.addEventListener('configLoaded', () => {
                         clearTimeout(timeout);
-                        console.log('✅ CONFIG recibido');
                         resolve();
                     }, { once: true });
                 });
             }
             
             if (!window.CONFIG?.api?.baseUrl) {
-                throw new Error('CONFIG no disponible después de timeout');
+                throw new Error('CONFIG no disponible');
             }
             
-            console.log('✅ CONFIG disponible:', window.CONFIG.api.baseUrl);
+            console.log('✅ CONFIG disponible');
             
             // Cargar configuración de Wompi
             const configLoaded = await loadWompiConfig();
             
             if (!configLoaded) {
-                throw new Error('No se pudo cargar configuración de Wompi');
+                throw new Error('Error cargando configuración de Wompi');
             }
             
             // Configurar event listeners
@@ -355,9 +391,9 @@ if (typeof mostrarError === 'undefined') {
             
         } catch (error) {
             console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.error('❌ Error inicializando lógica de pago:', error);
+            console.error('❌ Error inicializando:', error);
             console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            mostrarError('Error al inicializar el sistema de pagos: ' + error.message);
+            mostrarError('Error al inicializar: ' + error.message);
         }
     }
 })();
