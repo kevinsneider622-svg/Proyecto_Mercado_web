@@ -1024,15 +1024,55 @@ function procesarCompra() {
 
 // Nueva función para ir a la página de pago
 function irAPaginaPago() {
-    const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
-    
-    if (!compra) {
-        showToast('Error: No hay información de compra', 'danger');
-        return;
+     
+    try {
+        // 1. Validar compra
+        const compra = JSON.parse(localStorage.getItem('compra_pendiente'));
+        
+        if (!compra || !compra.items || compra.items.length === 0) {
+            showToast('Error: No hay información de compra', 'danger');
+            return;
+        }
+        
+        // 2. Validar que hay usuario
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showToast('Debes iniciar sesión para continuar', 'warning');
+            mostrarFormularioLogin();
+            return;
+        }
+        
+        // 3. Determinar URL base
+        let baseUrl;
+        
+        // Prioridad 1: CONFIG
+        if (window.CONFIG?.api?.baseUrl) {
+            baseUrl = window.CONFIG.api.baseUrl;
+        }
+        // Prioridad 2: window.location.origin (automático)
+        else {
+            baseUrl = window.location.origin;
+        }
+        
+        // 4. Construir URL de pago
+        const pagoUrl = `${baseUrl}/pago.html`;
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔗 Redirigiendo a página de pago');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Base URL:', baseUrl);
+        console.log('Pago URL:', pagoUrl);
+        console.log('Hostname:', window.location.hostname);
+        console.log('Total compra:', compra.total);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // 5. Redirigir
+        window.location.href = pagoUrl;
+        
+    } catch (error) {
+        console.error('❌ Error al ir a página de pago:', error);
+        showToast('Error al procesar la compra', 'danger');
     }
-    
-    // Redirigir a la página de pago
-    window.location.href = 'http://127.0.0.1:3000/pago.html';
 }
 
 // Función para cargar datos en la página de pago (usar en pago.html)
