@@ -3,9 +3,12 @@
 // Compatible con Render, Vercel y Local
 // ============================================
 
+import crypto from 'crypto';
+
 // Cargar dotenv solo en desarrollo
 if (process.env.NODE_ENV !== 'production') {
-  await import('dotenv/config');
+  const dotenv = await import ('dotenv');
+  dotenv.config();
 }
 
 // ============================================
@@ -78,7 +81,47 @@ const wompiConfig = {
   environment: process.env.WOMPI_ENV || 'sandbox',
   isProduction,
   isRender,
-  isVercel
+  isVercel,
+
+  // MÉTODOS AUXILIARES
+
+  // Verificar que la configuración está completa
+
+  isConfigured() {
+    return !!(
+      this.publicKey && 
+      this.privateKey && 
+      this.eventSecret && 
+      this.integritySecret
+    );
+  },
+
+  // Obtener headers para requests a Wompi
+
+  getHeaders() {
+    return {
+      'Authorization': `Bearer ${this.privateKey}`,
+      'Content-Type': 'application/json'
+    };
+  },
+
+
+  // Validar webhook signature
+
+  validateWebhookSignature(signature, payload) {
+    const hash = crypto
+      .createHmac('sha256', this.eventSecret)
+      .update(JSON.stringify(payload))
+      .digest('hex');
+    return hash === signature;
+  },
+
+ // Generar signature para integridad de transacciones
+
+  generateIntegritySignature(reference, amountInCents, currency) {
+    const cadena = `${reference}${amountInCents}${currency}${this.integritySecret}`;
+    return crypto.createHash('sha256').update(cadena).digest('hex');
+  }
 };
 
 // ============================================
@@ -187,61 +230,18 @@ if (missingVars.length === 0) {
   
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
-
 // ============================================
-// FUNCIONES AUXILIARES
+// EXPORTAR CONFIGURACIÓN Y FUNCIONES
 // ============================================
 
-/**
- * Verificar que la configuración está completa
- */
-wompiConfig.isConfigured = function() {
-  return !!(
-    this.publicKey && 
-    this.privateKey && 
-    this.eventSecret && 
-    this.integritySecret
-  );
-};
-
-/**
- * Obtener headers para requests a Wompi
- */
-wompiConfig.getHeaders = function() {
-  return {
-    'Authorization': `Bearer ${this.privateKey}`,
-    'Content-Type': 'application/json'
-  };
-};
-
-/**
- * Validar webhook signature
- */
-wompiConfig.validateWebhookSignature = function(signature, payload) {
-  const crypto = require('crypto');
-  const hash = crypto
-    .createHmac('sha256', this.eventSecret)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-  
-  return hash === signature;
-};
-
-/**
- * Generar signature para integridad de transacciones
- */
-import crypto from 'crypto';
-
+// Exportar función standalone para uso directo
 export const generateIntegritySignature = (reference, amountInCents, currency, integrityKey) => {
   const cadena = `${reference}${amountInCents}${currency}${integrityKey}`;
   return crypto.createHash('sha256').update(cadena).digest('hex');
 };
 
-// ============================================
-// EXPORTAR CONFIGURACIÓN
-// ============================================
-
+// Export default
 export default wompiConfig;
 
-// También exportar como CommonJS para compatibilidad
+// También exportar como named export para compatibilidad
 export const config = wompiConfig;

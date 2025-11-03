@@ -8,13 +8,13 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Importar rutas
-import pagosRoutes from './routes/pagos.js';
-import productosRoutes from './routes/productos.js';
-
 // Configurar __dirname para ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Importar rutas
+import pagosRoutes from './routes/pagos.js';
+import productosRoutes from './routes/productos.js';
 
 // Crear app de Express
 const app = express();
@@ -47,16 +47,16 @@ const corsOptions = {
             return callback(null, true);
         }
         
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.warn('⚠️  CORS bloqueado para origen:', origin);
-            callback(null, false);
+            callback(null, isProduction);
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
@@ -74,6 +74,9 @@ if (!isProduction) {
     app.use((req, res, next) => {
         const timestamp = new Date().toISOString();
         console.log(`[${timestamp}] ${req.method} ${req.path}`);
+        if (req.body && Object.keys(req.body).length > 0) {
+            console.log('   Body:', JSON.stringify(req.body, null, 2));
+        }
         next();
     });
 }
@@ -91,17 +94,23 @@ app.use((req, res, next) => {
 // ============================================
 
 // Servir carpeta de uploads (imágenes de productos)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-    maxAge: '1d', // Cache de 1 día en producción
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+    maxAge: isProduction ? '1d' : '0',
     etag: true
 }));
 
 // Servir frontend
-app.use(express.static(path.join(__dirname, '../frontend'), {
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath, {
     maxAge: isProduction ? '1h' : '0',
     etag: true,
     index: 'index.html'
 }));
+
+console.log('📁 Rutas de archivos estáticos:');
+console.log('   Uploads:', uploadsPath);
+console.log('   Frontend:', frontendPath);
 
 // ============================================
 // HEALTH CHECK
@@ -119,9 +128,11 @@ app.get('/health', (req, res) => {
         memory: {
             used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
             total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
-        }
+        },
+
+        wompiConfigured: !!(process.env.WOMPI_PUBLIC_KEY && process.env.WOMPI_INTEGRITY_SECRET)
     };
-    
+       
     res.status(200).json(healthCheck);
 });
 
@@ -135,26 +146,24 @@ app.use('/api/productos', productosRoutes);
 // Rutas de pagos Wompi
 app.use('/api/pagos', pagosRoutes);
 
-// TODO: Agregar más rutas aquí
-// app.use('/api/auth', authRoutes);
-// app.use('/api/usuarios', usuariosRoutes);
-// app.use('/api/pedidos', pedidosRoutes);
-
 // ============================================
 // RUTA PRINCIPAL (SPA)
 // ============================================
 
 // Catch-all para servir index.html en cualquier ruta no API
-app.get('*', (req, res) => {
-    // Si la ruta empieza con /api, no servir el HTML
+app.get('*', (req, res, next) => {
+    // Si la ruta empieza con /api, pasar al siguiente handler
     if (req.path.startsWith('/api')) {
-        return res.status(404).json({
-            success: false,
-            error: 'Ruta API no encontrada'
-        });
+        return next();
     }
     
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+    // Servir index.html para todas las demás rutas (SPA)
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+        if (err) {
+            console.error('Error sirviendo index.html:', err);
+            res.status(500).send('Error al cargar la aplicación');
+        }
+    });
 });
 
 // ============================================
@@ -175,6 +184,7 @@ app.use((err, req, res, next) => {
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error('❌ ERROR NO MANEJADO:');
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Timestamp:', new Date().toISOString());
     console.error('Ruta:', req.method, req.path);
     console.error('Error:', err.message);
     console.error('Stack:', err.stack);
@@ -187,49 +197,11 @@ app.use((err, req, res, next) => {
         error: isProduction ? 'Error interno del servidor' : err.message,
         ...((!isProduction) && { 
             stack: err.stack,
-            details: err 
+            details: err.toString() 
         })
     });
 });
 
-// ============================================
-// MANEJO DE SEÑALES DE CIERRE
-// ============================================
-
-process.on('SIGTERM', () => {
-    console.log('\n⚠️  SIGTERM recibido. Cerrando servidor gracefully...');
-    server.close(() => {
-        console.log('✅ Servidor cerrado correctamente');
-        process.exit(0);
-    });
-});
-
-process.on('SIGINT', () => {
-    console.log('\n⚠️  SIGINT recibido. Cerrando servidor...');
-    server.close(() => {
-        console.log('✅ Servidor cerrado correctamente');
-        process.exit(0);
-    });
-});
-
-// Manejar errores no capturados
-process.on('uncaughtException', (error) => {
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('💥 UNCAUGHT EXCEPTION:');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error(error);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('💥 UNHANDLED REJECTION:');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('Razón:', reason);
-    console.error('Promesa:', promise);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-});
 
 // ============================================
 // INICIAR SERVIDOR
@@ -271,26 +243,95 @@ const server = app.listen(PORT, () => {
     console.log('   GET    /api/pagos/config');
     console.log('   GET    /api/pagos/bancos-pse');
     console.log('   POST   /api/pagos/crear-transaccion');
-    console.log('   POST   /api/pagos/webhook');
     console.log('   GET    /api/pagos/transaccion/:id');
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    // Warnings importantes
-    if (!isProduction) {
-        console.log('⚠️  MODO DESARROLLO - Logs detallados activados');
-    }
+    // Validaciones de configuración
+    const warnings = [];
     
     if (!process.env.WOMPI_PUBLIC_KEY) {
-        console.log('⚠️  WARNING: WOMPI_PUBLIC_KEY no configurado');
+        warnings.push('WOMPI_PUBLIC_KEY no configurado');
     }
     
     if (!process.env.WOMPI_PRIVATE_KEY) {
-        console.log('⚠️  WARNING: WOMPI_PRIVATE_KEY no configurado');
+        warnings.push('WOMPI_PRIVATE_KEY no configurado');
     }
     
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    console.log('✅ Servidor listo para recibir peticiones\n');
+    if (!process.env.WOMPI_INTEGRITY_SECRET) {
+        warnings.push('WOMPI_INTEGRITY_SECRET no configurado');
+    }
+    
+    if (!process.env.WOMPI_EVENT_SECRET) {
+        warnings.push('WOMPI_EVENT_SECRET no configurado');
+    }
+    
+    if (warnings.length > 0) {
+        console.log('⚠️  ADVERTENCIAS:');
+        warnings.forEach(warning => console.log(`   - ${warning}`));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+    
+    // Info de modo
+    if (!isProduction) {
+        console.log('⚠️  MODO DESARROLLO - Logs detallados activados');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+    
+    console.log('\n✅ Servidor listo para recibir peticiones\n');
+});
+
+
+// ============================================
+// MANEJO DE SEÑALES DE CIERRE
+// ============================================
+
+const gracefulShutdown = (signal) => {
+    console.log(`\n⚠️  ${signal} recibido. Cerrando servidor gracefully...`);
+    
+    server.close(() => {
+        console.log('✅ Servidor cerrado correctamente');
+        process.exit(0);
+    });
+    
+    // Forzar cierre después de 10 segundos
+    setTimeout(() => {
+        console.error('❌ No se pudo cerrar el servidor gracefully, forzando cierre...');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Manejar errores no capturados
+process.on('uncaughtException', (error) => {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('💥 UNCAUGHT EXCEPTION:');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
+    // En producción, intentar cerrar gracefully
+    if (isProduction) {
+        gracefulShutdown('UNCAUGHT_EXCEPTION');
+    } else {
+        // En desarrollo, solo loggear
+        console.error('⚠️  Servidor continúa ejecutándose en modo desarrollo\n');
+    }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('💥 UNHANDLED REJECTION:');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Razón:', reason);
+    console.error('Promesa:', promise);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
+    // No cerrar el servidor por promesas rechazadas, solo loggear
+    console.error('⚠️  Servidor continúa ejecutándose\n');
 });
 
 // ============================================
