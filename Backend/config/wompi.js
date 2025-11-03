@@ -230,14 +230,11 @@ wompiConfig.validateWebhookSignature = function(signature, payload) {
 /**
  * Generar signature para integridad de transacciones
  */
-wompiConfig.generateIntegritySignature = function(reference, amountInCents) {
-  const crypto = require('crypto');
-  const message = `${reference}${amountInCents}COP${this.integritySecret}`;
-  
-  return crypto
-    .createHash('sha256')
-    .update(message)
-    .digest('hex');
+import crypto from 'crypto';
+
+export const generateIntegritySignature = (reference, amountInCents, currency, integrityKey) => {
+  const cadena = `${reference}${amountInCents}${currency}${integrityKey}`;
+  return crypto.createHash('sha256').update(cadena).digest('hex');
 };
 
 // ============================================
