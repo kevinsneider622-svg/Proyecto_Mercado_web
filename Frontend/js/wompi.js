@@ -184,6 +184,15 @@ async function handlePaymentSubmit(e) {
         
         // ✅ IMPORTANTE: Convertir a centavos
         const amountInCents = Math.round(compraInfo.total * 100);
+
+        // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
+        if (amountInCents < 150000) {
+            mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
+            setLoading(false);
+        return;
+        }    
+
+        
         
         console.log('📋 Datos del formulario:');
         console.log('   Email:', email);
@@ -195,6 +204,8 @@ async function handlePaymentSubmit(e) {
         console.log('   Monto centavos:', amountInCents);
         console.log('   Referencia:', reference);
         console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
+
+        const reference = generateReference();
         
         // ✅ Estructura correcta según la API de Wompi
         const transactionData = {
@@ -212,7 +223,7 @@ async function handlePaymentSubmit(e) {
             },
             reference: reference,
             customer_data: {
-                phone_number: '',
+                phone_number: '3001234567',
                 full_name: email.split('@')[0]
             }
         };
