@@ -98,11 +98,6 @@
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
         }
 
-              <div id="montoMinimo" class="info-box" style="display: none; background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">
-        <i class="fas fa-exclamation-triangle"></i> 
-        <strong>Monto insuficiente:</strong> El monto mínimo para PSE es $1,500 COP. 
-        Tu compra actual es de $<span id="montoActual">0</span> COP.
-    </div>
 
         .amount-display .amount {
             font-size: 42px;
@@ -209,6 +204,13 @@
         <div class="error-message" id="errorMessage"></div>
 
         
+        <div id="montoMinimo" class="info-box" style="display: none; background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">
+        <i class="fas fa-exclamation-triangle"></i> 
+        <strong>Monto insuficiente:</strong> El monto mínimo para PSE es $1,500 COP. 
+        Tu compra actual es de $<span id="montoActual">0</span> COP.
+        </div>
+
+       
         <!-- Resumen de productos -->
         <div id="resumenProductos"></div>
 
@@ -434,25 +436,37 @@ function volverAlCarrito() {
 // ============================================
 // CARGAR RESUMEN DE PRODUCTOS
 // ============================================
+
 function cargarResumenProductos() {
     try {
         const compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
         
-    if (compraInfo.total < 1500) {
-        const alerta = document.getElementById('montoMinimo');
-        if (alerta) {
-            document.getElementById('montoActual').textContent = compraInfo.total.toLocaleString('es-CO');
-            alerta.style.display = 'block';
+        if (!compraInfo || !compraInfo.items) {
+            console.warn('⚠️ No hay información de compra');
+            return false;
         }
         
-        // Deshabilitar botón de pago
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-ban"></i> Monto insuficiente (mínimo $1,500)';
+        const container = document.getElementById('resumenProductos');
+        if (!container) {
+            console.error('❌ Container resumenProductos no encontrado');
+            return false;
         }
-    }
-}
+        
+        // ✅ Validar monto mínimo
+        if (compraInfo.total < 1500) {
+            const alerta = document.getElementById('montoMinimo');
+            if (alerta) {
+                document.getElementById('montoActual').textContent = compraInfo.total.toLocaleString('es-CO');
+                alerta.style.display = 'block';
+            }
+            
+            // Deshabilitar botón de pago
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-ban"></i> Monto insuficiente (mínimo $1,500)';
+            }
+        }
         
         const html = `
             <div class="resumen-compra">
@@ -489,7 +503,6 @@ function cargarResumenProductos() {
         return false;
     }
 }
-
 // ============================================
 // CARGAR BANCOS PSE
 // ============================================
