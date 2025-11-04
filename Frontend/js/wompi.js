@@ -192,7 +192,8 @@ async function handlePaymentSubmit(e) {
         return;
         }    
 
-        
+        // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
+        const reference = generateReference();
         
         console.log('📋 Datos del formulario:');
         console.log('   Email:', email);
@@ -204,8 +205,6 @@ async function handlePaymentSubmit(e) {
         console.log('   Monto centavos:', amountInCents);
         console.log('   Referencia:', reference);
         console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
-
-        const reference = generateReference();
         
         // ✅ Estructura correcta según la API de Wompi
         const transactionData = {
@@ -219,7 +218,7 @@ async function handlePaymentSubmit(e) {
                 user_legal_id_type: legalIdType,
                 user_legal_id: legalId,
                 financial_institution_code: bankCode,
-                payment_description: `Compra en SuperMarket - ${compraInfo.items?.length || 0} productos`
+                payment_description: `Compra en Tu Despensa Online - ${compraInfo.items?.length || 0} productos`
             },
             reference: reference,
             customer_data: {
