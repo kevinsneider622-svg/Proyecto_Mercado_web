@@ -211,6 +211,24 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
             });
         }
 
+
+        // ✅ AGREGAR: Validar monto mínimo de Wompi
+        if (amount < 150000) {  // 1,500 COP en centavos
+            return res.status(400).json({
+                success: false,
+                error: 'El monto mínimo para PSE es $1,500 COP',
+                details: [`Monto recibido: $${(amount / 100).toLocaleString('es-CO')} COP`]
+            });
+        }
+        
+
+console.log('✅ Validación de monto:');
+console.log('   Centavos recibidos:', amount);
+console.log('   Pesos:', amount / 100);
+console.log('   Mínimo requerido: 150,000 centavos (1,500 COP)');
+console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
+        
+
         // ============================================
         // GENERAR FIRMA DE INTEGRIDAD
         // ============================================
