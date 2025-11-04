@@ -253,13 +253,12 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
             },
             redirect_url: redirect_url || wompiConfig.redirectUrl,
             reference: reference,
-            customer_data: customer_data || {
-                phone_number: '',
-                full_name: customer_email.split('@')[0]
+            customer_data: {
+                phone_number: customer_data?.phone_number || '3001234567',
+                full_name: customer_data?.full_name || customer_email.split('@')[0]
             },
-            signature: {
-                integrity: signature
-            }
+            
+            signature: signature
         };
 
         console.log('📤 Payload para Wompi:', JSON.stringify(wompiPayload, null, 2));
