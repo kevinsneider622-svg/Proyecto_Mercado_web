@@ -291,34 +291,52 @@
 
     <!-- 3. ✅ SCRIPT INLINE - Funciones auxiliares y setup -->
 
+<!-- Reemplaza solo la sección de scripts desde aquí -->
 <script>
+
 // ============================================
-// FUNCIÓN FETCHAPI - MEJORADA CON MEJOR MANEJO DE ERRORES
+// FUNCIÓN FETCHAPI - VERSION FINAL
 // ============================================
 async function fetchAPI(endpoint, options = {}) {
-    // Esperar CONFIG con timeout
+    // Esperar a que CONFIG esté disponible
     if (!window.CONFIG?.api?.baseUrl) {
         console.log('⏳ Esperando CONFIG...');
+        
         await new Promise((resolve) => {
+            if (window.CONFIG?.api?.baseUrl) {
+                resolve();
+                return;
+            }
+            
             const timeout = setTimeout(() => {
-                console.error('❌ Timeout esperando CONFIG');
+                console.warn('⚠️ Timeout esperando CONFIG (5s)');
                 resolve();
             }, 5000);
             
             window.addEventListener('configLoaded', () => {
                 clearTimeout(timeout);
+                console.log('✅ CONFIG recibido en fetchAPI');
                 resolve();
             }, { once: true });
         });
     }
     
     if (!window.CONFIG?.api?.baseUrl) {
-        throw new Error('CONFIG no disponible');
+        const error = new Error('CONFIG no disponible después de timeout');
+        console.error('❌', error.message);
+        throw error;
     }
     
     const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-    console.log('🌐 Fetching:', url);
-    console.log('📤 Options:', options);
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📡 FETCH REQUEST:');
+    console.log('   URL:', url);
+    console.log('   Method:', options.method || 'GET');
+    if (options.body) {
+        console.log('   Body:', options.body);
+    }
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     try {
         const response = await fetch(url, {
@@ -329,34 +347,33 @@ async function fetchAPI(endpoint, options = {}) {
             }
         });
         
-        console.log('📊 Response Status:', response.status);
-        console.log('📊 Response OK:', response.ok);
+        console.log('📡 FETCH RESPONSE:');
+        console.log('   Status:', response.status);
+        console.log('   Status Text:', response.statusText);
+        console.log('   OK:', response.ok);
         
-        // Intentar leer el body
+        // Leer respuesta como texto primero
+        const textResponse = await response.text();
+        console.log('   Raw Response:', textResponse.substring(0, 500));
+        
+        // Intentar parsear como JSON
         let data;
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-        } else {
-            const text = await response.text();
-            console.log('📄 Response Text:', text);
-            
-            // Intentar parsear como JSON
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                // Si no es JSON, crear un objeto de error
-                data = {
-                    success: false,
-                    error: text || 'Error del servidor',
-                    status: response.status
-                };
-            }
+        try {
+            data = JSON.parse(textResponse);
+        } catch (e) {
+            console.error('❌ No se pudo parsear JSON:', e);
+            data = {
+                success: false,
+                error: 'Respuesta inválida del servidor',
+                rawResponse: textResponse,
+                status: response.status
+            };
         }
         
-        console.log('📥 Response Data:', data);
+        console.log('   Parsed Data:', data);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         
+        // Si la respuesta no es OK, lanzar error
         if (!response.ok) {
             const error = new Error(data.error || data.message || `HTTP ${response.status}`);
             error.status = response.status;
@@ -367,11 +384,15 @@ async function fetchAPI(endpoint, options = {}) {
         return data;
         
     } catch (error) {
-        console.error('❌ Error en fetchAPI:');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ ERROR EN FETCHAPI:');
         console.error('   URL:', url);
-        console.error('   Error:', error.message);
+        console.error('   Mensaje:', error.message);
         console.error('   Status:', error.status);
-        console.error('   Data:', error.data);
+        if (error.data) {
+            console.error('   Data:', JSON.stringify(error.data, null, 2));
+        }
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         throw error;
     }
 }
@@ -379,11 +400,6 @@ async function fetchAPI(endpoint, options = {}) {
 // ============================================
 // FUNCIONES AUXILIARES
 // ============================================
-
-function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-}
 
 function mostrarError(mensaje) {
     const errorDiv = document.getElementById('errorMessage');
@@ -396,10 +412,11 @@ function mostrarError(mensaje) {
     errorDiv.textContent = mensaje;
     errorDiv.classList.add('active');
     
-    // Auto-ocultar después de 10 segundos
     setTimeout(() => {
         errorDiv.classList.remove('active');
     }, 10000);
+    
+    console.error('🚨', mensaje);
 }
 
 function volverAlCarrito() {
@@ -417,11 +434,14 @@ function cargarResumenProductos() {
         
         if (!compraInfo || !compraInfo.items) {
             console.warn('⚠️ No hay información de compra');
-            return;
+            return false;
         }
         
         const container = document.getElementById('resumenProductos');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Container resumenProductos no encontrado');
+            return false;
+        }
         
         const html = `
             <div class="resumen-compra">
@@ -441,16 +461,21 @@ function cargarResumenProductos() {
         
         container.innerHTML = html;
         
-        // Actualizar display de monto
         const displayAmount = document.getElementById('displayAmount');
         if (displayAmount) {
             displayAmount.textContent = compraInfo.total.toLocaleString('es-CO');
         }
         
-        console.log('✅ Resumen de productos cargado');
+        console.log('✅ Resumen cargado:', {
+            items: compraInfo.items.length,
+            total: compraInfo.total
+        });
+        
+        return true;
         
     } catch (error) {
         console.error('❌ Error cargando resumen:', error);
+        return false;
     }
 }
 
@@ -460,82 +485,107 @@ function cargarResumenProductos() {
 async function cargarBancos() {
     const bankSelect = document.getElementById('bank');
     
+    if (!bankSelect) {
+        throw new Error('Select de bancos no encontrado');
+    }
+    
     try {
         console.log('🏦 Cargando bancos PSE...');
-        
-        bankSelect.innerHTML = '<option value="">Cargando bancos...</option>';
+        bankSelect.innerHTML = '<option value="">⏳ Cargando bancos...</option>';
         
         const data = await fetchAPI('/api/pagos/bancos-pse');
         
-        console.log('📦 Respuesta bancos:', data);
+        if (!data.success) {
+            throw new Error(data.error || 'Error en respuesta de bancos');
+        }
         
-        if (data.success && data.banks && data.banks.length > 0) {
-            bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
-            
-            data.banks.forEach(bank => {
-                const option = document.createElement('option');
-                option.value = bank.financial_institution_code;
-                option.textContent = bank.financial_institution_name;
-                bankSelect.appendChild(option);
-            });
-            
-            console.log(`✅ ${data.banks.length} bancos cargados`);
-            return true;
-        } else {
+        if (!data.banks || data.banks.length === 0) {
             throw new Error('No se recibieron bancos');
         }
+        
+        bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
+        
+        data.banks.forEach(bank => {
+            const option = document.createElement('option');
+            option.value = bank.financial_institution_code;
+            option.textContent = bank.financial_institution_name;
+            bankSelect.appendChild(option);
+        });
+        
+        console.log(`✅ ${data.banks.length} bancos cargados`);
+        return true;
+        
     } catch (error) {
         console.error('❌ Error cargando bancos:', error);
-        bankSelect.innerHTML = '<option value="">Error cargando bancos. Recarga la página.</option>';
+        bankSelect.innerHTML = '<option value="">❌ Error cargando bancos</option>';
         throw error;
     }
 }
 
 // ============================================
-// INICIALIZACIÓN AL CARGAR LA PÁGINA
+// INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🚀 INICIANDO PÁGINA DE PAGO');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('🌐 URL:', window.location.href);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
     try {
-        // 1. Verificar que existe información de compra
+        // 1. Verificar compra pendiente
         const compraInfo = localStorage.getItem('compra_pendiente');
         
         if (!compraInfo) {
-            console.error('❌ No hay compra pendiente');
-            mostrarError('No hay compra pendiente. Redirigiendo al inicio...');
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
+            console.error('❌ No hay compra pendiente en localStorage');
+            mostrarError('No hay compra pendiente. Redirigiendo...');
+            setTimeout(() => window.location.href = '/', 2000);
             return;
         }
         
-        console.log('✅ Información de compra encontrada');
-        console.log('📦 Compra:', JSON.parse(compraInfo));
+        console.log('✅ Compra pendiente encontrada');
+        
+        try {
+            const compra = JSON.parse(compraInfo);
+            console.log('📦 Detalle de compra:', {
+                items: compra.items?.length || 0,
+                total: compra.total,
+                email: compra.userEmail || 'No especificado'
+            });
+        } catch (e) {
+            console.error('❌ Error parseando compra:', e);
+        }
 
-        // 2. Cargar resumen de productos
-        cargarResumenProductos();
+        // 2. Cargar resumen
+        console.log('\n📋 Cargando resumen de productos...');
+        const resumenOk = cargarResumenProductos();
+        if (!resumenOk) {
+            console.warn('⚠️ No se pudo cargar el resumen');
+        }
 
-        // 3. Cargar bancos PSE
+        // 3. Cargar bancos
+        console.log('\n🏦 Cargando bancos PSE...');
         try {
             await cargarBancos();
-            console.log('✅ Bancos cargados correctamente');
         } catch (error) {
-            console.error('❌ Error cargando bancos:', error);
-            mostrarError('Error al cargar la lista de bancos. Por favor recarga la página.');
+            console.error('❌ Fallo crítico cargando bancos:', error);
+            mostrarError('Error al cargar bancos. Verifica tu conexión y recarga la página.');
             return;
         }
 
-        // 4. Prellenar email si existe
-        const compra = JSON.parse(compraInfo);
-        if (compra.userEmail) {
-            const emailInput = document.getElementById('email');
-            if (emailInput) {
-                emailInput.value = compra.userEmail;
-                console.log('✅ Email prellenado:', compra.userEmail);
+        // 4. Prellenar email
+        try {
+            const compra = JSON.parse(compraInfo);
+            if (compra.userEmail) {
+                const emailInput = document.getElementById('email');
+                if (emailInput) {
+                    emailInput.value = compra.userEmail;
+                    console.log('✅ Email prellenado:', compra.userEmail);
+                }
             }
+        } catch (e) {
+            console.warn('⚠️ No se pudo prellenar email:', e);
         }
 
         // 5. Mostrar formulario
@@ -543,24 +593,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (paymentForm) {
             paymentForm.style.display = 'block';
             console.log('✅ Formulario mostrado');
+        } else {
+            console.error('❌ Formulario no encontrado');
         }
 
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✅ PÁGINA DE PAGO LISTA');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     } catch (error) {
+        console.error('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ ERROR FATAL EN INICIALIZACIÓN');
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ ERROR INICIALIZANDO PÁGINA');
-        console.error('   Error:', error.message);
-        console.error('   Stack:', error.stack);
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         
-        mostrarError('Error al cargar la página: ' + error.message);
+        mostrarError('Error crítico: ' + error.message);
     }
 });
-    </script>
-    
+
+</script>
     <!-- 4. ✅ SCRIPT EXTERNO - Lógica de pago de wompi.js -->
     <script src="js/wompi.js"></script>
 </body>
