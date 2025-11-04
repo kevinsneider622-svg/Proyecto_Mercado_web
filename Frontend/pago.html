@@ -290,192 +290,275 @@
     
 
     <!-- 3. ✅ SCRIPT INLINE - Funciones auxiliares y setup -->
-    <script>
-        // ============================================
-        // FUNCIÓN FETCHAPI - ÚNICA Y MEJORADA
-        // ============================================
-        async function fetchAPI(endpoint, options = {}) {
-            // Esperar CONFIG con timeout
-            if (!window.CONFIG?.api?.baseUrl) {
-                console.log('⏳ Esperando CONFIG...');
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.error('❌ Timeout esperando CONFIG');
-                        resolve();
-                    }, 5000);
-                    
-                    window.addEventListener('configLoaded', () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    }, { once: true });
-                });
-            }
+
+<script>
+// ============================================
+// FUNCIÓN FETCHAPI - MEJORADA CON MEJOR MANEJO DE ERRORES
+// ============================================
+async function fetchAPI(endpoint, options = {}) {
+    // Esperar CONFIG con timeout
+    if (!window.CONFIG?.api?.baseUrl) {
+        console.log('⏳ Esperando CONFIG...');
+        await new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                console.error('❌ Timeout esperando CONFIG');
+                resolve();
+            }, 5000);
             
-            if (!window.CONFIG?.api?.baseUrl) {
-                throw new Error('CONFIG no disponible');
-            }
-            
-            const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-            console.log('🌐 Fetching:', url);
-            
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options?.headers
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('❌ Error en fetchAPI:', error);
-                throw error;
-            }
-        }
-
-        // ============================================
-        // FUNCIONES AUXILIARES
-        // ============================================
-        
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        function mostrarError(mensaje) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = mensaje;
-            errorDiv.classList.add('active');
-            
-            setTimeout(() => {
-                errorDiv.classList.remove('active');
-            }, 8000);
-        }
-
-        function volverAlCarrito() {
-            if (confirm('¿Deseas volver al carrito?')) {
-                window.location.href =  '/';
-            }
-        }
-
-        // ============================================
-        // CARGAR RESUMEN DE PRODUCTOS
-        // ============================================
-        function cargarResumenProductos() {
-            try {
-                const compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
-                
-                if (!compraInfo || !compraInfo.items) {
-                    console.warn('⚠️ No hay información de compra');
-                    return;
-                }
-                
-                const container = document.getElementById('resumenProductos');
-                if (!container) return;
-                
-                const html = `
-                    <div class="resumen-compra">
-                        <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
-                        ${compraInfo.items.map(item => `
-                            <div class="item-compra">
-                                <span>${item.nombre} <small>(x${item.cantidad})</small></span>
-                                <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
-                            </div>
-                        `).join('')}
-                        <div class="item-compra">
-                            <span>TOTAL</span>
-                            <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
-                        </div>
-                    </div>
-                `;
-                
-                container.innerHTML = html;
-                
-                // Actualizar display de monto
-                document.getElementById('displayAmount').textContent = 
-                    compraInfo.total.toLocaleString('es-CO');
-                
-            } catch (error) {
-                console.error('❌ Error cargando resumen:', error);
-            }
-        }
-
-        // ============================================
-        // CARGAR BANCOS PSE
-        // ============================================
-        async function cargarBancos() {
-            try {
-                console.log('🏦 Cargando bancos PSE...');
-                const data = await fetchAPI('/api/pagos/bancos-pse');
-                
-                const bankSelect = document.getElementById('bank');
-                
-                if (data.success && data.banks && data.banks.length > 0) {
-                    bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
-                    
-                    data.banks.forEach(bank => {
-                        const option = document.createElement('option');
-                        option.value = bank.financial_institution_code;
-                        option.textContent = bank.financial_institution_name;
-                        bankSelect.appendChild(option);
-                    });
-                    
-                    console.log(`✅ ${data.banks.length} bancos cargados`);
-                } else {
-                    throw new Error('No se recibieron bancos');
-                }
-            } catch (error) {
-                console.error('❌ Error cargando bancos:', error);
-                document.getElementById('bank').innerHTML = 
-                    '<option value="">Error cargando bancos</option>';
-                throw error;
-            }
-        }
-
-        // ============================================
-        // INICIALIZACIÓN AL CARGAR LA PÁGINA
-        // ============================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 Iniciando página de pago...');
-            
-            try {
-                // 1. Verificar que existe información de compra
-                const compraInfo = localStorage.getItem('compra_pendiente');
-                if (!compraInfo) {
-                    mostrarError('No hay compra pendiente. Redirigiendo...');
-                    setTimeout(() => {
-                        window.location.href = window.CONFIG?.api?.baseUrl || '/';
-                    }, 2000);
-                    return;
-                }
-
-                // 2. Cargar resumen de productos
-                cargarResumenProductos();
-
-                // 3. Cargar bancos
-                await cargarBancos();
-
-                // 4. Prellenar email si existe
-                const compra = JSON.parse(compraInfo);
-                if (compra.userEmail) {
-                    document.getElementById('email').value = compra.userEmail;
-                }
-
-                // 5. Mostrar formulario
-                document.getElementById('paymentForm').style.display = 'block';
-
-                console.log('✅ Página de pago lista');
-
-            } catch (error) {
-                console.error('❌ Error inicializando página:', error);
-                mostrarError('Error al cargar la página: ' + error.message);
+            window.addEventListener('configLoaded', () => {
+                clearTimeout(timeout);
+                resolve();
+            }, { once: true });
+        });
+    }
+    
+    if (!window.CONFIG?.api?.baseUrl) {
+        throw new Error('CONFIG no disponible');
+    }
+    
+    const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
+    console.log('🌐 Fetching:', url);
+    console.log('📤 Options:', options);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers
             }
         });
+        
+        console.log('📊 Response Status:', response.status);
+        console.log('📊 Response OK:', response.ok);
+        
+        // Intentar leer el body
+        let data;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            console.log('📄 Response Text:', text);
+            
+            // Intentar parsear como JSON
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // Si no es JSON, crear un objeto de error
+                data = {
+                    success: false,
+                    error: text || 'Error del servidor',
+                    status: response.status
+                };
+            }
+        }
+        
+        console.log('📥 Response Data:', data);
+        
+        if (!response.ok) {
+            const error = new Error(data.error || data.message || `HTTP ${response.status}`);
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
+        
+        return data;
+        
+    } catch (error) {
+        console.error('❌ Error en fetchAPI:');
+        console.error('   URL:', url);
+        console.error('   Error:', error.message);
+        console.error('   Status:', error.status);
+        console.error('   Data:', error.data);
+        throw error;
+    }
+}
+
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
+
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+function mostrarError(mensaje) {
+    const errorDiv = document.getElementById('errorMessage');
+    if (!errorDiv) {
+        console.error('❌ Error div no encontrado');
+        alert(mensaje);
+        return;
+    }
+    
+    errorDiv.textContent = mensaje;
+    errorDiv.classList.add('active');
+    
+    // Auto-ocultar después de 10 segundos
+    setTimeout(() => {
+        errorDiv.classList.remove('active');
+    }, 10000);
+}
+
+function volverAlCarrito() {
+    if (confirm('¿Deseas volver al carrito?')) {
+        window.location.href = '/';
+    }
+}
+
+// ============================================
+// CARGAR RESUMEN DE PRODUCTOS
+// ============================================
+function cargarResumenProductos() {
+    try {
+        const compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
+        
+        if (!compraInfo || !compraInfo.items) {
+            console.warn('⚠️ No hay información de compra');
+            return;
+        }
+        
+        const container = document.getElementById('resumenProductos');
+        if (!container) return;
+        
+        const html = `
+            <div class="resumen-compra">
+                <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
+                ${compraInfo.items.map(item => `
+                    <div class="item-compra">
+                        <span>${item.nombre} <small>(x${item.cantidad})</small></span>
+                        <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
+                    </div>
+                `).join('')}
+                <div class="item-compra">
+                    <span>TOTAL</span>
+                    <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+        // Actualizar display de monto
+        const displayAmount = document.getElementById('displayAmount');
+        if (displayAmount) {
+            displayAmount.textContent = compraInfo.total.toLocaleString('es-CO');
+        }
+        
+        console.log('✅ Resumen de productos cargado');
+        
+    } catch (error) {
+        console.error('❌ Error cargando resumen:', error);
+    }
+}
+
+// ============================================
+// CARGAR BANCOS PSE
+// ============================================
+async function cargarBancos() {
+    const bankSelect = document.getElementById('bank');
+    
+    try {
+        console.log('🏦 Cargando bancos PSE...');
+        
+        bankSelect.innerHTML = '<option value="">Cargando bancos...</option>';
+        
+        const data = await fetchAPI('/api/pagos/bancos-pse');
+        
+        console.log('📦 Respuesta bancos:', data);
+        
+        if (data.success && data.banks && data.banks.length > 0) {
+            bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
+            
+            data.banks.forEach(bank => {
+                const option = document.createElement('option');
+                option.value = bank.financial_institution_code;
+                option.textContent = bank.financial_institution_name;
+                bankSelect.appendChild(option);
+            });
+            
+            console.log(`✅ ${data.banks.length} bancos cargados`);
+            return true;
+        } else {
+            throw new Error('No se recibieron bancos');
+        }
+    } catch (error) {
+        console.error('❌ Error cargando bancos:', error);
+        bankSelect.innerHTML = '<option value="">Error cargando bancos. Recarga la página.</option>';
+        throw error;
+    }
+}
+
+// ============================================
+// INICIALIZACIÓN AL CARGAR LA PÁGINA
+// ============================================
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚀 INICIANDO PÁGINA DE PAGO');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    try {
+        // 1. Verificar que existe información de compra
+        const compraInfo = localStorage.getItem('compra_pendiente');
+        
+        if (!compraInfo) {
+            console.error('❌ No hay compra pendiente');
+            mostrarError('No hay compra pendiente. Redirigiendo al inicio...');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+            return;
+        }
+        
+        console.log('✅ Información de compra encontrada');
+        console.log('📦 Compra:', JSON.parse(compraInfo));
+
+        // 2. Cargar resumen de productos
+        cargarResumenProductos();
+
+        // 3. Cargar bancos PSE
+        try {
+            await cargarBancos();
+            console.log('✅ Bancos cargados correctamente');
+        } catch (error) {
+            console.error('❌ Error cargando bancos:', error);
+            mostrarError('Error al cargar la lista de bancos. Por favor recarga la página.');
+            return;
+        }
+
+        // 4. Prellenar email si existe
+        const compra = JSON.parse(compraInfo);
+        if (compra.userEmail) {
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.value = compra.userEmail;
+                console.log('✅ Email prellenado:', compra.userEmail);
+            }
+        }
+
+        // 5. Mostrar formulario
+        const paymentForm = document.getElementById('paymentForm');
+        if (paymentForm) {
+            paymentForm.style.display = 'block';
+            console.log('✅ Formulario mostrado');
+        }
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ PÁGINA DE PAGO LISTA');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    } catch (error) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ ERROR INICIALIZANDO PÁGINA');
+        console.error('   Error:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        
+        mostrarError('Error al cargar la página: ' + error.message);
+    }
+});
     </script>
     
     <!-- 4. ✅ SCRIPT EXTERNO - Lógica de pago de wompi.js -->
