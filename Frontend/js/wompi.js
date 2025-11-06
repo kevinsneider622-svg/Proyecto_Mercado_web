@@ -129,6 +129,75 @@ function validateLegalId(e) {
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 }
 
+
+// ============================================
+// INICIALIZACIÓN AUTOMÁTICA
+// ============================================
+(async function initWompiPayment() {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎨 Wompi PSE Integration v5.0');
+    console.log('📦 Compatible con Backend PSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        await init();
+    }
+    
+    async function init() {
+        try {
+            console.log('🚀 Inicializando sistema de pago...');
+            
+            // Esperar CONFIG
+            if (!window.CONFIG?.api?.baseUrl) {
+                console.log('⏳ Esperando CONFIG...');
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.warn('⚠️ Timeout esperando CONFIG');
+                        resolve();
+                    }, 5000);
+                    
+                    window.addEventListener('configLoaded', () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    }, { once: true });
+                });
+            }
+            
+            if (!window.CONFIG?.api?.baseUrl) {
+                throw new Error('CONFIG no disponible');
+            }
+            
+            console.log('✅ CONFIG disponible');
+            
+            // Cargar configuración de Wompi
+            const configLoaded = await loadWompiConfig();
+            
+            if (!configLoaded) {
+                throw new Error('Error cargando configuración de Wompi');
+            }
+            
+            // Configurar event listeners
+            setupPaymentListeners();
+            
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('✅ Sistema de pago listo');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            
+        } catch (error) {
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error('❌ Error inicializando:', error);
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            mostrarError('Error al inicializar: ' + error.message);
+        }
+    }
+})();
+
+
+
+
+
 // ============================================
 // PROCESAR FORMULARIO DE PAGO
 // ============================================
@@ -339,66 +408,3 @@ if (typeof mostrarError === 'undefined') {
     };
 }
 
-// ============================================
-// INICIALIZACIÓN AUTOMÁTICA
-// ============================================
-(async function initWompiPayment() {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎨 Wompi PSE Integration v5.0');
-    console.log('📦 Compatible con Backend PSE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        await init();
-    }
-    
-    async function init() {
-        try {
-            console.log('🚀 Inicializando sistema de pago...');
-            
-            // Esperar CONFIG
-            if (!window.CONFIG?.api?.baseUrl) {
-                console.log('⏳ Esperando CONFIG...');
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.warn('⚠️ Timeout esperando CONFIG');
-                        resolve();
-                    }, 5000);
-                    
-                    window.addEventListener('configLoaded', () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    }, { once: true });
-                });
-            }
-            
-            if (!window.CONFIG?.api?.baseUrl) {
-                throw new Error('CONFIG no disponible');
-            }
-            
-            console.log('✅ CONFIG disponible');
-            
-            // Cargar configuración de Wompi
-            const configLoaded = await loadWompiConfig();
-            
-            if (!configLoaded) {
-                throw new Error('Error cargando configuración de Wompi');
-            }
-            
-            // Configurar event listeners
-            setupPaymentListeners();
-            
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('✅ Sistema de pago listo');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            
-        } catch (error) {
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.error('❌ Error inicializando:', error);
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            mostrarError('Error al inicializar: ' + error.message);
-        }
-    }
-})();
