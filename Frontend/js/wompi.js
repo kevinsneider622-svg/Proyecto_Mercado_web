@@ -168,9 +168,16 @@ async function handlePaymentSubmit(e) {
         console.error('❌ No hay acceptance token');
         mostrarError('Error: No se pudo obtener el token de aceptación. Recarga la página.');
         return;
-    }
+
     
-    // Mostrar loading
+    // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
+    if (amountInCents < 150000) {
+        mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
+        setLoading(false);
+        return;
+        }    
+    }
+
     setLoading(true);
     
     try {
@@ -190,13 +197,7 @@ async function handlePaymentSubmit(e) {
         // ✅ IMPORTANTE: Convertir a centavos
         const amountInCents = Math.round(compraInfo.total * 100);
 
-        // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
-        if (amountInCents < 150000) {
-            mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
-            setLoading(false);
-        return;
-        }    
-
+    
         // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
         const reference = generateReference();
         
