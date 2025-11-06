@@ -173,7 +173,19 @@ async function handlePaymentSubmit(e) {
     setLoading(true);
     
     try {
+                
+        console.log('📋 Datos del formulario:');
+        console.log('   Email:', email);
+        console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
+        console.log('   Tipo doc:', legalIdType);
+        console.log('   Num doc:', legalId);
+        console.log('   Banco:', bankCode);
+        console.log('   Monto:', compraInfo.total, 'COP');
+        console.log('   Monto centavos:', amountInCents);
+        console.log('   Referencia:', reference);
+        console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
         
+                
         // ✅ IMPORTANTE: Convertir a centavos
         const amountInCents = Math.round(compraInfo.total * 100);
 
@@ -186,17 +198,6 @@ async function handlePaymentSubmit(e) {
 
         // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
         const reference = generateReference();
-        
-        console.log('📋 Datos del formulario:');
-        console.log('   Email:', email);
-        console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
-        console.log('   Tipo doc:', legalIdType);
-        console.log('   Num doc:', legalId);
-        console.log('   Banco:', bankCode);
-        console.log('   Monto:', compraInfo.total, 'COP');
-        console.log('   Monto centavos:', amountInCents);
-        console.log('   Referencia:', reference);
-        console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
         
         // ✅ Estructura correcta según la API de Wompi
         const transactionData = {
