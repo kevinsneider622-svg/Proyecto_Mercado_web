@@ -22,6 +22,7 @@ const loading = document.getElementById('loading');
 const emailInput = document.getElementById('email');
 const legalIdInput = document.getElementById('legalId');
 const bankCode = document.getElementById('bankCode'); 
+const amountInCents = 0; // Se asignará dinámicamente
 
 // ============================================
 // VERIFICAR QUE LOS ELEMENTOS EXISTAN
