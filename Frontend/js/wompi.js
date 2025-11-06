@@ -21,7 +21,7 @@ const submitBtn = document.getElementById('submitBtn');
 const loading = document.getElementById('loading');
 const emailInput = document.getElementById('email');
 const legalIdInput = document.getElementById('legalId');
-const bankCode = document.getElementById('bankCode'); 
+
 
 
 // ============================================
@@ -77,11 +77,14 @@ async function getAcceptanceToken() {
         if (data.success && data.acceptanceToken) {
             acceptanceToken = data.acceptanceToken;
             console.log('✅ Acceptance token obtenido');
+            return true;
         } else {
             console.warn('⚠️ No se pudo obtener acceptance token');
+            return false;    
         }
     } catch (error) {
         console.error('❌ Error obteniendo acceptance token:', error);
+        return false;
     }
 }
 
@@ -132,74 +135,6 @@ function validateLegalId(e) {
 
 
 // ============================================
-// INICIALIZACIÓN AUTOMÁTICA
-// ============================================
-(async function initWompiPayment() {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎨 Wompi PSE Integration v5.0');
-    console.log('📦 Compatible con Backend PSE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        await init();
-    }
-    
-    async function init() {
-        try {
-            console.log('🚀 Inicializando sistema de pago...');
-            
-            // Esperar CONFIG
-            if (!window.CONFIG?.api?.baseUrl) {
-                console.log('⏳ Esperando CONFIG...');
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.warn('⚠️ Timeout esperando CONFIG');
-                        resolve();
-                    }, 5000);
-                    
-                    window.addEventListener('configLoaded', () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    }, { once: true });
-                });
-            }
-            
-            if (!window.CONFIG?.api?.baseUrl) {
-                throw new Error('CONFIG no disponible');
-            }
-            
-            console.log('✅ CONFIG disponible');
-            
-            // Cargar configuración de Wompi
-            const configLoaded = await loadWompiConfig();
-            
-            if (!configLoaded) {
-                throw new Error('Error cargando configuración de Wompi');
-            }
-            
-            // Configurar event listeners
-            setupPaymentListeners();
-            
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('✅ Sistema de pago listo');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            
-        } catch (error) {
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.error('❌ Error inicializando:', error);
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            mostrarError('Error al inicializar: ' + error.message);
-        }
-    }
-})();
-
-
-
-
-
-// ============================================
 // PROCESAR FORMULARIO DE PAGO
 // ============================================
 async function handlePaymentSubmit(e) {
@@ -233,22 +168,34 @@ async function handlePaymentSubmit(e) {
         return;
     }
 
-    const amountInCents = Math.round(compraInfo.total * 100);
+    setLoading(true);
+
+    try {
+
+        // ✅ PASO 1: Obtener datos del formulario
+
+        const email = document.getElementById('email').value.trim();
+        const userType = document.getElementById('userType').value; // 0=Natural, 1=Jurídica
+        const legalIdType = document.getElementById('legalIdType').value;
+        const legalId = document.getElementById('legalId').value.trim();
+        const bankCode = document.getElementById('bankCode').value;
+
+        // / ✅ PASO 2: Convertir a centavos
+        const amountInCents = Math.round(compraInfo.total * 100);
     
     
-    // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
+    // ✅ // ✅ PASO 3: VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
     if (amountInCents < 150000) {
         mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
         setLoading(false);
         return;
         }    
-    }
-       
-
-    setLoading(true);
     
-    try {
-                
+
+        // ✅ PASO 4: Generar referencia 
+        const reference = generateReference();
+        
+                        
         console.log('📋 Datos del formulario:');
         console.log('   Email:', email);
         console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
@@ -259,16 +206,9 @@ async function handlePaymentSubmit(e) {
         console.log('   Monto centavos:', amountInCents);
         console.log('   Referencia:', reference);
         console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
-        
-                
-        // ✅ IMPORTANTE: Convertir a centavos
-        
 
-    
-        // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
-        const reference = generateReference();
-        
-        // ✅ Estructura correcta según la API de Wompi
+
+// ✅ PASO 5: Crear payload
         const transactionData = {
             acceptance_token: acceptanceToken,
             amount_in_cents: amountInCents,
@@ -307,8 +247,11 @@ async function handlePaymentSubmit(e) {
         
         if (result.success) {
             const paymentUrl = result.paymentUrl;
+
+            console.log('🔗 Payment URL recibida:', paymentUrl);
             
             if (!paymentUrl) {
+                console.error('❌ No se recibió URL de pago');
                 throw new Error('No se recibió URL de pago del banco');
             }
             
@@ -363,6 +306,7 @@ async function handlePaymentSubmit(e) {
     }
 }
 
+
 // ============================================
 // GENERAR REFERENCIA ÚNICA
 // ============================================
@@ -406,3 +350,68 @@ if (typeof mostrarError === 'undefined') {
     };
 }
 
+
+
+// ============================================
+// INICIALIZACIÓN AUTOMÁTICA
+// ============================================
+(async function initWompiPayment() {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎨 Wompi PSE Integration v5.0');
+    console.log('📦 Compatible con Backend PSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    async function init() {
+        try {
+            console.log('🚀 Inicializando sistema de pago...');
+            
+            // Esperar CONFIG
+            if (!window.CONFIG?.api?.baseUrl) {
+                console.log('⏳ Esperando CONFIG...');
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.warn('⚠️ Timeout esperando CONFIG');
+                        resolve();
+                    }, 5000);
+                    
+                    window.addEventListener('configLoaded', () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    }, { once: true });
+                });
+            }
+            
+            if (!window.CONFIG?.api?.baseUrl) {
+                throw new Error('CONFIG no disponible');
+            }
+            
+            console.log('✅ CONFIG disponible');
+            
+            // Cargar configuración de Wompi
+            const configLoaded = await loadWompiConfig();
+            
+            if (!configLoaded) {
+                throw new Error('Error cargando configuración de Wompi');
+            }
+            
+            // Configurar event listeners
+            setupPaymentListeners();
+            
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('✅ Sistema de pago listo');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            
+        } catch (error) {
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error('❌ Error inicializando:', error);
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            mostrarError('Error al inicializar: ' + error.message);
+        }
+    }
+})();
