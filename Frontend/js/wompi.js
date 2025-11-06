@@ -22,7 +22,7 @@ const loading = document.getElementById('loading');
 const emailInput = document.getElementById('email');
 const legalIdInput = document.getElementById('legalId');
 const bankCode = document.getElementById('bankCode'); 
-const amountInCents = 0; // Se asignará dinámicamente
+
 
 // ============================================
 // VERIFICAR QUE LOS ELEMENTOS EXISTAN
@@ -232,13 +232,9 @@ async function handlePaymentSubmit(e) {
         mostrarError('Error al cargar información de la compra');
         return;
     }
-    
-    // Verificar acceptance token
-    if (!acceptanceToken) {
-        console.error('❌ No hay acceptance token');
-        mostrarError('Error: No se pudo obtener el token de aceptación. Recarga la página.');
-        return;
 
+    const amountInCents = Math.round(compraInfo.total * 100);
+    
     
     // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
     if (amountInCents < 150000) {
@@ -247,6 +243,14 @@ async function handlePaymentSubmit(e) {
         return;
         }    
     }
+    
+    // Verificar acceptance token
+    if (!acceptanceToken) {
+        console.error('❌ No hay acceptance token');
+        mostrarError('Error: No se pudo obtener el token de aceptación. Recarga la página.');
+        return;
+
+    
 
     setLoading(true);
     
@@ -265,7 +269,7 @@ async function handlePaymentSubmit(e) {
         
                 
         // ✅ IMPORTANTE: Convertir a centavos
-        const amountInCents = Math.round(compraInfo.total * 100);
+        
 
     
         // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
