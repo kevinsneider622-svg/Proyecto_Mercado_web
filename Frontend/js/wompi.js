@@ -21,6 +21,7 @@ const submitBtn = document.getElementById('submitBtn');
 const loading = document.getElementById('loading');
 const emailInput = document.getElementById('email');
 const legalIdInput = document.getElementById('legalId');
+const bankCode = document.getElementById('bankCode'); 
 
 // ============================================
 // VERIFICAR QUE LOS ELEMENTOS EXISTAN
