@@ -243,14 +243,7 @@ async function handlePaymentSubmit(e) {
         return;
         }    
     }
-    
-    // Verificar acceptance token
-    if (!acceptanceToken) {
-        console.error('❌ No hay acceptance token');
-        mostrarError('Error: No se pudo obtener el token de aceptación. Recarga la página.');
-        return;
-
-    
+       
 
     setLoading(true);
     
