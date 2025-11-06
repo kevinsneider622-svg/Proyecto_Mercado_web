@@ -211,6 +211,24 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
             });
         }
 
+
+        // ✅ AGREGAR: Validar monto mínimo de Wompi
+        if (amount < 150000) {  // 1,500 COP en centavos
+            return res.status(400).json({
+                success: false,
+                error: 'El monto mínimo para PSE es $1,500 COP',
+                details: [`Monto recibido: $${(amount / 100).toLocaleString('es-CO')} COP`]
+            });
+        }
+        
+
+console.log('✅ Validación de monto:');
+console.log('   Centavos recibidos:', amount);
+console.log('   Pesos:', amount / 100);
+console.log('   Mínimo requerido: 150,000 centavos (1,500 COP)');
+console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
+        
+
         // ============================================
         // GENERAR FIRMA DE INTEGRIDAD
         // ============================================
@@ -253,13 +271,12 @@ router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
             },
             redirect_url: redirect_url || wompiConfig.redirectUrl,
             reference: reference,
-            customer_data: customer_data || {
-                phone_number: '',
-                full_name: customer_email.split('@')[0]
+            customer_data: {
+                phone_number: customer_data?.phone_number || '3001234567',
+                full_name: customer_data?.full_name || customer_email.split('@')[0]
             },
-            signature: {
-                integrity: signature
-            }
+            
+            signature: signature
         };
 
         console.log('📤 Payload para Wompi:', JSON.stringify(wompiPayload, null, 2));

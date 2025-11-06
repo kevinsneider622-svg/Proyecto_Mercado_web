@@ -1,3 +1,4 @@
+
 // ============================================
 // WOMPI.JS - FRONTEND (Lógica de Pago)
 // Compatible con Backend PSE
@@ -172,18 +173,19 @@ async function handlePaymentSubmit(e) {
     setLoading(true);
     
     try {
-        // Generar referencia única
-        const reference = generateReference();
-        
-        // Obtener valores del formulario
-        const email = document.getElementById('email').value.trim();
-        const userType = document.getElementById('userType').value;
-        const legalIdType = document.getElementById('legalIdType').value;
-        const legalId = document.getElementById('legalId').value.trim();
-        const bankCode = document.getElementById('bank').value;
         
         // ✅ IMPORTANTE: Convertir a centavos
         const amountInCents = Math.round(compraInfo.total * 100);
+
+        // ✅ VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
+        if (amountInCents < 150000) {
+            mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
+            setLoading(false);
+        return;
+        }    
+
+        // ✅ Generar referencia AQUÍ (UNA SOLA VEZ)
+        const reference = generateReference();
         
         console.log('📋 Datos del formulario:');
         console.log('   Email:', email);
@@ -208,11 +210,11 @@ async function handlePaymentSubmit(e) {
                 user_legal_id_type: legalIdType,
                 user_legal_id: legalId,
                 financial_institution_code: bankCode,
-                payment_description: `Compra en SuperMarket - ${compraInfo.items?.length || 0} productos`
+                payment_description: `Compra en Tu Despensa Online - ${compraInfo.items?.length || 0} productos`
             },
             reference: reference,
             customer_data: {
-                phone_number: '',
+                phone_number: '3001234567',
                 full_name: email.split('@')[0]
             }
         };
