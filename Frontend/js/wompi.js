@@ -133,6 +133,20 @@ function validateLegalId(e) {
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 }
 
+// ============================================
+// DEBUG: Verificar elementos al cargar
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Verificando elementos del formulario:');
+    console.log('   email:', !!document.getElementById('email'));
+    console.log('   userType:', !!document.getElementById('userType'));
+    console.log('   legalIdType:', !!document.getElementById('legalIdType'));
+    console.log('   legalId:', !!document.getElementById('legalId'));
+    console.log('   bank:', !!document.getElementById('bank'));
+    console.log('   paymentForm:', !!document.getElementById('paymentForm'));
+    console.log('   submitBtn:', !!document.getElementById('submitBtn'));
+});
+
 
 // ============================================
 // PROCESAR FORMULARIO DE PAGO
@@ -172,63 +186,98 @@ async function handlePaymentSubmit(e) {
 
     try {
 
-        // ✅ PASO 1: Obtener datos del formulario
+        // ✅ PASO 1: Obtener datos del formulario CON VALIDACIÓN
 
-        const email = document.getElementById('email').value.trim();
-        const userType = document.getElementById('userType').value; // 0=Natural, 1=Jurídica
-        const legalIdType = document.getElementById('legalIdType').value;
-        const legalId = document.getElementById('legalId').value.trim();
-        const bankCode = document.getElementById('bankCode').value;
+        const emailElement = document.getElementById('email');
+        const userTypeElement = document.getElementById('userType'); // 0=Natural, 1=Jurídica
+        const legalIdTypeElement = document.getElementById('legalIdType');
+        const legalIdElement = document.getElementById('legalId');
+        const bankCodeElement = document.getElementById('bank');
+
+        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankCodeElement) {
+
+            console.error('❌ Elementos del formulario no encontrados');
+            console.error('    email:', !!emailElement);
+            console.error('    userType:', !!userTypeElement);
+            console.error('    legalIdType:', !!legalIdTypeElement);
+            console.error('    legalId:', !!legalIdElement);
+            console.error('    bank:', !!bankCodeElement);
+            throw new Error ('Elementos del formulario no encontrados');
+        }
+
+    
+        const email = emailElement.value.trim();
+        const userType = userTypeElement.value; // 0=Natural, 1=Jurídica
+        const legalIdType = legalIdTypeElement.value;
+        const legalId = legalIdElement.value.trim();
+        const bankCode = banckElement.value;
+
+
+        // Validar que todos tengan valores
+
+        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankCodeElement) {
+
+            console.error('❌ Campos Vacios');
+            console.error('    email:', email || 'VACIO');
+            console.error('    userType:', userType || 'VACIO');
+            console.error('    legalIdType:', legalIdType || 'VACIO');
+            console.error('    legalId:', legalId || 'VACIO');
+            console.error('    bankCode:', bankCode || 'VACIO');
+            
+            mostrarError('Por favor completa todos los campos requeridos');
+            setLoading(false);
+            return;
+        }
 
         // / ✅ PASO 2: Convertir a centavos
         const amountInCents = Math.round(compraInfo.total * 100);
     
     
-    // ✅ // ✅ PASO 3: VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
-    if (amountInCents < 150000) {
-        mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
-        setLoading(false);
-        return;
-        }    
-    
-
-        // ✅ PASO 4: Generar referencia 
-        const reference = generateReference();
+        // ✅ // ✅ PASO 3: VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
+        if (amountInCents < 150000) {
+            mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
+            setLoading(false);
+            return;
+            }    
         
-                        
-        console.log('📋 Datos del formulario:');
-        console.log('   Email:', email);
-        console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
-        console.log('   Tipo doc:', legalIdType);
-        console.log('   Num doc:', legalId);
-        console.log('   Banco:', bankCode);
-        console.log('   Monto:', compraInfo.total, 'COP');
-        console.log('   Monto centavos:', amountInCents);
-        console.log('   Referencia:', reference);
-        console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
+
+            // ✅ PASO 4: Generar referencia 
+            const reference = generateReference();
+            
+                            
+            console.log('📋 Datos del formulario:');
+            console.log('   Email:', email);
+            console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
+            console.log('   Tipo doc:', legalIdType);
+            console.log('   Num doc:', legalId);
+            console.log('   Banco:', bankCode);
+            console.log('   Monto:', compraInfo.total, 'COP');
+            console.log('   Monto centavos:', amountInCents);
+            console.log('   Referencia:', reference);
+            console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
 
 
-// ✅ PASO 5: Crear payload
-        const transactionData = {
-            acceptance_token: acceptanceToken,
-            amount_in_cents: amountInCents,
-            currency: 'COP',
-            customer_email: email,
-            payment_method: {
-                type: 'PSE',
-                user_type: userType,
-                user_legal_id_type: legalIdType,
-                user_legal_id: legalId,
-                financial_institution_code: bankCode,
-                payment_description: `Compra en Tu Despensa Online - ${compraInfo.items?.length || 0} productos`
-            },
-            reference: reference,
-            customer_data: {
-                phone_number: '3001234567',
-                full_name: email.split('@')[0]
-            }
-        };
-        
+    // ✅ PASO 5: Crear payload
+            const transactionData = {
+                acceptance_token: acceptanceToken,
+                amount_in_cents: amountInCents,
+                currency: 'COP',
+                customer_email: email,
+                payment_method: {
+                    type: 'PSE',
+                    user_type: userType,
+                    user_legal_id_type: legalIdType,
+                    user_legal_id: legalId,
+                    financial_institution_code: bankCode,
+                    payment_description: `Compra en Tu Despensa Online - ${compraInfo.items?.length || 0} productos`
+                },
+                reference: reference,
+                customer_data: {
+                    phone_number: '3001234567',
+                    full_name: email.split('@')[0]
+                }
+            };
+            
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('📤 ENVIANDO A BACKEND:');
         console.log(JSON.stringify(transactionData, null, 2));
