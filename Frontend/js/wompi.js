@@ -210,7 +210,7 @@ async function handlePaymentSubmit(e) {
         const userType = userTypeElement.value; // 0=Natural, 1=Jurídica
         const legalIdType = legalIdTypeElement.value;
         const legalId = legalIdElement.value.trim();
-        const bankCode = banckElement.value;
+        const bankCode = bankElement.value;
 
 
         // Validar que todos tengan valores
