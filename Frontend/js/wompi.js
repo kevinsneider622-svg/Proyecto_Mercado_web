@@ -192,16 +192,16 @@ async function handlePaymentSubmit(e) {
         const userTypeElement = document.getElementById('userType'); // 0=Natural, 1=Jurídica
         const legalIdTypeElement = document.getElementById('legalIdType');
         const legalIdElement = document.getElementById('legalId');
-        const bankCodeElement = document.getElementById('bank');
+        const bankElement = document.getElementById('bank');
 
-        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankCodeElement) {
+        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankElement) {
 
             console.error('❌ Elementos del formulario no encontrados');
             console.error('    email:', !!emailElement);
             console.error('    userType:', !!userTypeElement);
             console.error('    legalIdType:', !!legalIdTypeElement);
             console.error('    legalId:', !!legalIdElement);
-            console.error('    bank:', !!bankCodeElement);
+            console.error('    bank:', !!bankElement);
             throw new Error ('Elementos del formulario no encontrados');
         }
 
@@ -215,7 +215,7 @@ async function handlePaymentSubmit(e) {
 
         // Validar que todos tengan valores
 
-        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankCodeElement) {
+        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankElement) {
 
             console.error('❌ Campos Vacios');
             console.error('    email:', email || 'VACIO');

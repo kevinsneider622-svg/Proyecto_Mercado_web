@@ -22,7 +22,7 @@ const CONFIG = {
               // Si estamos en Vercel, usar el backend en Render
             if (hostname.includes('vercel.app')) {
                 console.log('🎯 Entorno: Frontend en Vercel → Backend en Render');
-                return 'https://proyecto-mercado-web.onrender.com';
+                return 'https://proyecto-mercado-web.onrender.com'|| 'http://localhost:3000';
             }
 
             // Si estamos en localhost, usar localhost
