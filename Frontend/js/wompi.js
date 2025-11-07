@@ -295,7 +295,8 @@ async function handlePaymentSubmit(e) {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
         if (result.success) {
-            const paymentUrl = result.paymentUrl;
+
+            const paymentUrl = result.paymentUrl || result.payment_url || result.url || result.redirect_url;
 
             console.log('🔗 Payment URL recibida:', paymentUrl);
             

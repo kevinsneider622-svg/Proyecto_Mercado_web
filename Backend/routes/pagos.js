@@ -336,16 +336,32 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
         // RESPUESTA EXITOSA
         // ============================================
         
-        console.log('✅ TRANSACCIÓN CREADA');
+console.log('✅ TRANSACCIÓN CREADA');
+console.log('🔍 DEBUG - Propiedades disponibles en responseData.data:');
+console.log('   - id:', responseData.data?.id);
+console.log('   - status:', responseData.data?.status);
+console.log('   - reference:', responseData.data?.reference);
+console.log('   - redirect_url:', responseData.data?.redirect_url);
+console.log('   - payment_link_url:', responseData.data?.payment_link_url);
+console.log('   - async_payment_url:', responseData.data?.async_payment_url);
+console.log('   - Todas las keys:', Object.keys(responseData.data || {}));
         
-        res.json({
-            success: true,
-            data: responseData.data,
-            transactionId: responseData.data?.id,
-            paymentUrl: responseData.data?.payment_link_url || responseData.data?.async_payment_url,
-            reference: responseData.data?.reference,
-            status: responseData.data?.status
-        });
+// 🔧 SOLUCIÓN: Usar redirect_url para PSE
+const paymentUrl = responseData.data?.redirect_url;
+
+if (!paymentUrl) {
+    console.error('❌ Wompi no devolvió redirect_url');
+    console.error('📋 Respuesta completa:', JSON.stringify(responseData, null, 2));
+}
+        
+res.json({
+    success: true,
+    data: responseData.data,
+    transactionId: responseData.data?.id,
+    paymentUrl: paymentUrl,
+    reference: responseData.data?.reference,
+    status: responseData.data?.status
+    });
 
     } catch (error) {
         console.error('❌ Error creando transacción:', error);
