@@ -54,7 +54,7 @@ router.get('/bancos-pse', verificarConfigWompi, async (req, res) => {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${wompiConfig.publicKey}`,
+                'Authorization': `Bearer ${wompiConfig.privateKey}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -91,12 +91,14 @@ router.get('/bancos-pse', verificarConfigWompi, async (req, res) => {
 // ============================================
 // 3. ENDPOINT: Obtener acceptance token
 // ============================================
+
 router.get('/acceptance-token', verificarConfigWompi, async (req, res) => {
     try {
         console.log('📝 Obteniendo acceptance token...');
         
         const url = `${wompiConfig.apiUrl}/merchants/${wompiConfig.publicKey}`;
-        
+        console.log('🔗 URL Merchant:', url);
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -105,6 +107,8 @@ router.get('/acceptance-token', verificarConfigWompi, async (req, res) => {
             }
         });
         
+        console.log('📊 Status merchant:', response.status);
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Error obteniendo acceptance token:', errorText);
@@ -112,6 +116,11 @@ router.get('/acceptance-token', verificarConfigWompi, async (req, res) => {
         }
         
         const data = await response.json();
+        console.log('✅ Datos merchant recibidos:', {
+            has_presigned_acceptance: !!data.data?.presigned_acceptance,
+            acceptance_token: data.data?.presigned_acceptance?.acceptance_token ? '✅ PRESENTE' : '❌ FALTANTE',
+            permalink: data.data?.presigned_acceptance?.permalink
+        });
         
         res.json({
             success: true,
@@ -132,6 +141,7 @@ router.get('/acceptance-token', verificarConfigWompi, async (req, res) => {
 // ============================================
 // 4. ENDPOINT: Crear transacción PSE
 // ============================================
+
 router.post('/crear-transaccion', verificarConfigWompi, async (req, res) => {
     try {
         console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -253,6 +263,25 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
         console.log('   Firma:', signature);
 
         // ============================================
+        // 🔍 DEBUG COMPLETO ANTES DE ENVIAR A WOMPI
+        // ============================================
+        console.log('🔑 DEBUG ACCEPTANCE TOKEN:');
+        console.log('   Token presente:', acceptance_token ? '✅ SÍ' : '❌ NO');
+        console.log('   Longitud token:', acceptance_token?.length || 'N/A');
+        console.log('   Token (primeros 20 chars):', acceptance_token ? acceptance_token.substring(0, 20) + '...' : 'N/A');
+
+        console.log('🏦 DEBUG DATOS BANCARIOS:');
+        console.log('   Código banco:', payment_method.financial_institution_code);
+        console.log('   Tipo persona:', payment_method.user_type);
+        console.log('   Tipo documento:', payment_method.user_legal_id_type);
+        console.log('   Número documento:', payment_method.user_legal_id);
+
+        console.log('👤 DEBUG DATOS CLIENTE:');
+        console.log('   Email:', customer_email);
+        console.log('   Teléfono:', customer_data?.phone_number || '3001234567');
+        console.log('   Nombre:', customer_data?.full_name || customer_email.split('@')[0]);
+
+        // ============================================
         // PREPARAR PAYLOAD PARA WOMPI
         // ============================================
         
@@ -269,7 +298,7 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
                 financial_institution_code: payment_method.financial_institution_code,
                 payment_description: payment_method.payment_description || 'Compra en línea'
             },
-            redirect_url: redirect_url || wompiConfig.redirectUrl,
+            redirect_url: wompiConfig.redirectUrl || `${wompiConfig.baseUrl}/confir-pago.html`,
             reference: reference,
             customer_data: {
                 phone_number: customer_data?.phone_number || '3001234567',
@@ -279,6 +308,13 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
             signature: signature
         };
 
+        
+        console.log('🏦 VERIFICACIÓN DATOS BANCARIOS:');
+        console.log('   Código banco:', payment_method.financial_institution_code);
+        console.log('   Tipo persona:', payment_method.user_type);
+        console.log('   Tipo documento:', payment_method.user_legal_id_type);
+        console.log('   Número documento:', payment_method.user_legal_id);
+    
         console.log('📤 Payload para Wompi:', JSON.stringify(wompiPayload, null, 2));
 
         // ============================================
@@ -298,6 +334,64 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
         });
 
         const responseData = await wompiResponse.json();
+
+        
+        //-----------------------------------
+        // DEBUG COMPLETO PARA WOMPI (PSE)
+        //-----------------------------------
+        console.log('🔍 DEBUG PROFUNDO - BUSCANDO URL PSE:');
+        console.log('   Status transacción:', responseData.data?.status);
+        console.log('   Payment method type:', responseData.data?.payment_method_type);
+
+        // Verificar si hay URL de PSE en otros lugares
+        console.log('   ¿Tiene payment_link?:', !!responseData.data?.payment_link);
+        console.log('   ¿Tiene checkout_url?:', !!responseData.data?.checkout_url);
+        console.log('   ¿Tiene async_payment_url?:', !!responseData.data?.async_payment_url);
+
+        // Verificar datos específicos de PSE
+        if (responseData.data?.payment_method_type === 'PSE') {
+            console.log('🎯 DATOS ESPECÍFICOS PSE:');
+            console.log('   financial_institution_code:', responseData.data?.payment_method?.financial_institution_code);
+            console.log('   user_type:', responseData.data?.payment_method?.user_type);
+            console.log('   user_legal_id_type:', responseData.data?.payment_method?.user_legal_id_type);
+            
+            // Buscar en el objeto 'extra' que es específico de PSE
+            console.log('   payment_method.extra:', responseData.data?.payment_method?.extra);
+        }
+
+        // Verificar si hay errores ocultos
+        if (responseData.error) {
+            console.error('❌ ERROR OCULTO:', responseData.error);
+        }
+
+        // Verificar la respuesta COMPLETA de Wompi
+        console.log('📋 RESPUESTA COMPLETA WOMPI:');
+        Object.keys(responseData.data || {}).forEach(key => {
+            if (typeof responseData.data[key] !== 'object' || responseData.data[key] === null) {
+                console.log(`   ${key}:`, responseData.data[key]);
+            }
+        });
+
+
+//-------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         console.log('📥 Respuesta Wompi:');
         console.log('   Status:', wompiResponse.status);
@@ -333,27 +427,63 @@ console.log('   Cumple mínimo:', amount >= 150000 ? '✅' : '❌');
         }
 
         // ============================================
-        // RESPUESTA EXITOSA
+        // RESPUESTA EXITOSA (DEL FRONTEND)
         // ============================================
-        
-console.log('✅ TRANSACCIÓN CREADA');
-console.log('🔍 DEBUG - Propiedades disponibles en responseData.data:');
-console.log('   - id:', responseData.data?.id);
-console.log('   - status:', responseData.data?.status);
-console.log('   - reference:', responseData.data?.reference);
-console.log('   - redirect_url:', responseData.data?.redirect_url);
-console.log('   - payment_link_url:', responseData.data?.payment_link_url);
-console.log('   - async_payment_url:', responseData.data?.async_payment_url);
-console.log('   - Todas las keys:', Object.keys(responseData.data || {}));
-        
+        console.log('✅ TRANSACCIÓN CREADA');
+
+// 🔍 DEBUG COMPLETO DE LA RESPUESTA DE WOMPI
+console.log('🎯 DEBUG DETALLADO - RESPUESTA WOMPI:');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('Status HTTP:', wompiResponse.status);
+console.log('Status transacción:', responseData.data?.status);
+console.log('Tipo de pago:', responseData.data?.payment_method_type);
+console.log('ID transacción:', responseData.data?.id);
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+// Verificar todas las URLs posibles
+console.log('🔗 URLs en la respuesta:');
+console.log('   redirect_url:', responseData.data?.redirect_url);
+console.log('   payment_link_url:', responseData.data?.payment_link_url);
+console.log('   async_payment_url:', responseData.data?.async_payment_url);
+console.log('   checkout_url:', responseData.data?.checkout_url);
+
+// Verificar datos de payment_method
+console.log('🏦 Datos del método de pago:');
+console.log('   type:', responseData.data?.payment_method?.type);
+console.log('   extra:', responseData.data?.payment_method?.extra);
+console.log('   object:', responseData.data?.payment_method);
+
+// Verificar si hay errores en la respuesta
+if (responseData.error) {
+    console.error('❌ ERROR EN RESPUESTA WOMPI:');
+    console.error('   Tipo:', responseData.error.type);
+    console.error('   Mensaje:', responseData.error.messages);
+}
+
 // 🔧 SOLUCIÓN: Usar redirect_url para PSE
 const paymentUrl = responseData.data?.redirect_url;
 
 if (!paymentUrl) {
-    console.error('❌ Wompi no devolvió redirect_url');
-    console.error('📋 Respuesta completa:', JSON.stringify(responseData, null, 2));
+    console.error('❌ CRÍTICO: Wompi no devolvió redirect_url para PSE');
+    console.error('📋 Posibles causas:');
+    console.error('   1. Datos bancarios inválidos');
+    console.error('   2. Código de banco incorrecto');
+    console.error('   3. Problema con acceptance_token');
+    console.error('   4. Configuración del merchant incompleta');
+    console.error('   5. Límites de transacción');
+    
+    console.error('📋 Respuesta completa de Wompi:');
+    console.error(JSON.stringify(responseData, null, 2));
+    
+    // Mostrar los datos que enviamos para debug
+    console.error('📤 Datos que enviamos a Wompi:');
+    console.error(JSON.stringify(wompiPayload, null, 2));
 }
-        
+
+console.log('🔗 URL de pago que enviaremos al frontend:', paymentUrl);
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+
 res.json({
     success: true,
     data: responseData.data,
@@ -376,6 +506,7 @@ res.json({
     }
 });
 
+
 // ============================================
 // 5. ENDPOINT: Consultar transacción
 // ============================================
@@ -387,10 +518,8 @@ router.get('/transaccion/:transactionId', verificarConfigWompi, async (req, res)
         
         const response = await fetch(`${wompiConfig.apiUrl}/transactions/${transactionId}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${wompiConfig.publicKey}`,
-                'Content-Type': 'application/json'
-            }
+            headers: wompiConfig.getHeaders()
+            
         });
 
         if (!response.ok) {

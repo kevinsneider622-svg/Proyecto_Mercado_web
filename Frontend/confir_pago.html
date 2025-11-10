@@ -141,4 +141,205 @@
 
             <div class="transaction-details" id="transactionDetails">
                 <div class="detail-row">
-                    <span class
+                    <span class="detail-label">ID Transacción:</span>
+                    <span class="detail-value" id="transactionId">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Referencia:</span>
+                    <span class="detail-value" id="transactionReference">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Estado:</span>
+                    <span class="detail-value" id="transactionStatus">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Monto:</span>
+                    <span class="detail-value" id="transactionAmount">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value" id="transactionDate">-</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="volverAlInicio()">Volver al Inicio</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN
+        // ============================================
+        const API_BASE_URL = 'https://proyecto-mercado-web.onrender.com'; // Backend
+
+        // ============================================
+        // FUNCIONES PRINCIPALES
+        // ============================================
+
+        async function verificarEstadoTransaccion(transactionId) {
+            try {
+                console.log('🔍 Verificando transacción:', transactionId);
+                
+                const response = await fetch(`${API_BASE_URL}/api/pagos/transaccion/${transactionId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${await response.text()}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Estado recibido:', data);
+                
+                return data;
+            } catch (error) {
+                console.error('❌ Error verificando transacción:', error);
+                throw error;
+            }
+        }
+
+        function mostrarResultado(transactionData) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Mostrar resultado y ocultar loading
+            loading.classList.add('hidden');
+            result.classList.remove('hidden');
+            
+            const transaction = transactionData.data;
+            
+            // Actualizar detalles de la transacción
+            document.getElementById('transactionId').textContent = transaction.id || '-';
+            document.getElementById('transactionReference').textContent = transaction.reference || '-';
+            document.getElementById('transactionStatus').textContent = traducirEstado(transaction.status);
+            document.getElementById('transactionAmount').textContent = formatearMonto(transaction.amount_in_cents);
+            document.getElementById('transactionDate').textContent = new Date(transaction.created_at).toLocaleString('es-CO');
+            
+            // Configurar según el estado
+            switch (transaction.status) {
+                case 'APPROVED':
+                    statusIcon.className = 'status-icon success';
+                    statusIcon.textContent = '✅';
+                    statusTitle.textContent = '¡Pago Exitoso!';
+                    statusMessage.textContent = 'Tu pago ha sido procesado correctamente. Recibirás un correo de confirmación shortly.';
+                    break;
+                    
+                case 'PENDING':
+                    statusIcon.className = 'status-icon pending';
+                    statusIcon.textContent = '⏳';
+                    statusTitle.textContent = 'Pago en Proceso';
+                    statusMessage.textContent = 'Tu transacción está siendo procesada por el banco. Esto puede tomar unos minutos.';
+                    break;
+                    
+                case 'DECLINED':
+                case 'VOIDED':
+                case 'ERROR':
+                    statusIcon.className = 'status-icon error';
+                    statusIcon.textContent = '❌';
+                    statusTitle.textContent = 'Pago Fallido';
+                    statusMessage.textContent = 'No pudimos procesar tu pago. Por favor intenta nuevamente.';
+                    break;
+                    
+                default:
+                    statusIcon.className = 'status-icon pending';
+                    statusIcon.textContent = '❓';
+                    statusTitle.textContent = 'Estado Desconocido';
+                    statusMessage.textContent = 'No podemos determinar el estado de tu transacción. Contacta a soporte.';
+            }
+        }
+
+        function mostrarError(mensaje) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            loading.classList.add('hidden');
+            result.classList.remove('hidden');
+            
+            statusIcon.className = 'status-icon error';
+            statusIcon.textContent = '❌';
+            statusTitle.textContent = 'Error';
+            statusMessage.textContent = mensaje;
+        }
+
+        function traducirEstado(estado) {
+            const estados = {
+                'PENDING': 'Pendiente',
+                'APPROVED': 'Aprobado',
+                'DECLINED': 'Rechazado',
+                'ERROR': 'Error',
+                'VOIDED': 'Anulado'
+            };
+            return estados[estado] || estado;
+        }
+
+        function formatearMonto(centavos) {
+            if (!centavos) return '-';
+            const pesos = centavos / 100;
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP'
+            }).format(pesos);
+        }
+
+        function volverAlInicio() {
+            // Limpiar localStorage si es necesario
+            localStorage.removeItem('compra_pendiente');
+            localStorage.removeItem('transaction_id');
+            localStorage.removeItem('transaction_reference');
+            localStorage.removeItem('transaction_status');
+            
+            window.location.href = '/';
+        }
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Iniciando verificación de pago...');
+            
+            // Obtener transaction_id de la URL o localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            let transactionId = urlParams.get('transaction_id') || 
+                               localStorage.getItem('transaction_id');
+            
+            if (!transactionId) {
+                mostrarError('No se encontró información de la transacción.');
+                return;
+            }
+            
+            console.log('📋 Transaction ID:', transactionId);
+            
+            try {
+                // Verificar estado inmediatamente
+                const resultado = await verificarEstadoTransaccion(transactionId);
+                mostrarResultado(resultado);
+                
+                // Si está pendiente, verificar cada 10 segundos
+                if (resultado.data?.status === 'PENDING') {
+                    const intervalo = setInterval(async () => {
+                        try {
+                            const nuevoEstado = await verificarEstadoTransaccion(transactionId);
+                            mostrarResultado(nuevoEstado);
+                            
+                            // Si ya no está pendiente, dejar de verificar
+                            if (nuevoEstado.data?.status !== 'PENDING') {
+                                clearInterval(intervalo);
+                            }
+                        } catch (error) {
+                            console.error('Error en verificación periódica:', error);
+                        }
+                    }, 10000); // 10 segundos
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                mostrarError('Error al verificar el estado del pago: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

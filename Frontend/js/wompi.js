@@ -91,6 +91,7 @@ async function getAcceptanceToken() {
 // ============================================
 // CONFIGURAR EVENT LISTENERS
 // ============================================
+
 function setupPaymentListeners() {
     if (!form) {
         console.error('❌ Formulario no encontrado');
@@ -113,6 +114,7 @@ function setupPaymentListeners() {
 // ============================================
 // VALIDACIONES
 // ============================================
+
 function validateEmail() {
     if (!emailInput) return false;
     
@@ -133,9 +135,11 @@ function validateLegalId(e) {
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 }
 
+
 // ============================================
 // DEBUG: Verificar elementos al cargar
 // ============================================
+/*
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔍 Verificando elementos del formulario:');
     console.log('   email:', !!document.getElementById('email'));
@@ -147,10 +151,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('   submitBtn:', !!document.getElementById('submitBtn'));
 });
 
+*/
 
 // ============================================
 // PROCESAR FORMULARIO DE PAGO
 // ============================================
+
 async function handlePaymentSubmit(e) {
     e.preventDefault();
     
@@ -168,7 +174,10 @@ async function handlePaymentSubmit(e) {
         mostrarError('Por favor ingresa un email válido');
         return;
     }
+  
+ 
     
+
     // Cargar info de compra
     try {
         compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
@@ -258,25 +267,26 @@ async function handlePaymentSubmit(e) {
 
 
     // ✅ PASO 5: Crear payload
-            const transactionData = {
-                acceptance_token: acceptanceToken,
-                amount_in_cents: amountInCents,
-                currency: 'COP',
-                customer_email: email,
-                payment_method: {
-                    type: 'PSE',
-                    user_type: userType,
-                    user_legal_id_type: legalIdType,
-                    user_legal_id: legalId,
-                    financial_institution_code: bankCode,
-                    payment_description: `Compra en Tu Despensa Online - ${compraInfo.items?.length || 0} productos`
-                },
-                reference: reference,
-                customer_data: {
-                    phone_number: '3001234567',
-                    full_name: email.split('@')[0]
-                }
-            };
+    const transactionData = {
+        acceptance_token: acceptanceToken,
+        amount_in_cents: amountInCents,
+        currency: 'COP',
+        customer_email: "test@wompi.com",  // ← Email de prueba
+        payment_method: {
+            type: 'PSE',
+            user_type: "0",                // ← Persona natural
+            user_legal_id_type: "CC",      // ← Cédula
+            user_legal_id: "123456789",    // ← Número de prueba
+            financial_institution_code: "1022",  // ← Bancolombia
+            payment_description: 'Compra en Tu Despensa Online'
+        },
+
+        reference: reference,
+        customer_data: {
+            phone_number: "3508239549",    // ← Número real
+            full_name: "Kevin Castro"    // ← Nombre real
+        }
+    };    
             
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('📤 ENVIANDO A BACKEND:');
@@ -296,7 +306,7 @@ async function handlePaymentSubmit(e) {
         
         if (result.success) {
 
-            const paymentUrl = result.paymentUrl || result.payment_url || result.url || result.redirect_url;
+        const paymentUrl = result.paymentUrl || result.payment_url || result.url || result.redirect_url;
 
             console.log('🔗 Payment URL recibida:', paymentUrl);
             
@@ -317,21 +327,30 @@ async function handlePaymentSubmit(e) {
             console.log('🔗 Redirigiendo al banco en 2 segundos...');
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
             
+            // VERIFICAR SI ES URL DE BANCO (Wompi) O URL DIRECTA
+            const isBankUrl = paymentUrl.includes('wompi.co');
+
+            if (isBankUrl) {
+                console.log('🏦 Redirigiendo al banco...');
+                // Esta es la URL del banco - redirigir directamente
+                window.location.href = paymentUrl;
+            
+            } else {
+                 console.log('📱 Redirigiendo a página de confirmación...');
+               // Esta es tu página de confirmación - agregar transaction_id
+                window.location.href = `${paymentUrl}?transaction_id=${result.transactionId}`;
+            }
+        
+            } else {
+               throw new Error(result.error || result.message || 'Error al procesar el pago');
+            }
+
             // Mostrar mensaje de éxito
             const loadingText = loading.querySelector('p');
             if (loadingText) {
                 loadingText.innerHTML = '<strong>✅ Transacción creada!</strong><br>Redirigiendo al banco...';
             }
-            
-            // Redirigir al banco
-            setTimeout(() => {
-                window.location.href = paymentUrl;
-            }, 2000);
-            
-        } else {
-            throw new Error(result.error || result.message || 'Error al procesar el pago');
-        }
-        
+                    
     } catch (error) {
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.error('❌ ERROR AL PROCESAR PAGO:');
