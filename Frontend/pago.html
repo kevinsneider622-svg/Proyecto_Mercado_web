@@ -21,179 +21,178 @@
         window.dispatchEvent(new CustomEvent('configLoaded', { 
             detail: { config: CONFIG } 
         }));
-        
         </script>
 
 
     
-  <style>
-        /* ... tus estilos ... */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <style>
+            /* ... tus estilos ... */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+            }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
+            .container {
+                background: white;
+                border-radius: 20px;
+                padding: 40px;
+                max-width: 600px;
+                width: 100%;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+            .logo {
+                text-align: center;
+                margin-bottom: 30px;
+            }
 
-        .logo h1 {
-            color: #2ecc71;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+            .logo h1 {
+                color: #2ecc71;
+                font-size: 28px;
+                margin-bottom: 10px;
+            }
 
-        .resumen-compra {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
+            .resumen-compra {
+                background: #f8f9fa;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 25px;
+            }
 
-        .item-compra {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
+            .item-compra {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 0;
+                border-bottom: 1px solid #e0e0e0;
+            }
 
-        .item-compra:last-child {
-            border-bottom: none;
-            font-weight: bold;
-            color: #2ecc71;
-            font-size: 18px;
-            padding-top: 15px;
-            margin-top: 10px;
-            border-top: 2px solid #2ecc71;
-        }
+            .item-compra:last-child {
+                border-bottom: none;
+                font-weight: bold;
+                color: #2ecc71;
+                font-size: 18px;
+                padding-top: 15px;
+                margin-top: 10px;
+                border-top: 2px solid #2ecc71;
+            }
 
-        .amount-display {
-            background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
-        }
+            .amount-display {
+                background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
+                color: white;
+                padding: 25px;
+                border-radius: 15px;
+                text-align: center;
+                margin-bottom: 25px;
+                box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+            }
 
 
-        .amount-display .amount {
-            font-size: 42px;
-            font-weight: bold;
-        }
+            .amount-display .amount {
+                font-size: 42px;
+                font-weight: bold;
+            }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+            .wompi-widget-container {
+                text-align: center;
+                margin: 30px 0;
+                padding: 20px;
+                border: 2px dashed #e0e0e0;
+                border-radius: 15px;
+                background: #fafafa;
+            }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-        }
+            .btn {
+                width: 100%;
+                padding: 15px;
+                background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 10px;
+            }
 
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-        }
+            .btn-secondary {
+                background: #95a5a6;
+            }
 
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #2ecc71 0%, #3498db 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+            .loading {
+                display: none;
+                text-align: center;
+                padding: 20px;
+            }
 
-        .btn-secondary {
-            background: #95a5a6;
-        }
+            .loading.active {
+                display: block;
+            }
 
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
+            .spinner {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #2ecc71;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 15px;
+            }
 
-        .loading.active {
-            display: block;
-        }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
 
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2ecc71;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
+            .error-message {
+                background: #fee;
+                color: #c33;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: none;
+            }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+            .error-message.active {
+                display: block;
+            }
 
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
+            .info-box {
+                background: #e8f5e9;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                color: #2e7d32;
+                border-left: 4px solid #2ecc71;
+            }
 
-        .error-message.active {
-            display: block;
-        }
-
-        .info-box {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #2e7d32;
-            border-left: 4px solid #2ecc71;
-        }
-    </style>
+            .payment-methods-info {
+                background: #e3f2fd;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                text-align: center;
+                font-size: 14px;
+                color: #1565c0;
+            }
+       </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">
             <h1><i class="fas fa-store"></i>Tu Despensa Online</h1>
-            <p>Pago seguro con PSE - Powered by Wompi</p>
+            <p>Pago seguro - Powered by Wompi</p>
         </div>
 
         <div class="amount-display">
@@ -204,441 +203,242 @@
         <div class="error-message" id="errorMessage"></div>
 
         
-        <div id="montoMinimo" class="info-box" style="display: none; background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">
-        <i class="fas fa-exclamation-triangle"></i> 
-        <strong>Monto insuficiente:</strong> El monto mínimo para PSE es $1,500 COP. 
-        Tu compra actual es de $<span id="montoActual">0</span> COP.
-        </div>
-
-       
         <!-- Resumen de productos -->
         <div id="resumenProductos"></div>
 
-        <form id="paymentForm" style="display: none;">
+        <!-- Información de métodos de pago -->
+        <div class="payment-methods-info">
+            <i class="fas fa-credit-card"></i> 
+            <strong>Múltiples métodos de pago:</strong> Tarjetas, PSE, Efectivo y más
+        </div>
+
+        <!-- Widget de Wompi Checkout -->
+        <div class="wompi-widget-container">
             <h3 style="margin-bottom: 20px; color: #333;">
-                <i class="fas fa-file-invoice-dollar"></i> Información de pago
+                <i class="fas fa-credit-card"></i> Completa tu pago
             </h3>
-
-            <div class="form-group">
-                <label for="email">
-                    <i class="fas fa-envelope"></i> Correo electrónico *
-                </label>
-                <input type="email" id="email" required placeholder="tu@email.com">
+            <div id="wompi-widget">
+                <!-- El widget de Wompi se cargará aquí -->
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="userType">
-                    <i class="fas fa-user"></i> Tipo de persona *
-                </label>
-                <select id="userType" required>
-                    <option value="">Selecciona...</option>
-                    <option value="0">Persona Natural</option>
-                    <option value="1">Persona Jurídica</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="legalIdType">
-                    <i class="fas fa-id-card"></i> Tipo de documento *
-                </label>
-                <select id="legalIdType" required>
-                    <option value="">Selecciona...</option>
-                    <option value="CC">Cédula de Ciudadanía</option>
-                    <option value="CE">Cédula de Extranjería</option>
-                    <option value="NIT">NIT</option>
-                    <option value="PP">Pasaporte</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="legalId">
-                    <i class="fas fa-hashtag"></i> Número de documento *
-                </label>
-                <input type="text" id="legalId" required placeholder="1234567890">
-            </div>
-
-            <div class="form-group">
-                <label for="bank">
-                    <i class="fas fa-building-columns"></i> Selecciona tu banco *
-                </label>
-                <select id="bank" required>
-                    <option value="">Cargando bancos...</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn" id="submitBtn">
-                <i class="fas fa-lock"></i> Pagar con PSE
-            </button>
-
-            <button type="button" class="btn btn-secondary" onclick="volverAlCarrito()">
-                <i class="fas fa-arrow-left"></i> Volver al carrito
-            </button>
-        </form>
+        <button type="button" class="btn btn-secondary" onclick="volverAlCarrito()">
+            <i class="fas fa-arrow-left"></i> Volver al carrito
+        </button>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p><strong>Procesando tu pago...</strong></p>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                Serás redirigido al banco en un momento
-            </p>
         </div>
     </div>
-
     
     <!-- ========================================
      SCRIPTS 
     ======================================== -->
-
-     <!-- HTML de la página de pago -->
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script de Wompi -->
-    <script src="https://checkout.wompi.co/widget.js"></script>
-    
-
-    <!-- 3. ✅ SCRIPT INLINE - Funciones auxiliares y setup -->
-
-<!-- Reemplaza solo la sección de scripts desde aquí -->
 <script>
 
-// ============================================
-// FUNCIÓN FETCHAPI - VERSION FINAL
-// ============================================
-async function fetchAPI(endpoint, options = {}) {
-    // Esperar a que CONFIG esté disponible
-    if (!window.CONFIG?.api?.baseUrl) {
-        console.log('⏳ Esperando CONFIG...');
-        
-        await new Promise((resolve) => {
-            if (window.CONFIG?.api?.baseUrl) {
-                resolve();
+    // ============================================
+    // CONFIGURACIÓN Y FUNCIONES PRINCIPALES
+    // ============================================
+
+     let compraInfo = null;
+     let wompiPublicKey = 'pub_test_dkLf1eZHmam5Nrs7IqHg8hRBgXccimsy';
+ 
+ 
+     // Función para cargar configuración de Wompi
+        async function loadWompiConfig() {
+            try {
+                console.log('🔑 Cargando configuración de Wompi...');
+                
+                const response = await fetch('/api/pagos/config');
+                const data = await response.json();
+                
+                if (!data.publicKey) {
+                    throw new Error('No se recibió la llave pública');
+                }
+                
+                wompiPublicKey = data.publicKey;
+                console.log('✅ Public Key cargada:', wompiPublicKey.substring(0, 20) + '...');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error cargando configuración:', error);
+                mostrarError('Error al inicializar el sistema de pagos.');
+                return false;
+            }
+        }
+
+        // Función para inicializar el widget de Wompi
+        function initializeWompiWidget() {
+            if (!compraInfo || !wompiPublicKey) {
+                console.error('❌ Faltan datos para inicializar widget');
+                return;
+            }
+
+            // Generar referencia única
+            const reference = generateReference();
+            const amountInCents = Math.round(compraInfo.total * 100);
+
+            console.log('🎯 Inicializando widget Wompi:');
+            console.log('   Monto:', compraInfo.total, 'COP');
+            console.log('   Centavos:', amountInCents);
+            console.log('   Referencia:', reference);
+            console.log('   Public Key:', wompiPublicKey.substring(0, 20) + '...');
+
+            // Crear script del widget
+            const widgetScript = document.createElement('script');
+            widgetScript.src = 'https://checkout.wompi.co/widget.js';
+            widgetScript.setAttribute('data-render', 'button');
+            widgetScript.setAttribute('data-public-key', wompiPublicKey);
+            widgetScript.setAttribute('data-currency', 'COP');
+            widgetScript.setAttribute('data-amount-in-cents', amountInCents.toString());
+            widgetScript.setAttribute('data-reference', reference);
+            
+            // URL de redirección después del pago
+            const redirectUrl = `${window.location.origin}/?payment=success&reference=${reference}`;
+            widgetScript.setAttribute('data-redirect-url', redirectUrl);
+
+            // Datos del cliente (usando datos reales de la compra)
+            if (compraInfo.userEmail) {
+                widgetScript.setAttribute('data-customer-data:email', compraInfo.userEmail);
+                widgetScript.setAttribute('data-customer-data:full-name', compraInfo.userName || 'Cliente');
+            }
+
+            // Agregar el script al contenedor
+            const widgetContainer = document.getElementById('wompi-widget');
+            widgetContainer.innerHTML = ''; // Limpiar contenedor
+            widgetContainer.appendChild(widgetScript);
+
+            console.log('✅ Widget de Wompi inicializado');
+        }
+
+        // Generar referencia única
+        function generateReference() {
+            const timestamp = Date.now();
+            const userId = compraInfo?.userId || 'GUEST';
+            const random = Math.floor(Math.random() * 10000);
+            return `SUPER-${userId}-${timestamp}-${random}`;
+        }
+
+        // Cargar resumen de productos
+        function cargarResumenProductos() {
+            try {
+                compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
+                
+                if (!compraInfo || !compraInfo.items) {
+                    console.warn('⚠️ No hay información de compra');
+                    return false;
+                }
+                
+                const container = document.getElementById('resumenProductos');
+                if (!container) {
+                    console.error('❌ Container resumenProductos no encontrado');
+                    return false;
+                }
+                
+                const html = `
+                    <div class="resumen-compra">
+                        <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
+                        ${compraInfo.items.map(item => `
+                            <div class="item-compra">
+                                <span>${item.nombre} <small>(x${item.cantidad})</small></span>
+                                <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
+                            </div>
+                        `).join('')}
+                        <div class="item-compra">
+                            <span>TOTAL</span>
+                            <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+                const displayAmount = document.getElementById('displayAmount');
+                if (displayAmount) {
+                    displayAmount.textContent = compraInfo.total.toLocaleString('es-CO');
+                }
+                
+                console.log('✅ Resumen cargado:', {
+                    items: compraInfo.items.length,
+                    total: compraInfo.total
+                });
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error cargando resumen:', error);
+                return false;
+            }
+        }
+
+        // Función para mostrar errores
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('errorMessage');
+            if (!errorDiv) {
+                console.error('❌ Error div no encontrado');
+                alert(mensaje);
                 return;
             }
             
-            const timeout = setTimeout(() => {
-                console.warn('⚠️ Timeout esperando CONFIG (5s)');
-                resolve();
-            }, 5000);
+            errorDiv.textContent = mensaje;
+            errorDiv.classList.add('active');
             
-            window.addEventListener('configLoaded', () => {
-                clearTimeout(timeout);
-                console.log('✅ CONFIG recibido en fetchAPI');
-                resolve();
-            }, { once: true });
-        });
-    }
-    
-    if (!window.CONFIG?.api?.baseUrl) {
-        const error = new Error('CONFIG no disponible después de timeout');
-        console.error('❌', error.message);
-        throw error;
-    }
-    
-    const url = `${window.CONFIG.api.baseUrl}${endpoint}`;
-    
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📡 FETCH REQUEST:');
-    console.log('   URL:', url);
-    console.log('   Method:', options.method || 'GET');
-    if (options.body) {
-        console.log('   Body:', options.body);
-    }
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options?.headers
-            }
-        });
-        
-        console.log('📡 FETCH RESPONSE:');
-        console.log('   Status:', response.status);
-        console.log('   Status Text:', response.statusText);
-        console.log('   OK:', response.ok);
-        
-        // Leer respuesta como texto primero
-        const textResponse = await response.text();
-        console.log('   Raw Response:', textResponse.substring(0, 500));
-        
-        // Intentar parsear como JSON
-        let data;
-        try {
-            data = JSON.parse(textResponse);
-        } catch (e) {
-            console.error('❌ No se pudo parsear JSON:', e);
-            data = {
-                success: false,
-                error: 'Respuesta inválida del servidor',
-                rawResponse: textResponse,
-                status: response.status
-            };
-        }
-        
-        console.log('   Parsed Data:', data);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        
-        // Si la respuesta no es OK, lanzar error
-        if (!response.ok) {
-            const error = new Error(data.error || data.message || `HTTP ${response.status}`);
-            error.status = response.status;
-            error.data = data;
-            throw error;
-        }
-        
-        return data;
-        
-    } catch (error) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ ERROR EN FETCHAPI:');
-        console.error('   URL:', url);
-        console.error('   Mensaje:', error.message);
-        console.error('   Status:', error.status);
-        if (error.data) {
-            console.error('   Data:', JSON.stringify(error.data, null, 2));
-        }
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        throw error;
-    }
-}
-
-// ============================================
-// FUNCIONES AUXILIARES
-// ============================================
-
-function mostrarError(mensaje) {
-    const errorDiv = document.getElementById('errorMessage');
-    if (!errorDiv) {
-        console.error('❌ Error div no encontrado');
-        alert(mensaje);
-        return;
-    }
-    
-    errorDiv.textContent = mensaje;
-    errorDiv.classList.add('active');
-    
-    setTimeout(() => {
-        errorDiv.classList.remove('active');
-    }, 10000);
-    
-    console.error('🚨', mensaje);
-}
-
-function volverAlCarrito() {
-    if (confirm('¿Deseas volver al carrito?')) {
-        window.location.href = '/';
-    }
-}
-
-// ============================================
-// CARGAR RESUMEN DE PRODUCTOS
-// ============================================
-
-function cargarResumenProductos() {
-    try {
-        const compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
-        
-        if (!compraInfo || !compraInfo.items) {
-            console.warn('⚠️ No hay información de compra');
-            return false;
-        }
-        
-        const container = document.getElementById('resumenProductos');
-        if (!container) {
-            console.error('❌ Container resumenProductos no encontrado');
-            return false;
-        }
-        
-        // ✅ Validar monto mínimo
-        if (compraInfo.total < 1500) {
-            const alerta = document.getElementById('montoMinimo');
-            if (alerta) {
-                document.getElementById('montoActual').textContent = compraInfo.total.toLocaleString('es-CO');
-                alerta.style.display = 'block';
-            }
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 10000);
             
-            // Deshabilitar botón de pago
-            const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-ban"></i> Monto insuficiente (mínimo $1,500)';
+            console.error('🚨', mensaje);
+        }
+
+        // Volver al carrito
+        function volverAlCarrito() {
+            if (confirm('¿Deseas volver al carrito?')) {
+                window.location.href = '/';
             }
         }
-        
-        const html = `
-            <div class="resumen-compra">
-                <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
-                ${compraInfo.items.map(item => `
-                    <div class="item-compra">
-                        <span>${item.nombre} <small>(x${item.cantidad})</small></span>
-                        <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
-                    </div>
-                `).join('')}
-                <div class="item-compra">
-                    <span>TOTAL</span>
-                    <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
-                </div>
-            </div>
-        `;
-        
-        container.innerHTML = html;
-        
-        const displayAmount = document.getElementById('displayAmount');
-        if (displayAmount) {
-            displayAmount.textContent = compraInfo.total.toLocaleString('es-CO');
-        }
-        
-        console.log('✅ Resumen cargado:', {
-            items: compraInfo.items.length,
-            total: compraInfo.total
-        });
-        
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error cargando resumen:', error);
-        return false;
-    }
-}
-// ============================================
-// CARGAR BANCOS PSE
-// ============================================
-async function cargarBancos() {
-    const bankSelect = document.getElementById('bank');
-    
-    if (!bankSelect) {
-        throw new Error('Select de bancos no encontrado');
-    }
-    
-    try {
-        console.log('🏦 Cargando bancos PSE...');
-        bankSelect.innerHTML = '<option value="">⏳ Cargando bancos...</option>';
-        
-        const data = await fetchAPI('/api/pagos/bancos-pse');
-        
-        if (!data.success) {
-            throw new Error(data.error || 'Error en respuesta de bancos');
-        }
-        
-        if (!data.banks || data.banks.length === 0) {
-            throw new Error('No se recibieron bancos');
-        }
-        
-        bankSelect.innerHTML = '<option value="">Selecciona tu banco...</option>';
-        
-        data.banks.forEach(bank => {
-            const option = document.createElement('option');
-            option.value = bank.financial_institution_code;
-            option.textContent = bank.financial_institution_name;
-            bankSelect.appendChild(option);
-        });
-        
-        console.log(`✅ ${data.banks.length} bancos cargados`);
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error cargando bancos:', error);
-        bankSelect.innerHTML = '<option value="">❌ Error cargando bancos</option>';
-        throw error;
-    }
-}
 
-// ============================================
-// INICIALIZACIÓN
-// ============================================
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🚀 INICIANDO PÁGINA DE PAGO');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('⏰ Timestamp:', new Date().toISOString());
-    console.log('🌐 URL:', window.location.href);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-    try {
-        // 1. Verificar compra pendiente
-        const compraInfo = localStorage.getItem('compra_pendiente');
-        
-        if (!compraInfo) {
-            console.error('❌ No hay compra pendiente en localStorage');
-            mostrarError('No hay compra pendiente. Redirigiendo...');
-            setTimeout(() => window.location.href = '/', 2000);
-            return;
-        }
-        
-        console.log('✅ Compra pendiente encontrada');
-        
-        try {
-            const compra = JSON.parse(compraInfo);
-            console.log('📦 Detalle de compra:', {
-                items: compra.items?.length || 0,
-                total: compra.total,
-                email: compra.userEmail || 'No especificado'
-            });
-        } catch (e) {
-            console.error('❌ Error parseando compra:', e);
-        }
-
-        // 2. Cargar resumen
-        console.log('\n📋 Cargando resumen de productos...');
-        const resumenOk = cargarResumenProductos();
-        if (!resumenOk) {
-            console.warn('⚠️ No se pudo cargar el resumen');
-        }
-
-        // 3. Cargar bancos
-        console.log('\n🏦 Cargando bancos PSE...');
-        try {
-            await cargarBancos();
-        } catch (error) {
-            console.error('❌ Fallo crítico cargando bancos:', error);
-            mostrarError('Error al cargar bancos. Verifica tu conexión y recarga la página.');
-            return;
-        }
-
-        // 4. Prellenar email
-        try {
-            const compra = JSON.parse(compraInfo);
-            if (compra.userEmail) {
-                const emailInput = document.getElementById('email');
-                if (emailInput) {
-                    emailInput.value = compra.userEmail;
-                    console.log('✅ Email prellenado:', compra.userEmail);
+        // ============================================
+        // INICIALIZACIÓN AL CARGAR LA PÁGINA
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('\n🚀 INICIANDO PÁGINA DE PAGO CON WOMPI CHECKOUT');
+            
+            try {
+                // 1. Verificar compra pendiente
+                const compraInfoStr = localStorage.getItem('compra_pendiente');
+                
+                if (!compraInfoStr) {
+                    console.error('❌ No hay compra pendiente');
+                    mostrarError('No hay compra pendiente. Redirigiendo...');
+                    setTimeout(() => window.location.href = '/', 2000);
+                    return;
                 }
+                
+                console.log('✅ Compra pendiente encontrada');
+
+                // 2. Cargar resumen
+                const resumenOk = cargarResumenProductos();
+                if (!resumenOk) {
+                    throw new Error('No se pudo cargar el resumen de productos');
+                }
+
+                // 3. Cargar configuración de Wompi
+                const configOk = await loadWompiConfig();
+                if (!configOk) {
+                    throw new Error('No se pudo cargar la configuración de Wompi');
+                }
+
+                // 4. Inicializar widget de Wompi
+                initializeWompiWidget();
+
+                console.log('✅ PÁGINA DE PAGO LISTA CON WOMPI CHECKOUT');
+
+            } catch (error) {
+                console.error('❌ ERROR EN INICIALIZACIÓN:', error);
+                mostrarError('Error al inicializar: ' + error.message);
             }
-        } catch (e) {
-            console.warn('⚠️ No se pudo prellenar email:', e);
-        }
-
-        // 5. Mostrar formulario
-        const paymentForm = document.getElementById('paymentForm');
-        if (paymentForm) {
-            paymentForm.style.display = 'block';
-            console.log('✅ Formulario mostrado');
-        } else {
-            console.error('❌ Formulario no encontrado');
-        }
-
-        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('✅ PÁGINA DE PAGO LISTA');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
-    } catch (error) {
-        console.error('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ ERROR FATAL EN INICIALIZACIÓN');
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('Error:', error.message);
-        console.error('Stack:', error.stack);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        
-        mostrarError('Error crítico: ' + error.message);
-    }
-});
-
-</script>
-    <!-- 4. ✅ SCRIPT EXTERNO - Lógica de pago de wompi.js -->
-    <script src="js/wompi.js"></script>
+        });
+    </script>
 </body>
 </html>
