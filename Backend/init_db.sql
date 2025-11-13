@@ -13,6 +13,7 @@ SELECT 'Frutas y Verduras', 'Productos frescos del campo'
 WHERE NOT EXISTS (SELECT 1 FROM categorias);
 
 
+
 # Modificaciones adicionales a la tabla productos
 ALTER TABLE productos 
 ADD COLUMN subcategoria VARCHAR(100),
@@ -99,3 +100,24 @@ ON CONFLICT (nivel) DO NOTHING;
 SELECT * FROM usuarios LIMIT 1;
 SELECT * FROM niveles ORDER BY nivel;
 SELECT * FROM compras LIMIT 1;
+
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS pedidos (
+    id VARCHAR(255) PRIMARY KEY,
+    total DECIMAL(10, 2) NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    datos_pago JSONB,
+    telefono_contacto VARCHAR(50),
+    email_cliente VARCHAR(255),
+    fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices útiles
+CREATE INDEX idx_pedidos_estado ON pedidos(estado);
+CREATE INDEX idx_pedidos_email ON pedidos(email_cliente);
+CREATE INDEX idx_pedidos_fecha ON pedidos(fecha_pedido);

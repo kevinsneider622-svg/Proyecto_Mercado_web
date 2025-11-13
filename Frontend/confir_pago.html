@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmación de Pago</title>
+    <title>Confirmación de Pago - Tu Despensa Online</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -25,15 +26,27 @@
             background: white;
             border-radius: 20px;
             padding: 40px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .status-icon {
             font-size: 80px;
             margin-bottom: 20px;
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
         .status-icon.success { color: #10b981; }
@@ -50,20 +63,28 @@
             color: #666;
             margin-bottom: 30px;
             line-height: 1.6;
+            font-size: 16px;
         }
 
         .transaction-details {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
             margin-bottom: 25px;
             text-align: left;
         }
 
+        .transaction-details h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+
         .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #e0e0e0;
         }
 
@@ -74,16 +95,28 @@
         .detail-label {
             color: #666;
             font-weight: 600;
+            font-size: 14px;
         }
 
         .detail-value {
             color: #333;
             font-weight: 500;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            display: inline-block;
-            padding: 15px 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-decoration: none;
@@ -100,6 +133,14 @@
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
         .loading {
             text-align: center;
             padding: 40px;
@@ -109,8 +150,8 @@
             border: 4px solid #f3f3f3;
             border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
@@ -120,18 +161,79 @@
             100% { transform: rotate(360deg); }
         }
 
+        .loading p {
+            color: #666;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
         .hidden {
-            display: none;
+            display: none !important;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .refresh-info {
+            background: #f0f9ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #0369a1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .status-icon {
+                font-size: 60px;
+            }
+
+            .buttons-container {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Estado de carga -->
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Verificando el estado de tu pago...</p>
+            <p><strong>Verificando tu pago...</strong></p>
+            <p style="font-size: 14px; color: #999; margin-top: 10px;">
+                Esto puede tomar unos segundos
+            </p>
         </div>
 
+        <!-- Resultado -->
         <div id="result" class="hidden">
             <div class="status-icon" id="statusIcon">⏳</div>
             <h1 id="statusTitle">Verificando pago</h1>
@@ -139,30 +241,46 @@
                 Estamos verificando el estado de tu transacción...
             </p>
 
+            <!-- Detalles de la transacción -->
             <div class="transaction-details" id="transactionDetails">
+                <h3><i class="fas fa-receipt"></i> Detalles de la Transacción</h3>
                 <div class="detail-row">
-                    <span class="detail-label">ID Transacción:</span>
-                    <span class="detail-value" id="transactionId">-</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Referencia:</span>
+                    <span class="detail-label"><i class="fas fa-hashtag"></i> Referencia:</span>
                     <span class="detail-value" id="transactionReference">-</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Estado:</span>
+                    <span class="detail-label"><i class="fas fa-info-circle"></i> Estado:</span>
                     <span class="detail-value" id="transactionStatus">-</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Monto:</span>
+                    <span class="detail-label"><i class="fas fa-money-bill-wave"></i> Monto:</span>
                     <span class="detail-value" id="transactionAmount">-</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-label"><i class="fas fa-calendar"></i> Fecha:</span>
                     <span class="detail-value" id="transactionDate">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><i class="fas fa-credit-card"></i> Método:</span>
+                    <span class="detail-value" id="paymentMethod">-</span>
                 </div>
             </div>
 
-            <button class="btn" onclick="volverAlInicio()">Volver al Inicio</button>
+            <!-- Información adicional para pagos pendientes -->
+            <div id="pendingInfo" class="refresh-info hidden">
+                <i class="fas fa-clock"></i> 
+                <strong>Verificando automáticamente cada 10 segundos...</strong>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="buttons-container">
+                <button class="btn" onclick="volverAlInicio()">
+                    <i class="fas fa-home"></i> Volver al Inicio
+                </button>
+                <button class="btn btn-success" onclick="hacerOtraCompra()">
+                    <i class="fas fa-shopping-cart"></i> Hacer Otra Compra
+                </button>
+            </div>
         </div>
     </div>
 
@@ -170,174 +288,334 @@
         // ============================================
         // CONFIGURACIÓN
         // ============================================
-        const API_BASE_URL = 'https://proyecto-mercado-web.onrender.com'; // Backend
+        const API_BASE_URL = window.location.hostname.includes('localhost') || 
+                            window.location.hostname.includes('127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://proyecto-mercado-web.onrender.com';
+
+        const IS_DEVELOPMENT = window.location.hostname.includes('localhost');
+
+        console.log('🌐 Configuración:');
+        console.log('   API URL:', API_BASE_URL);
+        console.log('   Ambiente:', IS_DEVELOPMENT ? 'Desarrollo' : 'Producción');
 
         // ============================================
-        // FUNCIONES PRINCIPALES
+        // VARIABLES GLOBALES
         // ============================================
+        let verificacionInterval = null;
 
-        async function verificarEstadoTransaccion(transactionId) {
+        // ============================================
+        // FUNCIONES PARA OBTENER REFERENCIA
+        // ============================================
+        function obtenerReferencia() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Wompi puede enviar diferentes parámetros
+            const reference = urlParams.get('reference') || 
+                             urlParams.get('ref') ||
+                             urlParams.get('id') ||
+                             localStorage.getItem('ultima_referencia_pago');
+            
+            console.log('🔍 Parámetros de URL:', Object.fromEntries(urlParams));
+            console.log('📋 Referencia encontrada:', reference);
+            
+            return reference;
+        }
+
+        // ============================================
+        // FUNCIÓN PARA VERIFICAR ESTADO
+        // ============================================
+        async function verificarEstadoPago(reference) {
             try {
-                console.log('🔍 Verificando transacción:', transactionId);
+                console.log('🔍 Verificando estado para referencia:', reference);
                 
-                const response = await fetch(`${API_BASE_URL}/api/pagos/transaccion/${transactionId}`);
-                
+                const response = await fetch(`${API_BASE_URL}/api/pagos/verificar-estado/${reference}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📊 Response status:', response.status);
+
                 if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${await response.text()}`);
+                    const errorText = await response.text();
+                    console.error('❌ Error HTTP:', errorText);
+                    throw new Error(`Error ${response.status}: No se pudo verificar el estado`);
                 }
-                
+
                 const data = await response.json();
-                console.log('📊 Estado recibido:', data);
-                
+                console.log('✅ Datos recibidos:', data);
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Error verificando estado');
+                }
+
                 return data;
+
             } catch (error) {
-                console.error('❌ Error verificando transacción:', error);
+                console.error('❌ Error en verificación:', error);
                 throw error;
             }
         }
 
-        function mostrarResultado(transactionData) {
+        // ============================================
+        // FUNCIÓN PARA MOSTRAR RESULTADO
+        // ============================================
+        function mostrarResultado(data) {
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const statusIcon = document.getElementById('statusIcon');
             const statusTitle = document.getElementById('statusTitle');
             const statusMessage = document.getElementById('statusMessage');
-            
-            // Mostrar resultado y ocultar loading
+            const pendingInfo = document.getElementById('pendingInfo');
+
+            // Ocultar loading y mostrar resultado
             loading.classList.add('hidden');
             result.classList.remove('hidden');
+
+            const estado = data.data.estado;
+            const transaccion = data.data.transaccion;
+
+            console.log('📊 Mostrando resultado:', estado);
+
+            // Actualizar detalles
+            document.getElementById('transactionReference').textContent = data.data.referencia || '-';
+            document.getElementById('transactionStatus').textContent = data.data.estadoLegible || estado;
             
-            const transaction = transactionData.data;
-            
-            // Actualizar detalles de la transacción
-            document.getElementById('transactionId').textContent = transaction.id || '-';
-            document.getElementById('transactionReference').textContent = transaction.reference || '-';
-            document.getElementById('transactionStatus').textContent = traducirEstado(transaction.status);
-            document.getElementById('transactionAmount').textContent = formatearMonto(transaction.amount_in_cents);
-            document.getElementById('transactionDate').textContent = new Date(transaction.created_at).toLocaleString('es-CO');
-            
-            // Configurar según el estado
-            switch (transaction.status) {
+            if (transaccion) {
+                document.getElementById('transactionAmount').textContent = formatearMonto(transaccion.amount_in_cents);
+                document.getElementById('transactionDate').textContent = formatearFecha(transaccion.created_at);
+                document.getElementById('paymentMethod').textContent = traducirMetodoPago(transaccion.payment_method_type);
+            } else {
+                document.getElementById('transactionAmount').textContent = '-';
+                document.getElementById('transactionDate').textContent = '-';
+                document.getElementById('paymentMethod').textContent = '-';
+            }
+
+            // Configurar UI según estado
+            switch (estado) {
                 case 'APPROVED':
+                case 'aprobado':
                     statusIcon.className = 'status-icon success';
-                    statusIcon.textContent = '✅';
+                    statusIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
                     statusTitle.textContent = '¡Pago Exitoso!';
-                    statusMessage.textContent = 'Tu pago ha sido procesado correctamente. Recibirás un correo de confirmación shortly.';
-                    break;
+                    statusMessage.textContent = 'Tu pago ha sido procesado correctamente. Recibirás un correo de confirmación en breve.';
                     
+                    // Limpiar carrito
+                    localStorage.removeItem('compra_pendiente');
+                    localStorage.removeItem('ultima_referencia_pago');
+                    
+                    // Detener verificación periódica si existe
+                    if (verificacionInterval) {
+                        clearInterval(verificacionInterval);
+                        verificacionInterval = null;
+                    }
+                    break;
+
                 case 'PENDING':
+                case 'pendiente':
                     statusIcon.className = 'status-icon pending';
-                    statusIcon.textContent = '⏳';
+                    statusIcon.innerHTML = '<i class="fas fa-clock"></i>';
                     statusTitle.textContent = 'Pago en Proceso';
-                    statusMessage.textContent = 'Tu transacción está siendo procesada por el banco. Esto puede tomar unos minutos.';
-                    break;
+                    statusMessage.textContent = 'Tu transacción está siendo procesada. Esto puede tardar unos minutos.';
+                    pendingInfo.classList.remove('hidden');
                     
+                    // Iniciar verificación periódica
+                    iniciarVerificacionPeriodica(data.data.referencia);
+                    break;
+
                 case 'DECLINED':
-                case 'VOIDED':
-                case 'ERROR':
+                case 'rechazado':
                     statusIcon.className = 'status-icon error';
-                    statusIcon.textContent = '❌';
-                    statusTitle.textContent = 'Pago Fallido';
-                    statusMessage.textContent = 'No pudimos procesar tu pago. Por favor intenta nuevamente.';
+                    statusIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                    statusTitle.textContent = 'Pago Rechazado';
+                    statusMessage.textContent = 'Tu pago fue rechazado por el banco. Por favor intenta con otro método de pago.';
                     break;
+
+                case 'ERROR':
+                case 'error':
+                    statusIcon.className = 'status-icon error';
+                    statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                    statusTitle.textContent = 'Error en el Pago';
+                    statusMessage.textContent = 'Hubo un error procesando tu pago. Por favor intenta nuevamente.';
+                    break;
+
+                case 'no_encontrado':
+                case 'NO_ENCONTRADO':
+                    statusIcon.className = 'status-icon pending';
+                    statusIcon.innerHTML = '<i class="fas fa-search"></i>';
+                    statusTitle.textContent = 'Transacción no Encontrada';
+                    statusMessage.textContent = 'No encontramos información sobre esta transacción. Es posible que aún esté siendo procesada.';
+                    pendingInfo.classList.remove('hidden');
                     
+                    // Iniciar verificación periódica
+                    iniciarVerificacionPeriodica(data.data.referencia);
+                    break;
+
                 default:
                     statusIcon.className = 'status-icon pending';
-                    statusIcon.textContent = '❓';
+                    statusIcon.innerHTML = '<i class="fas fa-question-circle"></i>';
                     statusTitle.textContent = 'Estado Desconocido';
-                    statusMessage.textContent = 'No podemos determinar el estado de tu transacción. Contacta a soporte.';
+                    statusMessage.textContent = 'No pudimos determinar el estado de tu pago. Por favor contacta a soporte.';
             }
         }
 
+        // ============================================
+        // FUNCIÓN PARA MOSTRAR ERROR
+        // ============================================
         function mostrarError(mensaje) {
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const statusIcon = document.getElementById('statusIcon');
             const statusTitle = document.getElementById('statusTitle');
             const statusMessage = document.getElementById('statusMessage');
-            
+
             loading.classList.add('hidden');
             result.classList.remove('hidden');
-            
+
             statusIcon.className = 'status-icon error';
-            statusIcon.textContent = '❌';
-            statusTitle.textContent = 'Error';
-            statusMessage.textContent = mensaje;
+            statusIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+            statusTitle.textContent = 'Error de Verificación';
+            statusMessage.innerHTML = mensaje + '<br><br><small>Por favor intenta recargar la página o contacta a soporte.</small>';
+
+            // Ocultar detalles si hay error
+            document.getElementById('transactionDetails').style.display = 'none';
         }
 
-        function traducirEstado(estado) {
-            const estados = {
-                'PENDING': 'Pendiente',
-                'APPROVED': 'Aprobado',
-                'DECLINED': 'Rechazado',
-                'ERROR': 'Error',
-                'VOIDED': 'Anulado'
-            };
-            return estados[estado] || estado;
+        // ============================================
+        // VERIFICACIÓN PERIÓDICA
+        // ============================================
+        function iniciarVerificacionPeriodica(reference) {
+            // Limpiar intervalo anterior si existe
+            if (verificacionInterval) {
+                clearInterval(verificacionInterval);
+            }
+
+            console.log('🔄 Iniciando verificación periódica cada 10 segundos...');
+
+            let intentos = 0;
+            const MAX_INTENTOS = 30; // 5 minutos máximo
+
+            verificacionInterval = setInterval(async () => {
+                intentos++;
+                console.log(`🔄 Verificación #${intentos}...`);
+
+                if (intentos > MAX_INTENTOS) {
+                    console.log('⏱️ Tiempo máximo de verificación alcanzado');
+                    clearInterval(verificacionInterval);
+                    verificacionInterval = null;
+                    return;
+                }
+
+                try {
+                    const data = await verificarEstadoPago(reference);
+                    
+                    // Si el estado cambió, actualizar UI
+                    if (data.data.estado !== 'PENDING' && data.data.estado !== 'no_encontrado') {
+                        console.log('✅ Estado actualizado:', data.data.estado);
+                        mostrarResultado(data);
+                    }
+                } catch (error) {
+                    console.error('Error en verificación periódica:', error);
+                }
+            }, 10000); // 10 segundos
         }
 
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
         function formatearMonto(centavos) {
             if (!centavos) return '-';
             const pesos = centavos / 100;
             return new Intl.NumberFormat('es-CO', {
                 style: 'currency',
-                currency: 'COP'
+                currency: 'COP',
+                minimumFractionDigits: 0
             }).format(pesos);
         }
 
+        function formatearFecha(fecha) {
+            if (!fecha) return '-';
+            return new Date(fecha).toLocaleString('es-CO', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function traducirMetodoPago(metodo) {
+            const metodos = {
+                'CARD': 'Tarjeta de Crédito/Débito',
+                'NEQUI': 'Nequi',
+                'PSE': 'PSE',
+                'BANCOLOMBIA_TRANSFER': 'Transferencia Bancolombia',
+                'BANCOLOMBIA_QR': 'QR Bancolombia'
+            };
+            return metodos[metodo] || metodo || 'No especificado';
+        }
+
         function volverAlInicio() {
-            // Limpiar localStorage si es necesario
+            // Limpiar todo
             localStorage.removeItem('compra_pendiente');
-            localStorage.removeItem('transaction_id');
-            localStorage.removeItem('transaction_reference');
-            localStorage.removeItem('transaction_status');
+            localStorage.removeItem('ultima_referencia_pago');
+            
+            // Detener verificación si existe
+            if (verificacionInterval) {
+                clearInterval(verificacionInterval);
+            }
             
             window.location.href = '/';
+        }
+
+        function hacerOtraCompra() {
+            volverAlInicio();
         }
 
         // ============================================
         // INICIALIZACIÓN
         // ============================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 Iniciando verificación de pago...');
+            console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🚀 PÁGINA DE CONFIRMACIÓN DE PAGO');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📍 URL:', window.location.href);
             
-            // Obtener transaction_id de la URL o localStorage
-            const urlParams = new URLSearchParams(window.location.search);
-            let transactionId = urlParams.get('transaction_id') || 
-                               localStorage.getItem('transaction_id');
+            // Obtener referencia
+            const reference = obtenerReferencia();
             
-            if (!transactionId) {
-                mostrarError('No se encontró información de la transacción.');
+            if (!reference) {
+                console.error('❌ No se encontró referencia de pago');
+                mostrarError('No se encontró información de la transacción en la URL. Por favor verifica el link o contacta a soporte.');
                 return;
             }
-            
-            console.log('📋 Transaction ID:', transactionId);
-            
+
+            console.log('✅ Referencia obtenida:', reference);
+
             try {
-                // Verificar estado inmediatamente
-                const resultado = await verificarEstadoTransaccion(transactionId);
-                mostrarResultado(resultado);
+                // Verificar estado
+                const data = await verificarEstadoPago(reference);
                 
-                // Si está pendiente, verificar cada 10 segundos
-                if (resultado.data?.status === 'PENDING') {
-                    const intervalo = setInterval(async () => {
-                        try {
-                            const nuevoEstado = await verificarEstadoTransaccion(transactionId);
-                            mostrarResultado(nuevoEstado);
-                            
-                            // Si ya no está pendiente, dejar de verificar
-                            if (nuevoEstado.data?.status !== 'PENDING') {
-                                clearInterval(intervalo);
-                            }
-                        } catch (error) {
-                            console.error('Error en verificación periódica:', error);
-                        }
-                    }, 10000); // 10 segundos
+                if (data.success) {
+                    mostrarResultado(data);
+                } else {
+                    mostrarError(data.error || 'Error al verificar el estado del pago');
                 }
                 
             } catch (error) {
-                console.error('❌ Error:', error);
-                mostrarError('Error al verificar el estado del pago: ' + error.message);
+                console.error('❌ Error fatal:', error);
+                mostrarError(`Error al verificar el pago: ${error.message}`);
+            }
+
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        });
+
+        // Limpiar intervalo al cerrar/salir de la página
+        window.addEventListener('beforeunload', function() {
+            if (verificacionInterval) {
+                clearInterval(verificacionInterval);
             }
         });
     </script>

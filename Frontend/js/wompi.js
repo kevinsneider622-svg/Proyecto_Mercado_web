@@ -1,35 +1,20 @@
-
 // ============================================
-// WOMPI.JS - FRONTEND (Lógica de Pago)
-// Compatible con Backend PSE
+// WOMPI.JS - FRONTEND (Widget de Wompi) - CORREGIDO
 // ============================================
 
 // ============================================
 // VARIABLES GLOBALES
 // ============================================
 let wompiPublicKey = '';
-let wompiApiUrl = '';
-let wompiEnvironment = '';
-let acceptanceToken = '';
 let compraInfo = null;
 
 // ============================================
 // ELEMENTOS DEL DOM
 // ============================================
-const form = document.getElementById('paymentForm');
-const submitBtn = document.getElementById('submitBtn');
+const form = document.getElementById('customerForm');
+const wompiButton = document.getElementById('wompi-button');
 const loading = document.getElementById('loading');
-const emailInput = document.getElementById('email');
-const legalIdInput = document.getElementById('legalId');
-
-
-
-// ============================================
-// VERIFICAR QUE LOS ELEMENTOS EXISTAN
-// ============================================
-if (!form || !submitBtn || !loading) {
-    console.error('❌ Elementos del DOM no encontrados');
-}
+const errorMessage = document.getElementById('errorMessage');
 
 // ============================================
 // CARGAR CONFIGURACIÓN DE WOMPI
@@ -38,23 +23,17 @@ async function loadWompiConfig() {
     try {
         console.log('🔑 Cargando configuración de Wompi...');
         
-        const data = await fetchAPI('/api/pagos/config');
+        const response = await fetch('/api/pagos/config');
+        const data = await response.json();
         
-        if (!data.publicKey) {
-            throw new Error('No se recibió la llave pública');
+        if (!data.success) {
+            throw new Error('Error en respuesta del servidor');
         }
         
         wompiPublicKey = data.publicKey;
-        wompiApiUrl = data.apiUrl || 'https://sandbox.wompi.co/v1';
-        wompiEnvironment = data.environment || 'sandbox';
         
-        console.log('✅ Configuración de Wompi cargada:');
+        console.log('✅ Configuración de Wompi cargada');
         console.log('   Public Key:', wompiPublicKey.substring(0, 20) + '...');
-        console.log('   API URL:', wompiApiUrl);
-        console.log('   Entorno:', wompiEnvironment.toUpperCase());
-        
-        // Obtener token de aceptación
-        await getAcceptanceToken();
         
         return true;
         
@@ -66,421 +45,308 @@ async function loadWompiConfig() {
 }
 
 // ============================================
-// OBTENER TOKEN DE ACEPTACIÓN
+// CARGAR RESUMEN DE COMPRA
 // ============================================
-async function getAcceptanceToken() {
-    try {
-        console.log('📝 Obteniendo acceptance token...');
-        
-        const data = await fetchAPI('/api/pagos/acceptance-token');
-        
-        if (data.success && data.acceptanceToken) {
-            acceptanceToken = data.acceptanceToken;
-            console.log('✅ Acceptance token obtenido');
-            return true;
-        } else {
-            console.warn('⚠️ No se pudo obtener acceptance token');
-            return false;    
-        }
-    } catch (error) {
-        console.error('❌ Error obteniendo acceptance token:', error);
-        return false;
-    }
-}
-
-// ============================================
-// CONFIGURAR EVENT LISTENERS
-// ============================================
-
-function setupPaymentListeners() {
-    if (!form) {
-        console.error('❌ Formulario no encontrado');
-        return;
-    }
-    
-    form.addEventListener('submit', handlePaymentSubmit);
-    
-    if (emailInput) {
-        emailInput.addEventListener('blur', validateEmail);
-    }
-    
-    if (legalIdInput) {
-        legalIdInput.addEventListener('input', validateLegalId);
-    }
-    
-    console.log('✅ Event listeners configurados');
-}
-
-// ============================================
-// VALIDACIONES
-// ============================================
-
-function validateEmail() {
-    if (!emailInput) return false;
-    
-    const email = emailInput.value.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    if (email && !emailRegex.test(email)) {
-        emailInput.style.borderColor = '#e74c3c';
-        return false;
-    } else if (email) {
-        emailInput.style.borderColor = '#2ecc71';
-        return true;
-    }
-    return false;
-}
-
-function validateLegalId(e) {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-}
-
-
-// ============================================
-// DEBUG: Verificar elementos al cargar
-// ============================================
-/*
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 Verificando elementos del formulario:');
-    console.log('   email:', !!document.getElementById('email'));
-    console.log('   userType:', !!document.getElementById('userType'));
-    console.log('   legalIdType:', !!document.getElementById('legalIdType'));
-    console.log('   legalId:', !!document.getElementById('legalId'));
-    console.log('   bank:', !!document.getElementById('bank'));
-    console.log('   paymentForm:', !!document.getElementById('paymentForm'));
-    console.log('   submitBtn:', !!document.getElementById('submitBtn'));
-});
-
-*/
-
-// ============================================
-// PROCESAR FORMULARIO DE PAGO
-// ============================================
-
-async function handlePaymentSubmit(e) {
-    e.preventDefault();
-    
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('💳 PROCESANDO PAGO PSE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    // Validar formulario
-    if (!form.checkValidity()) {
-        mostrarError('Por favor completa todos los campos requeridos');
-        return;
-    }
-    
-    if (!validateEmail()) {
-        mostrarError('Por favor ingresa un email válido');
-        return;
-    }
-  
- 
-    
-
-    // Cargar info de compra
+function cargarResumenCompra() {
     try {
         compraInfo = JSON.parse(localStorage.getItem('compra_pendiente'));
         
-        if (!compraInfo || !compraInfo.total) {
-            throw new Error('Información de compra no válida');
+        if (!compraInfo || !compraInfo.items || !compraInfo.total) {
+            throw new Error('No hay información de compra válida');
         }
+        
+        console.log('✅ Información de compra cargada');
+        console.log('   Total:', compraInfo.total, 'COP');
+        
+        // Actualizar display del monto
+        const displayAmount = document.getElementById('displayAmount');
+        if (displayAmount) {
+            displayAmount.textContent = compraInfo.total.toLocaleString('es-CO');
+        }
+        
+        // Mostrar resumen de productos
+        mostrarResumenProductos();
+        
+        return true;
+        
     } catch (error) {
         console.error('❌ Error cargando compra:', error);
         mostrarError('Error al cargar información de la compra');
-        return;
+        return false;
     }
+}
 
-    setLoading(true);
-
+// ============================================
+// MOSTRAR RESUMEN DE PRODUCTOS
+// ============================================
+function mostrarResumenProductos() {
     try {
-
-        // ✅ PASO 1: Obtener datos del formulario CON VALIDACIÓN
-
-        const emailElement = document.getElementById('email');
-        const userTypeElement = document.getElementById('userType'); // 0=Natural, 1=Jurídica
-        const legalIdTypeElement = document.getElementById('legalIdType');
-        const legalIdElement = document.getElementById('legalId');
-        const bankElement = document.getElementById('bank');
-
-        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankElement) {
-
-            console.error('❌ Elementos del formulario no encontrados');
-            console.error('    email:', !!emailElement);
-            console.error('    userType:', !!userTypeElement);
-            console.error('    legalIdType:', !!legalIdTypeElement);
-            console.error('    legalId:', !!legalIdElement);
-            console.error('    bank:', !!bankElement);
-            throw new Error ('Elementos del formulario no encontrados');
-        }
-
-    
-        const email = emailElement.value.trim();
-        const userType = userTypeElement.value; // 0=Natural, 1=Jurídica
-        const legalIdType = legalIdTypeElement.value;
-        const legalId = legalIdElement.value.trim();
-        const bankCode = bankElement.value;
-
-
-        // Validar que todos tengan valores
-
-        if (!emailElement || !userTypeElement || !legalIdTypeElement || !legalIdElement || !bankElement) {
-
-            console.error('❌ Campos Vacios');
-            console.error('    email:', email || 'VACIO');
-            console.error('    userType:', userType || 'VACIO');
-            console.error('    legalIdType:', legalIdType || 'VACIO');
-            console.error('    legalId:', legalId || 'VACIO');
-            console.error('    bankCode:', bankCode || 'VACIO');
-            
-            mostrarError('Por favor completa todos los campos requeridos');
-            setLoading(false);
-            return;
-        }
-
-        // / ✅ PASO 2: Convertir a centavos
-        const amountInCents = Math.round(compraInfo.total * 100);
-    
-    
-        // ✅ // ✅ PASO 3: VALIDAR MONTO MÍNIMO (1,500 COP = 150,000 centavos)
-        if (amountInCents < 150000) {
-            mostrarError('El monto mínimo para PSE es $1,500 COP. Tu compra es de $' + compraInfo.total.toLocaleString('es-CO') + ' COP');
-            setLoading(false);
-            return;
-            }    
+        const container = document.getElementById('resumenProductos');
+        if (!container) return;
         
-
-            // ✅ PASO 4: Generar referencia 
-            const reference = generateReference();
-            
-                            
-            console.log('📋 Datos del formulario:');
-            console.log('   Email:', email);
-            console.log('   Tipo persona:', userType, '(0=Natural, 1=Jurídica)');
-            console.log('   Tipo doc:', legalIdType);
-            console.log('   Num doc:', legalId);
-            console.log('   Banco:', bankCode);
-            console.log('   Monto:', compraInfo.total, 'COP');
-            console.log('   Monto centavos:', amountInCents);
-            console.log('   Referencia:', reference);
-            console.log('   Acceptance token:', acceptanceToken ? '✅' : '❌');
-
-
-    // ✅ PASO 5: Crear payload
-    const transactionData = {
-        acceptance_token: acceptanceToken,
-        amount_in_cents: amountInCents,
-        currency: 'COP',
-        customer_email: "test@wompi.com",  // ← Email de prueba
-        payment_method: {
-            type: 'PSE',
-            user_type: "0",                // ← Persona natural
-            user_legal_id_type: "CC",      // ← Cédula
-            user_legal_id: "123456789",    // ← Número de prueba
-            financial_institution_code: "1022",  // ← Bancolombia
-            payment_description: 'Compra en Tu Despensa Online'
-        },
-
-        reference: reference,
-        customer_data: {
-            phone_number: "3508239549",    // ← Número real
-            full_name: "Kevin Castro"    // ← Nombre real
-        }
-    };    
-            
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('📤 ENVIANDO A BACKEND:');
-        console.log(JSON.stringify(transactionData, null, 2));
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        const html = `
+            <div class="resumen-compra">
+                <h3><i class="fas fa-shopping-bag"></i> Resumen de tu pedido</h3>
+                ${compraInfo.items.map(item => `
+                    <div class="item-compra">
+                        <span>${item.nombre} <small>(x${item.cantidad})</small></span>
+                        <strong>$${(item.precio * item.cantidad).toLocaleString('es-CO')}</strong>
+                    </div>
+                `).join('')}
+                <div class="item-compra">
+                    <span>TOTAL</span>
+                    <span>$${compraInfo.total.toLocaleString('es-CO')} COP</span>
+                </div>
+            </div>
+        `;
         
-        // Enviar al backend
-        const result = await fetchAPI('/api/pagos/crear-transaccion', {
-            method: 'POST',
-            body: JSON.stringify(transactionData)
-        });
+        container.innerHTML = html;
         
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('📥 RESPUESTA DEL BACKEND:');
-        console.log(JSON.stringify(result, null, 2));
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        if (result.success) {
-
-        const paymentUrl = result.paymentUrl || result.payment_url || result.url || result.redirect_url;
-
-            console.log('🔗 Payment URL recibida:', paymentUrl);
-            
-            if (!paymentUrl) {
-                console.error('❌ No se recibió URL de pago');
-                throw new Error('No se recibió URL de pago del banco');
-            }
-            
-            // Guardar info de transacción
-            localStorage.setItem('transaction_id', result.transactionId);
-            localStorage.setItem('transaction_reference', reference);
-            localStorage.setItem('transaction_status', 'PENDING');
-            
-            console.log('✅ TRANSACCIÓN CREADA EXITOSAMENTE');
-            console.log('   ID:', result.transactionId);
-            console.log('   Status:', result.status);
-            console.log('   URL Pago:', paymentUrl);
-            console.log('🔗 Redirigiendo al banco en 2 segundos...');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            
-            // VERIFICAR SI ES URL DE BANCO (Wompi) O URL DIRECTA
-            const isBankUrl = paymentUrl.includes('wompi.co');
-
-            if (isBankUrl) {
-                console.log('🏦 Redirigiendo al banco...');
-                // Esta es la URL del banco - redirigir directamente
-                window.location.href = paymentUrl;
-            
-            } else {
-                 console.log('📱 Redirigiendo a página de confirmación...');
-               // Esta es tu página de confirmación - agregar transaction_id
-                window.location.href = `${paymentUrl}?transaction_id=${result.transactionId}`;
-            }
-        
-            } else {
-               throw new Error(result.error || result.message || 'Error al procesar el pago');
-            }
-
-            // Mostrar mensaje de éxito
-            const loadingText = loading.querySelector('p');
-            if (loadingText) {
-                loadingText.innerHTML = '<strong>✅ Transacción creada!</strong><br>Redirigiendo al banco...';
-            }
-                    
     } catch (error) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ ERROR AL PROCESAR PAGO:');
-        console.error('   Mensaje:', error.message);
-        console.error('   Stack:', error.stack);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        
-        let errorMessage = 'Error al procesar el pago. ';
-        
-        if (error.message.includes('400')) {
-            errorMessage += 'Verifica que todos los datos sean correctos.';
-        } else if (error.message.includes('401')) {
-            errorMessage += 'Error de autenticación con Wompi.';
-        } else if (error.message.includes('500')) {
-            errorMessage += 'Error del servidor. Intenta nuevamente.';
-        } else {
-            errorMessage += error.message;
-        }
-        
-        mostrarError(errorMessage);
-        setLoading(false);
+        console.error('❌ Error mostrando resumen:', error);
     }
 }
 
+// ============================================
+// GENERAR TRANSACCIÓN CON SIGNATURE - CORREGIDO
+// ============================================
+async function generarTransaccionConSignature() {
+    try {
+        // Obtener datos del formulario
+        const customerEmail = document.getElementById('customerEmail').value;
+        const customerName = document.getElementById('customerName').value;
+        const customerPhone = document.getElementById('customerPhone').value;
+        const customerLegalId = document.getElementById('customerLegalId').value;
+        const customerLegalIdType = document.getElementById('customerLegalIdType').value;
 
-// ============================================
-// GENERAR REFERENCIA ÚNICA
-// ============================================
-function generateReference() {
-    const timestamp = Date.now();
-    const userId = compraInfo?.userId || 'GUEST';
-    const random = Math.floor(Math.random() * 10000);
-    return `SUPER-${userId}-${timestamp}-${random}`;
+        // Validar campos
+        if (!customerEmail || !customerName || !customerPhone || !customerLegalId || !customerLegalIdType) {
+            mostrarError('Por favor completa todos los campos');
+            return null;
+        }
+
+        console.log('🔐 Solicitando transacción con signature al backend...');
+        
+        setLoading(true);
+
+        // ✅ SOLICITAR AL BACKEND QUE GENERE LA SIGNATURE
+        const response = await fetch('/api/pagos/generar-transaccion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                monto: compraInfo.total,
+                emailCliente: customerEmail,
+                nombreCliente: customerName,
+                telefonoCliente: customerPhone,
+                documentoCliente: customerLegalId,
+                tipoDocumento: customerLegalIdType
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Error generando transacción');
+        }
+
+        console.log('✅ Transacción generada:', {
+            referencia: data.data.referencia,
+            signature: data.data.signature?.substring(0, 20) + '...',
+            monto: data.data.amountInCents / 100
+        });
+
+        setLoading(false);
+        return data.data;
+
+    } catch (error) {
+        console.error('❌ Error generando transacción:', error);
+        mostrarError('Error: ' + error.message);
+        setLoading(false);
+        return null;
+    }
 }
 
 // ============================================
-// UI HELPERS
+// CREAR WIDGET DE WOMPI - CORREGIDO
+// ============================================
+async function crearWompiWidget() {
+    try {
+        // Generar transacción con signature desde el backend
+        const transaccionData = await generarTransaccionConSignature();
+        
+        if (!transaccionData) {
+            return false;
+        }
+
+        console.log('🎯 Creando widget Wompi con signature');
+
+        // Limpiar contenedor anterior
+        const container = document.getElementById('wompiButtonContainer');
+        if (!container) {
+            throw new Error('Contenedor del widget no encontrado');
+        }
+        
+        container.innerHTML = '';
+
+        // ✅ CREAR ELEMENTO SCRIPT CON SIGNATURE
+        const wompiScript = document.createElement('script');
+        wompiScript.src = 'https://checkout.wompi.co/widget.js';
+        wompiScript.setAttribute('data-render', 'button');
+        wompiScript.setAttribute('data-public-key', transaccionData.publicKey);
+        wompiScript.setAttribute('data-currency', transaccionData.currency);
+        wompiScript.setAttribute('data-amount-in-cents', transaccionData.amountInCents.toString());
+        wompiScript.setAttribute('data-reference', transaccionData.referencia);
+        
+        // ⚠️ CRITICAL: Signature de integridad
+        wompiScript.setAttribute('data-signature:integrity', transaccionData.signature);
+        
+        wompiScript.setAttribute('data-redirect-url', transaccionData.redirectUrl);
+        
+        // Datos del cliente
+        wompiScript.setAttribute('data-customer-data:email', transaccionData.customerEmail);
+        wompiScript.setAttribute('data-customer-data:full-name', transaccionData.customerName);
+        wompiScript.setAttribute('data-customer-data:phone-number', transaccionData.customerPhone.replace(/\D/g, ''));
+        wompiScript.setAttribute('data-customer-data:phone-number-prefix', '+57');
+        wompiScript.setAttribute('data-customer-data:legal-id', transaccionData.customerLegalId);
+        wompiScript.setAttribute('data-customer-data:legal-id-type', transaccionData.customerLegalIdType);
+
+        // Crear formulario para el widget
+        const form = document.createElement('form');
+        form.id = 'wompiPaymentForm';
+        form.appendChild(wompiScript);
+        container.appendChild(form);
+
+        console.log('✅ Widget de Wompi creado correctamente');
+
+        // Guardar referencia
+        localStorage.setItem('ultima_referencia_pago', transaccionData.referencia);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error creando widget:', error);
+        mostrarError('Error al crear el widget de pago');
+        return false;
+    }
+}
+
+// ============================================
+// CONFIGURAR VALIDACIÓN DE FORMULARIO
+// ============================================
+function setupFormValidation() {
+    const inputs = document.querySelectorAll('#customerForm input, #customerForm select');
+    const wompiButton = document.getElementById('wompi-button');
+    
+    if (!wompiButton) return;
+    
+    function validateForm() {
+        const email = document.getElementById('customerEmail')?.value;
+        const name = document.getElementById('customerName')?.value;
+        const phone = document.getElementById('customerPhone')?.value;
+        const legalId = document.getElementById('customerLegalId')?.value;
+        const legalIdType = document.getElementById('customerLegalIdType')?.value;
+        
+        return email && name && phone && legalId && legalIdType;
+    }
+    
+    function updateButtonState() {
+        if (validateForm()) {
+            wompiButton.disabled = false;
+            wompiButton.innerHTML = '<i class="fas fa-lock"></i> Pagar $' + compraInfo.total.toLocaleString('es-CO');
+            wompiButton.onclick = iniciarPago;
+        } else {
+            wompiButton.disabled = true;
+            wompiButton.innerHTML = '<i class="fas fa-lock"></i> Completa tus datos';
+            wompiButton.onclick = null;
+        }
+    }
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', updateButtonState);
+    });
+    
+    updateButtonState();
+    console.log('✅ Validación configurada');
+}
+
+// ============================================
+// INICIAR PROCESO DE PAGO
+// ============================================
+async function iniciarPago() {
+    try {
+        console.log('🚀 Iniciando pago...');
+        const success = await crearWompiWidget();
+        
+        if (success) {
+            console.log('✅ Widget listo');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error iniciando pago:', error);
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// ============================================
+// FUNCIONES DE UI
 // ============================================
 function setLoading(isLoading) {
-    if (!loading || !form || !submitBtn) return;
+    if (!loading) return;
     
     if (isLoading) {
         loading.classList.add('active');
-        form.style.display = 'none';
-        submitBtn.disabled = true;
     } else {
         loading.classList.remove('active');
-        form.style.display = 'block';
-        submitBtn.disabled = false;
     }
 }
 
-// Definir mostrarError si no existe
-if (typeof mostrarError === 'undefined') {
-    window.mostrarError = function(mensaje) {
-        const errorDiv = document.getElementById('errorMessage');
-        if (errorDiv) {
-            errorDiv.textContent = mensaje;
-            errorDiv.classList.add('active');
-            
-            setTimeout(() => {
-                errorDiv.classList.remove('active');
-            }, 8000);
-        }
-        console.error('❌', mensaje);
-    };
+function mostrarError(mensaje) {
+    if (errorMessage) {
+        errorMessage.textContent = mensaje;
+        errorMessage.classList.add('active');
+        
+        setTimeout(() => {
+            errorMessage.classList.remove('active');
+        }, 8000);
+    }
+    console.error('❌', mensaje);
 }
 
+function mostrarExito(transaccion) {
+    localStorage.removeItem('compra_pendiente');
+    window.location.href = `/confirmacion.html?reference=${transaccion.reference}&status=approved`;
+}
 
-
-// ============================================
-// INICIALIZACIÓN AUTOMÁTICA
-// ============================================
-(async function initWompiPayment() {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎨 Wompi PSE Integration v5.0');
-    console.log('📦 Compatible con Backend PSE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
+function volverAlCarrito() {
+    if (confirm('¿Deseas volver al carrito?')) {
+        window.location.href = '/';
     }
+}
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+(async function initWompiWidget() {
+    console.log('🚀 Inicializando Wompi Widget...');
     
-    async function init() {
-        try {
-            console.log('🚀 Inicializando sistema de pago...');
-            
-            // Esperar CONFIG
-            if (!window.CONFIG?.api?.baseUrl) {
-                console.log('⏳ Esperando CONFIG...');
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        console.warn('⚠️ Timeout esperando CONFIG');
-                        resolve();
-                    }, 5000);
-                    
-                    window.addEventListener('configLoaded', () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    }, { once: true });
-                });
-            }
-            
-            if (!window.CONFIG?.api?.baseUrl) {
-                throw new Error('CONFIG no disponible');
-            }
-            
-            console.log('✅ CONFIG disponible');
-            
-            // Cargar configuración de Wompi
-            const configLoaded = await loadWompiConfig();
-            
-            if (!configLoaded) {
-                throw new Error('Error cargando configuración de Wompi');
-            }
-            
-            // Configurar event listeners
-            setupPaymentListeners();
-            
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('✅ Sistema de pago listo');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            
-        } catch (error) {
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.error('❌ Error inicializando:', error);
-            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            mostrarError('Error al inicializar: ' + error.message);
-        }
+    try {
+        // 1. Cargar config
+        const configLoaded = await loadWompiConfig();
+        if (!configLoaded) throw new Error('Error cargando config');
+        
+        // 2. Cargar compra
+        const compraCargada = cargarResumenCompra();
+        if (!compraCargada) throw new Error('Error cargando compra');
+        
+        // 3. Configurar validación
+        setupFormValidation();
+        
+        console.log('✅ Widget inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando:', error);
+        mostrarError('Error: ' + error.message);
     }
 })();
