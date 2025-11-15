@@ -128,7 +128,7 @@ router.post('/generar-transaccion', verificarConfigWompi, async (req, res) => {
                 customerPhone: telefonoCliente,
                 customerLegalId: documentoCliente,
                 customerLegalIdType: tipoDocumento,
-                redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confir_pago.html?reference=${referencia}`
+                redirectUrl: `${process.env.FRONTEND_URL || 'https://proyecto-mercado-web.onrender.com'}/confir_pago.html?reference=${referencia}`
             }
         });
 
