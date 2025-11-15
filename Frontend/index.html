@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supermercado Online</title>
+    <title>Supermercado Online - Tu Despensa Digital</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-        <script type="module"> 
-        
+    <script type="module"> 
         import { CONFIG, UTILS, getAPI_BASE_URL } from './js/config.js';
         
         // Hacer disponible globalmente
@@ -23,144 +22,656 @@
         console.log('🌐 API URL:', CONFIG.api.baseUrl);
         console.log('📍 Hostname:', window.location.hostname);  
 
-           // ✅ DISPARAR EVENTO CUANDO CONFIG ESTÉ LISTO
+        // ✅ DISPARAR EVENTO CUANDO CONFIG ESTÉ LISTO
         window.dispatchEvent(new CustomEvent('configLoaded', { 
             detail: { config: CONFIG } 
         }));
-        
-        </script>
+    </script>
     
     <style>
-
         :root {
             --primary-color: #2ecc71;
+            --primary-dark: #27ae60;
             --secondary-color: #3498db;
-            --danger-color: #e74c3c;
+            --accent-color: #e74c3c;
             --warning-color: #f39c12;
             --dark-color: #2c3e50;
             --light-color: #ecf0f1;
+            --gray-light: #f8f9fa;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-hover: 0 8px 25px rgba(0,0,0,0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
         }
-        
-        .navbar {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        /* ========================================
+           ENCABEZADO SUPERIOR MEJORADO
+        ======================================== */
+        .top-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 8px 0;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        
+
+        .top-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-promo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .promo-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .promo-item i {
+            font-size: 0.7rem;
+        }
+
+        .header-contact {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+            color: white;
+            transition: var(--transition);
+        }
+
+        .contact-item:hover {
+            color: var(--light-color);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           NAVEGACIÓN PRINCIPAL MEJORADA
+        ======================================== */
+        .main-navbar {
+            background: white;
+            padding: 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
         .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: var(--primary-color) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 0;
+            transition: var(--transition);
         }
-        
+
+        .navbar-brand:hover {
+            transform: scale(1.02);
+        }
+
+        .navbar-brand i {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+        }
+
+        .nav-link {
+            font-weight: 600;
+            color: var(--text-dark) !important;
+            padding: 15px 20px !important;
+            border-radius: var(--border-radius);
+            margin: 0 5px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--primary-color);
+            transition: var(--transition);
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            width: 80%;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary-color) !important;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
         .cart-icon {
             position: relative;
-            cursor: pointer;
+            background: var(--gray-light);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            border: 2px solid transparent;
         }
-        
+
+        .cart-icon:hover {
+            background: var(--primary-color);
+            transform: scale(1.1);
+            border-color: var(--primary-dark);
+        }
+
+        .cart-icon:hover i {
+            color: white !important;
+        }
+
         .cart-count {
             position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: var(--danger-color);
+            top: -5px;
+            right: -5px;
+            background: var(--accent-color);
             color: white;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             font-size: 0.75rem;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        
-        .product-card {
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: none;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+        .user-actions .btn {
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: var(--transition);
+            border: 2px solid var(--primary-color);
         }
-        
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        }
-        
-        .product-img {
-            height: 200px;
-            object-fit: cover;
-            width: 100%;
-        }
-        
-        .price {
+
+        .user-actions .btn-outline-light {
             color: var(--primary-color);
-            font-weight: bold;
-            font-size: 1.25rem;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
-        
-        .btn-primary:hover {
-            background-color: #27ae60;
-            border-color: #27ae60;
+
+        .user-actions .btn-outline-light:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
-        
-        .cart-item {
-            transition: background-color 0.2s;
+
+        /* ========================================
+           CONTENIDO PRINCIPAL MEJORADO
+        ======================================== */
+        #contenidoPrincipal {
+            padding-top: 20px;
+            min-height: calc(100vh - 200px);
         }
-        
-        .cart-item:hover {
-            background-color: rgba(0,0,0,0.02);
-        }
-        
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1055;
-        }
-        
-        .empty-cart {
-            padding: 3rem 1rem;
+
+        .hero-section {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.9) 0%, rgba(52, 152, 219, 0.9) 100%),
+                        url('https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            padding: 100px 0;
             text-align: center;
-            color: #6c757d;
+            margin-bottom: 50px;
+            border-radius: 0 0 30px 30px;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .empty-cart i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(46, 204, 113, 0.8), rgba(52, 152, 219, 0.8));
+            z-index: 1;
         }
-        
+
+        .hero-section .container {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero-section .lead {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero {
+            padding: 15px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 3px solid transparent;
+        }
+
+        .btn-hero-primary {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            background: var(--light-color);
+        }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: white;
+            border: 3px solid white;
+        }
+
+        .btn-hero-secondary:hover {
+            background: white;
+            color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ========================================
+           TARJETAS DE PRODUCTOS MEJORADAS
+        ======================================== */
+        .product-card {
+            background: white;
+            border: none;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            height: 100%;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .product-img-container {
+            position: relative;
+            overflow: hidden;
+            height: 200px;
+        }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .product-card:hover .product-img {
+            transform: scale(1.1);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .product-card-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 200px);
+        }
+
+        .product-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+
+        .product-price {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .product-stock {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .quantity-btn {
+            width: 35px;
+            height: 35px;
+            border: 2px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: bold;
+        }
+
+        .quantity-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 5px;
+            font-weight: 600;
+        }
+
+        .add-to-cart-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ========================================
+           MODALES MEJORADOS
+        ======================================== */
         .modal-header {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
+            border-bottom: none;
+            padding: 20px 25px;
         }
-        
-        footer {
-            background-color: var(--dark-color);
-            color: white;
-            padding: 2rem 0;
-            margin-top: 3rem;
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.3rem;
         }
-        
-        .hero-section {
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
-            background-size: cover;
-            background-position: center;
+
+        .modal-content {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--shadow-hover);
+            overflow: hidden;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 10px;
+            background: var(--gray-light);
+            transition: var(--transition);
+        }
+
+        .cart-item:hover {
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .cart-item-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+
+        .cart-item-details {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-price {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* ========================================
+           FOOTER MEJORADO
+        ======================================== */
+        .main-footer {
+            background: var(--dark-color);
             color: white;
-            padding: 5rem 0;
+            padding: 50px 0 20px;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h5 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .whatsapp-contact {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+
+        .whatsapp-contact:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
             text-align: center;
-            margin-bottom: 3rem;
-            border-radius: 0 0 20px 20px;
+            color: var(--text-light);
+        }
+
+        /* ========================================
+           RESPONSIVE DESIGN
+        ======================================== */
+        @media (max-width: 768px) {
+            .top-header {
+                display: none;
+            }
+
+            .hero-section h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-section .lead {
+                font-size: 1.1rem;
+            }
+
+            .btn-hero {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+
+            .nav-link {
+                padding: 12px 15px !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .hero-section {
+                padding: 60px 0;
+            }
+
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-hero {
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
+            }
+        }
+
+        /* ========================================
+           ANIMACIONES Y EFECTOS
+        ======================================== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
         }
 
         .loading-spinner {
@@ -170,143 +681,148 @@
             min-height: 300px;
         }
 
-        /* ============================================
-   ESTILOS DEL PERFIL DE USUARIO
-   ============================================ */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
 
-.profile-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
+        /* ========================================
+           TOASTS MEJORADOS
+        ======================================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
 
-.profile-photo-container {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    margin: 0 auto 1rem;
-}
+        .toast {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-hover);
+            background: white;
+        }
 
-.profile-photo {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 5px solid white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
+        .toast-header {
+            border-bottom: none;
+            background: transparent;
+        }
 
-.photo-upload-btn {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: white;
-    border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        /* ========================================
+           ESTILOS EXISTENTES (MANTENIDOS)
+        ======================================== */
+        .empty-cart {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--text-light);
+        }
 
-.level-badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: bold;
-    margin: 0.5rem 0;
-}
+        .empty-cart i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
 
-.level-bronce { background: linear-gradient(135deg, #cd7f32, #8b4513); color: white; }
-.level-plata { background: linear-gradient(135deg, #c0c0c0, #808080); color: white; }
-.level-oro { background: linear-gradient(135deg, #ffd700, #daa520); color: white; }
-.level-platino { background: linear-gradient(135deg, #e5e4e2, #b0b0b0); color: white; }
-.level-diamante { background: linear-gradient(135deg, #b9f2ff, #00bfff); color: white; }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: var(--gray-light);
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+        }
 
-.progress-custom {
-    height: 30px;
-    border-radius: 15px;
-    background: #e9ecef;
-    overflow: hidden;
-}
+        .loading.active {
+            display: block;
+        }
 
-.progress-bar-custom {
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    height: 100%;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    transition: width 0.5s ease;
-}
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
 
-.stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.benefit-item {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-}
-
-.benefit-item i {
-    color: var(--primary-color);
-    margin-right: 1rem;
-    font-size: 1.5rem;
-}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
-
 </head>
 <body>
+    <!-- ========================================
+         ENCABEZADO SUPERIOR MEJORADO
+    ======================================== -->
+    <div class="top-header">
+        <div class="container">
+            <div class="header-promo">
+                <div class="promo-item">
+                    <i class="fas fa-shipping-fast"></i>
+                    <span>Envío gratis desde $50.000</span>
+                </div>
+                <div class="promo-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Pago 100% seguro</span>
+                </div>
+            </div>
+            <div class="header-contact">
+                <a href="tel:+573508239549" class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <span>+57 350 823 9549</span>
+                </a>
+                <a href="mailto:info@tudespensa.com" class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>info@tudespensa.com</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <!-- ========================================
+         NAVEGACIÓN PRINCIPAL MEJORADA
+    ======================================== -->
+    <nav class="navbar navbar-expand-lg main-navbar">
         <div class="container">
             <a class="navbar-brand" href="#" onclick="cargarPagina('inicio'); return false;">
-                <i class="fas fa-store me-2"></i>Tu Despensa Online
+                <i class="fas fa-shopping-basket"></i>
+                <span>TuDespensa</span>
             </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" onclick="cargarPagina('inicio'); return false;">Inicio</a>
+                        <a class="nav-link active" href="#" onclick="cargarPagina('inicio'); return false;">
+                            <i class="fas fa-home me-1"></i>Inicio
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="cargarPagina('productos'); return false;">Productos</a>
+                        <a class="nav-link" href="#" onclick="cargarPagina('productos'); return false;">
+                            <i class="fas fa-box me-1"></i>Productos
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="cargarPagina('ofertas'); return false;">Ofertas</a>
+                        <a class="nav-link" href="#" onclick="cargarPagina('ofertas'); return false;">
+                            <i class="fas fa-tag me-1"></i>Ofertas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="cargarPagina('categorias'); return false;">
+                            <i class="fas fa-list me-1"></i>Categorías
+                        </a>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center">
+                
+                <div class="d-flex align-items-center user-actions">
                     <div class="cart-icon me-3" onclick="mostrarCarrito()">
-                        <i class="fas fa-shopping-cart fa-lg text-white"></i>
+                        <i class="fas fa-shopping-cart fa-lg"></i>
                         <span id="carritoCount" class="cart-count" style="display: none;">0</span>
                     </div>
                     <button class="btn btn-outline-light" onclick="verificarSesion(); return false;">
@@ -317,12 +833,16 @@
         </div>
     </nav>
 
-    <!-- Contenedor principal -->
-    <div id="contenidoPrincipal">
+    <!-- ========================================
+         CONTENIDO PRINCIPAL
+    ======================================== -->
+    <div id="contenidoPrincipal" class="fade-in-up">
         <!-- Aquí se carga el contenido dinámico -->
     </div>
 
-    <!-- Modal del Carrito -->
+    <!-- ========================================
+         MODAL DEL CARRITO MEJORADO
+    ======================================== -->
     <div class="modal fade" id="carritoModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -348,25 +868,64 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
+    <!-- ========================================
+         TOAST CONTAINER
+    ======================================== -->
     <div class="toast-container"></div>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container text-center">
-            <p>&copy; 2025 Tu Despensa Online. Todos los derechos reservados.</p>
-            <div class="mt-3">
-                <a href="https://wa.me/573508239549?text=Hola,%20tengo%20una%20duda%20sobre%20su%20tienda" 
-                   target="_blank" 
-                   class="text-white me-3">
-                    <div> ¿Tienes dudas? Chatea con nosotros por WhatsApp</div>
-                   <i class="fab fa-whatsapp fa-lg me-1"></i> Soporte por WhatsApp
-                   
+    <!-- ========================================
+         FOOTER MEJORADO
+    ======================================== -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h5>Tu Despensa Online</h5>
+                    <p>Tu mercado digital de confianza. Productos frescos y de calidad directamente a tu hogar.</p>
+                    <a href="https://wa.me/573508239549?text=Hola,%20tengo%20una%20duda%20sobre%20su%20tienda" 
+                       target="_blank" 
+                       class="whatsapp-contact">
+                        <i class="fab fa-whatsapp fa-lg"></i>
+                        Soporte por WhatsApp
+                    </a>
+                </div>
+                
+                <div class="footer-section">
+                    <h5>Enlaces Rápidos</h5>
+                    <ul class="footer-links">
+                        <li><a href="#" onclick="cargarPagina('inicio')"><i class="fas fa-chevron-right"></i> Inicio</a></li>
+                        <li><a href="#" onclick="cargarPagina('productos')"><i class="fas fa-chevron-right"></i> Productos</a></li>
+                        <li><a href="#" onclick="cargarPagina('ofertas')"><i class="fas fa-chevron-right"></i> Ofertas</a></li>
+                        <li><a href="#" onclick="verificarSesion()"><i class="fas fa-chevron-right"></i> Mi Cuenta</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h5>Información</h5>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Términos y Condiciones</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Política de Privacidad</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Política de Envíos</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Preguntas Frecuentes</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h5>Contacto</h5>
+                    <ul class="footer-links">
+                        <li><a href="tel:+573508239549"><i class="fas fa-phone"></i> +57 350 823 9549</a></li>
+                        <li><a href="mailto:info@tudespensa.com"><i class="fas fa-envelope"></i> info@tudespensa.com</a></li>
+                        <li><a href="#"><i class="fas fa-map-marker-alt"></i> Bogotá, Colombia</a></li>
+                        <li><a href="#"><i class="fas fa-clock"></i> Lun-Dom: 6AM - 10PM</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Tu Despensa Online. Todos los derechos reservados. | Desarrollado con <i class="fas fa-heart text-danger"></i> para tu bienestar</p>
             </div>
         </div>
     </footer>
-
-
 
 
     <!-- Scripts -->
@@ -916,7 +1475,7 @@ function mostrarListaProductos(productos) {
                 let html = '';
                 let total = 0;
                 
-                window.cart.forEach(item => {
+                window.cart.forEach((item, index) => {
                     const subtotal = item.precio * item.cantidad;
                     total += subtotal;
                     html += `
