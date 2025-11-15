@@ -1,0 +1,673 @@
+/* ============================================
+   ESTILOS PARA PAGO.HTML - TEMA PROFESIONAL
+   ============================================ */
+
+:root {
+    --primary-color: #2ecc71;
+    --primary-dark: #27ae60;
+    --primary-light: #d5f4e6;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --warning-color: #f39c12;
+    --dark-color: #2c3e50;
+    --light-color: #ffffff;
+    --gray-light: #f8f9fa;
+    --gray-medium: #e9ecef;
+    --gray-dark: #6c757d;
+    --text-dark: #2c3e50;
+    --text-light: #7f8c8d;
+    --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-hover: 0 8px 25px rgba(0,0,0,0.15);
+    --border-radius: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   ESTILOS BASE
+============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+/* ============================================
+   HEADER DE CHECKOUT
+============================================ */
+
+.checkout-header {
+    background: var(--light-color);
+    width: 100%;
+    max-width: 800px;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    box-shadow: var(--shadow);
+    margin-bottom: 0;
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.brand:hover {
+    transform: scale(1.02);
+    color: var(--primary-dark);
+}
+
+.brand i {
+    font-size: 1.8rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-step {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background: var(--gray-light);
+    color: var(--text-light);
+    transition: var(--transition);
+}
+
+.breadcrumb-step.active {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.breadcrumb-separator {
+    color: var(--gray-dark);
+    font-weight: bold;
+}
+
+.security-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   CONTENEDOR PRINCIPAL
+============================================ */
+
+.container {
+    background: var(--light-color);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    padding: 2.5rem;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: var(--shadow-hover);
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   LOGO Y TÍTULO
+============================================ */
+
+.logo {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--gray-light);
+}
+
+.logo h1 {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.logo p {
+    color: var(--text-light);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   DISPLAY DEL MONTO
+============================================ */
+
+.amount-display {
+    background: linear-gradient(135deg, var(--primary-light), #e8f5e8);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.amount-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.amount-display h3 {
+    color: var(--text-dark);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+/* ============================================
+   MENSAJES DE ERROR
+============================================ */
+
+.error-message {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+.error-message.show {
+    display: block;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   CAJAS DE INFORMACIÓN
+============================================ */
+
+.info-box, .payment-methods-info {
+    background: var(--gray-light);
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem 1.5rem;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.info-box i, .payment-methods-info i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.payment-methods-info {
+    border-left-color: var(--secondary-color);
+}
+
+.payment-methods-info i {
+    color: var(--secondary-color);
+}
+
+/* ============================================
+   FORMULARIO DEL CLIENTE
+============================================ */
+
+.customer-form {
+    margin-bottom: 2rem;
+}
+
+.customer-form h3 {
+    color: var(--text-dark);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.customer-form h3 i {
+    color: var(--primary-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.required {
+    color: var(--accent-color);
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--gray-medium);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--light-color);
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+.form-group input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: var(--accent-color);
+}
+
+/* ============================================
+   RESUMEN DE PRODUCTOS
+============================================ */
+
+#resumenProductos {
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.producto-resumen {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-medium);
+}
+
+.producto-resumen:last-child {
+    border-bottom: none;
+}
+
+.producto-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.producto-imagen {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid var(--gray-medium);
+}
+
+.producto-detalles h4 {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text-dark);
+}
+
+.producto-detalles p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.producto-total {
+    font-weight: 700;
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   CONTENEDOR WOMPI
+============================================ */
+
+.wompi-widget-container {
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 2px dashed var(--primary-color);
+}
+
+.wompi-widget-container h3 {
+    color: var(--text-dark);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.wompi-widget-container h3 i {
+    color: var(--primary-color);
+}
+
+.wompi-button-container {
+    margin: 1.5rem 0;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.7);
+    border-radius: var(--border-radius);
+    border: 2px solid var(--gray-medium);
+}
+
+/* ============================================
+   BOTONES
+============================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    min-width: 200px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+#wompi-button {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+#wompi-button:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 2px solid var(--gray-dark);
+    color: var(--gray-dark);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-dark);
+    color: white;
+}
+
+/* ============================================
+   INDICADOR DE CARGA
+============================================ */
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+    margin: 1.5rem 0;
+}
+
+.loading.show {
+    display: block;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+============================================ */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .checkout-header {
+        padding: 1rem;
+        position: relative;
+        top: 0;
+    }
+    
+    .header-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .breadcrumb {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .container {
+        padding: 1.5rem;
+    }
+    
+    .logo h1 {
+        font-size: 1.8rem;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .amount {
+        font-size: 2rem;
+    }
+    
+    .wompi-widget-container {
+        padding: 1.5rem;
+    }
+    
+    .btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .logo h1 {
+        font-size: 1.5rem;
+    }
+    
+    .amount-display {
+        padding: 1rem;
+    }
+    
+    .amount {
+        font-size: 1.8rem;
+    }
+    
+    .customer-form h3, .wompi-widget-container h3 {
+        font-size: 1.1rem;
+    }
+    
+    .form-group input, .form-group select {
+        padding: 10px 12px;
+    }
+}
+
+/* ============================================
+   ANIMACIONES Y EFECTOS
+============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container, .checkout-header {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Efecto de pulso para elementos importantes */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+}
+
+.amount-display {
+    animation: pulse 2s infinite;
+}
+
+/* ============================================
+   ESTILOS PARA EL WIDGET DE WOMPI
+============================================ */
+
+/* Estos estilos se aplicarán al widget de Wompi cuando se cargue */
+.wompi-widget {
+    width: 100%;
+    border: none;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+/* Estilos para los iframes que Wompi pueda insertar */
+.wompi-button-container iframe {
+    border: none;
+    border-radius: var(--border-radius);
+    width: 100%;
+    min-height: 400px;
+}
+
+/* ============================================
+   ESTADOS DE VALIDACIÓN
+============================================ */
+
+.form-group.valid input,
+.form-group.valid select {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+}
+
+.form-group.invalid input,
+.form-group.invalid select {
+    border-color: var(--accent-color);
+    background: #ffeaea;
+}
+
+.validation-message {
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.form-group.invalid .validation-message {
+    display: block;
+    color: var(--accent-color);
+    font-weight: 500;
+}

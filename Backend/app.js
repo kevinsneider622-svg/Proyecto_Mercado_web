@@ -10,6 +10,7 @@ import productosRoutes from './routes/productos.js';
 import dashboardRoutes from './routes/dashboard.js';
 import authRoutes from './routes/auth.js';
 import pagosRoutes from './routes/pagos.js';
+import uploadRoutes from './routes/upload.js';
 
 dotenv.config();
 
@@ -158,6 +159,9 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Rutas de pagos PSE
 app.use('/api/pagos', pagosRoutes);
+
+// Rutas de upload
+app.use('/api/upload', uploadRoutes);
 
 // ============================================
 // RUTAS DE PRUEBA Y DIAGNÓSTICO

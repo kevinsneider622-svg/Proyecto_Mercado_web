@@ -2,6 +2,8 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../db.js';
+import auth from '../middleware/auth.js';
+
 
 const router = express.Router();
 
@@ -235,23 +237,16 @@ router.get('/verify', async (req, res) => {
 // ============================================
 // OBTENER PERFIL
 // ============================================
-router.get('/profile', async (req, res) => {
+router.get('/profile', auth, async (req, res) => {
     try {
-        const token = req.headers.authorization?.replace('Bearer ', '');
-
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                error: 'Token no proporcionado'
-            });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secreto_supermercado');
+        // ✅ EL USUARIO YA VIENE DEL MIDDLEWARE AUTH
+        const usuario = req.user;
+        console.log('👤 Obteniendo perfil para usuario:', usuario.id);
 
         const result = await db.query(
-            `SELECT id, nombre, email, telefono, direccion, rol, fecha_creacion 
+            `SELECT id, nombre, email, telefono, direccion, rol, fecha_creacion, fecha_actualizacion, foto_perfil
              FROM usuarios WHERE id = $1`,
-            [decoded.id]
+            [usuario.id]
         );
 
         if (result.rows.length === 0) {
@@ -261,16 +256,122 @@ router.get('/profile', async (req, res) => {
             });
         }
 
+        const userData = result.rows[0];
+        
+        // Construir URL completa para la foto de perfil si existe
+        if (userData.foto_perfil) {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            userData.foto_perfil_url = `${baseUrl}/uploads/${userData.foto_perfil}`;
+        }
+
+        console.log('✅ Perfil obtenido exitosamente:', userData.email);
+
         res.json({
             success: true,
-            user: result.rows[0]
+            user: userData
         });
 
     } catch (error) {
-        console.error('Error obteniendo perfil:', error);
+        console.error('❌ Error obteniendo perfil:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
+        });
+    }
+});
+
+// ============================================
+// ACTUALIZAR PERFIL
+// ============================================
+router.put('/profile', auth, async (req, res) => {
+    try {
+        console.log('🔄 Solicitud de actualización de perfil:', req.body);
+        
+        // ✅ EL USUARIO YA VIENE DEL MIDDLEWARE AUTH
+        const usuario = req.user;
+        const { nombre, telefono, direccion } = req.body;
+
+        // Validar que al menos un campo sea proporcionado
+        if (!nombre && !telefono && !direccion) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debe proporcionar al menos un campo para actualizar'
+            });
+        }
+
+        // Construir query dinámico
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        if (nombre) {
+            updates.push(`nombre = $${paramCount}`);
+            values.push(nombre);
+            paramCount++;
+        }
+
+        if (telefono) {
+            updates.push(`telefono = $${paramCount}`);
+            values.push(telefono);
+            paramCount++;
+        }
+
+        if (direccion) {
+            updates.push(`direccion = $${paramCount}`);
+            values.push(direccion);
+            paramCount++;
+        }
+
+        // Agregar fecha de actualización
+        updates.push(`fecha_actualizacion = $${paramCount}`);
+        values.push(new Date());
+        paramCount++;
+
+        // Agregar ID del usuario
+        values.push(usuario.id);
+
+        const query = `
+            UPDATE usuarios 
+            SET ${updates.join(', ')}
+            WHERE id = $${paramCount}
+            RETURNING id, nombre, email, telefono, direccion, rol, fecha_creacion, fecha_actualizacion, foto_perfil
+        `;
+
+        console.log('📝 Query de actualización:', query);
+        console.log('🔢 Valores:', values);
+
+        const result = await db.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Usuario no encontrado'
+            });
+        }
+
+        const usuarioActualizado = result.rows[0];
+        
+        // Construir URL completa para la foto de perfil si existe
+        if (usuarioActualizado.foto_perfil) {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            usuarioActualizado.foto_perfil_url = `${baseUrl}/uploads/${usuarioActualizado.foto_perfil}`;
+        }
+
+        console.log('✅ Perfil actualizado exitosamente:', usuarioActualizado.email);
+
+        res.json({
+            success: true,
+            message: 'Perfil actualizado correctamente',
+            user: usuarioActualizado
+        });
+
+    } catch (error) {
+        console.error('❌ Error actualizando perfil:', error);
+        
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor al actualizar perfil',
+            details: error.message
         });
     }
 });

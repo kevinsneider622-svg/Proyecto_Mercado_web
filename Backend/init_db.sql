@@ -121,3 +121,20 @@ CREATE TABLE IF NOT EXISTS pedidos (
 CREATE INDEX idx_pedidos_estado ON pedidos(estado);
 CREATE INDEX idx_pedidos_email ON pedidos(email_cliente);
 CREATE INDEX idx_pedidos_fecha ON pedidos(fecha_pedido);
+
+
+
+
+
+
+
+-- Agregar columna foto_perfil a la tabla usuarios
+ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(255) NULL;
+
+-- Opcional: agregar updated_at si no existe
+ALTER TABLE usuarios ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+
+
+
+
