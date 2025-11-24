@@ -1319,52 +1319,6 @@ function showToast(message, type = 'info') {
         actualizarContadorCarrito();
     }
 
-    function mostrarConfirmacionPago(transactionId, estado) {
-        const contenedor = document.getElementById('contenidoPrincipal');
-        
-        const iconos = {
-            success: { icon: 'fa-check-circle', color: 'success', titulo: '¡Pago Exitoso!' },
-            pending: { icon: 'fa-clock', color: 'warning', titulo: 'Pago Pendiente' },
-            error: { icon: 'fa-times-circle', color: 'danger', titulo: 'Pago Rechazado' }
-        };
-        
-        const info = iconos[estado] || iconos.error;
-        
-        contenedor.innerHTML = `
-            <div class="container mt-5 mb-5">
-                <div class="row justify-content-center">
-                    <div class="col-md-6">
-                        <div class="card shadow-lg text-center">
-                            <div class="card-body p-5">
-                                <i class="fas ${info.icon} fa-5x text-${info.color} mb-4"></i>
-                                <h2 class="mb-3">${info.titulo}</h2>
-                                <p class="text-muted mb-4">ID de Transacción: ${transactionId}</p>
-                                
-                                ${estado === 'success' ? `
-                                    <div class="alert alert-success">
-                                        Tu pedido será procesado en breve. Recibirás un correo de confirmación.
-                                    </div>
-                                ` : estado === 'pending' ? `
-                                    <div class="alert alert-warning">
-                                        Tu pago está siendo verificado. Te notificaremos cuando sea confirmado.
-                                    </div>
-                                ` : `
-                                    <div class="alert alert-danger">
-                                        Hubo un problema con tu pago. Por favor intenta nuevamente.
-                                    </div>
-                                `}
-                                
-                                <button class="btn btn-primary btn-lg mt-3" onclick="cargarInicio()">
-                                    <i class="fas fa-home me-2"></i>Volver al Inicio
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
 
 
 
