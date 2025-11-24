@@ -291,7 +291,7 @@ function mostrarResultadoConfirmacion(datos) {
 // FUNCIONES AUXILIARES ADICIONALES
 // ============================================
 function traducirEstado(estado) {
-    const estados = {
+    const estadoNormalizado = estado.toLowerCase();{
         'approved': 'Aprobado ✓',
         'pending': 'Pendiente ✗',
         'declined': 'Rechazado ✗',
