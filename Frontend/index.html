@@ -1319,94 +1319,52 @@ function showToast(message, type = 'info') {
         actualizarContadorCarrito();
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Nueva función para ir a la página de confirmación de pago
-function irAPaginaConfirmacionPago() {
-    try {
-        // 1. Validar que hay información de compra procesada
-        const compraProcesada = localStorage.getItem('compra_procesada');
-        const resultadoPago = localStorage.getItem('resultado_pago');
+    function mostrarConfirmacionPago(transactionId, estado) {
+        const contenedor = document.getElementById('contenidoPrincipal');
         
-        if (!compraProcesada && !resultadoPago) {
-            showToast('No hay información de pago procesado', 'warning');
-            // Redirigir al inicio si no hay datos de pago
-            setTimeout(() => {
-                cargarInicio();
-            }, 2000);
-            return;
-        }
+        const iconos = {
+            success: { icon: 'fa-check-circle', color: 'success', titulo: '¡Pago Exitoso!' },
+            pending: { icon: 'fa-clock', color: 'warning', titulo: 'Pago Pendiente' },
+            error: { icon: 'fa-times-circle', color: 'danger', titulo: 'Pago Rechazado' }
+        };
         
-        // 2. Validar que hay usuario (opcional, pero recomendado)
-        const token = localStorage.getItem('token');
-        if (!token) {
-            showToast('Sesión expirada', 'warning');
-            mostrarFormularioLogin();
-            return;
-        }
+        const info = iconos[estado] || iconos.error;
         
-        // 3. Determinar URL base
-        let baseUrl;
-        
-        // Prioridad 1: CONFIG
-        if (window.CONFIG?.api?.baseUrl) {
-            baseUrl = window.CONFIG.api.baseUrl;
-        }
-        // Prioridad 2: window.location.origin (automático)
-        else {
-            baseUrl = window.location.origin;
-        }
-        
-        // 4. Construir URL de confirmación
-        const confirmacionUrl = `${baseUrl}/confir_pago.html`;
-        
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('✅ Redirigiendo a confirmación de pago');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('Base URL:', baseUrl);
-        console.log('URL Confirmación:', confirmacionUrl);
-        console.log('Hostname:', window.location.hostname);
-        
-        // Log información de la compra procesada
-        if (compraProcesada) {
-            const compra = JSON.parse(compraProcesada);
-            console.log('Compra procesada:', compra);
-        }
-        
-        if (resultadoPago) {
-            const resultado = JSON.parse(resultadoPago);
-            console.log('Resultado pago:', resultado);
-        }
-        
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        // 5. Redirigir
-        window.location.href = confirmacionUrl;
-        
-    } catch (error) {
-        console.error('❌ Error al ir a página de confirmación:', error);
-        showToast('Error al acceder a la confirmación', 'danger');
-        
-        // Fallback: redirigir al inicio
-        setTimeout(() => {
-            cargarInicio();
-        }, 3000);
+        contenedor.innerHTML = `
+            <div class="container mt-5 mb-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="card shadow-lg text-center">
+                            <div class="card-body p-5">
+                                <i class="fas ${info.icon} fa-5x text-${info.color} mb-4"></i>
+                                <h2 class="mb-3">${info.titulo}</h2>
+                                <p class="text-muted mb-4">ID de Transacción: ${transactionId}</p>
+                                
+                                ${estado === 'success' ? `
+                                    <div class="alert alert-success">
+                                        Tu pedido será procesado en breve. Recibirás un correo de confirmación.
+                                    </div>
+                                ` : estado === 'pending' ? `
+                                    <div class="alert alert-warning">
+                                        Tu pago está siendo verificado. Te notificaremos cuando sea confirmado.
+                                    </div>
+                                ` : `
+                                    <div class="alert alert-danger">
+                                        Hubo un problema con tu pago. Por favor intenta nuevamente.
+                                    </div>
+                                `}
+                                
+                                <button class="btn btn-primary btn-lg mt-3" onclick="cargarInicio()">
+                                    <i class="fas fa-home me-2"></i>Volver al Inicio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
-}
+
 
 // Función para guardar datos de pago procesado (usar después del pago exitoso)
 function guardarDatosPagoProcesado(datosPago) {
