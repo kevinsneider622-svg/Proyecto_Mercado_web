@@ -291,14 +291,15 @@ function mostrarResultadoConfirmacion(datos) {
 // FUNCIONES AUXILIARES ADICIONALES
 // ============================================
 function traducirEstado(estado) {
-    const estadoNormalizado = estado.toLowerCase();{
+    const estadoNormalizado = estado.toLowerCase();
+    const estados = {
         'approved': 'Aprobado ✓',
         'pending': 'Pendiente ✗',
         'declined': 'Rechazado ✗',
         'error': 'Error ⚠️',
         'failed': 'Fallido ⚠️'
     };
-    return estados[estadoNormalizado] || `${estado} (?)`;
+    return estados [estadoNormalizado] || `${estado} (?)`;
 }
 
 function crearEfectoConfetti() {
