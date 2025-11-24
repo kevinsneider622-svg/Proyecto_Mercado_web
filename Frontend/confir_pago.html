@@ -218,10 +218,14 @@ function mostrarResultadoConfirmacion(datos) {
     loading.classList.add('hidden');
     result.classList.remove('hidden');
 
-    const estado = datos.resultado?.status || 'pending';
+    const estadoOriginal = datos.resultado?.status || 'pending';
+    const estado = estadoOriginal.toLowerCase();
     const compra = datos.compra;
 
-    console.log('📊 Mostrando resultado confirmación:', estado);
+    console.log('📊 Estado original:', estadoOriginal);
+    console.log('📊 Estado normalizado:', estado);
+    console.log('📊 Mostrando resultado confirmación');
+
 
     // Actualizar detalles con los nuevos datos
     document.getElementById('transactionReference').textContent = datos.numeroReferencia || '-';
@@ -257,31 +261,44 @@ function mostrarResultadoConfirmacion(datos) {
             break;
 
         case 'declined':
+        case 'rejected': 
             statusIcon.className = 'status-icon error';
             statusIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
             statusTitle.textContent = 'Pago Rechazado';
             statusMessage.textContent = 'Tu pago fue rechazado. Por favor intenta con otro método de pago.';
             break;
 
+        case 'error':
+        case 'failed':
+            statusIcon.className = 'status-icon error';
+            statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            statusTitle.textContent = 'Error en el Pago';
+            statusMessage.textContent = 'Ocurrió un error al procesar tu pago. Por favor intenta nuevamente.';
+            break;
+
+
         default:
             statusIcon.className = 'status-icon pending';
             statusIcon.innerHTML = '<i class="fas fa-question-circle"></i>';
             statusTitle.textContent = 'Estado Desconocido';
-            statusMessage.textContent = 'No pudimos determinar el estado de tu pago. Por favor contacta a soporte.';
+            statusMessage.innerHTML = 'No pudimos determinar el estado de tu pago. Por favor contacta a soporte.';
+            console.warn('⚠️ Estado no reconocido:', estadoOriginal);
+        }
+
     }
-}
 
 // ============================================
 // FUNCIONES AUXILIARES ADICIONALES
 // ============================================
 function traducirEstado(estado) {
     const estados = {
-        'approved': 'Aprobado',
-        'pending': 'Pendiente',
-        'declined': 'Rechazado',
-        'error': 'Error'
+        'approved': 'Aprobado ✓',
+        'pending': 'Pendiente ✗',
+        'declined': 'Rechazado ✗',
+        'error': 'Error ⚠️'
+        'failed': 'Fallido ⚠️'
     };
-    return estados[estado] || estado;
+    return estados[estadoNormalizado] || `${estado} (?)`;
 }
 
 function crearEfectoConfetti() {

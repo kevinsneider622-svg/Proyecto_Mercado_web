@@ -148,8 +148,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-shopping-cart me-2"></i>Mi Carrito de Compras
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
+                 </div>
                 <div class="modal-body">
                     <div id="carritoContent"></div>
                 </div>
@@ -1365,6 +1364,94 @@ function showToast(message, type = 'info') {
         `;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Nueva función para ir a la página de confirmación de pago
+function irAPaginaConfirmacionPago() {
+    try {
+        // 1. Validar que hay información de compra procesada
+        const compraProcesada = localStorage.getItem('compra_procesada');
+        const resultadoPago = localStorage.getItem('resultado_pago');
+        
+        if (!compraProcesada && !resultadoPago) {
+            showToast('No hay información de pago procesado', 'warning');
+            // Redirigir al inicio si no hay datos de pago
+            setTimeout(() => {
+                cargarInicio();
+            }, 2000);
+            return;
+        }
+        
+        // 2. Validar que hay usuario (opcional, pero recomendado)
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showToast('Sesión expirada', 'warning');
+            mostrarFormularioLogin();
+            return;
+        }
+        
+        // 3. Determinar URL base
+        let baseUrl;
+        
+        // Prioridad 1: CONFIG
+        if (window.CONFIG?.api?.baseUrl) {
+            baseUrl = window.CONFIG.api.baseUrl;
+        }
+        // Prioridad 2: window.location.origin (automático)
+        else {
+            baseUrl = window.location.origin;
+        }
+        
+        // 4. Construir URL de confirmación
+        const confirmacionUrl = `${baseUrl}/confir_pago.html`;
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Redirigiendo a confirmación de pago');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Base URL:', baseUrl);
+        console.log('URL Confirmación:', confirmacionUrl);
+        console.log('Hostname:', window.location.hostname);
+        
+        // Log información de la compra procesada
+        if (compraProcesada) {
+            const compra = JSON.parse(compraProcesada);
+            console.log('Compra procesada:', compra);
+        }
+        
+        if (resultadoPago) {
+            const resultado = JSON.parse(resultadoPago);
+            console.log('Resultado pago:', resultado);
+        }
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // 5. Redirigir
+        window.location.href = confirmacionUrl;
+        
+    } catch (error) {
+        console.error('❌ Error al ir a página de confirmación:', error);
+        showToast('Error al acceder a la confirmación', 'danger');
+        
+        // Fallback: redirigir al inicio
+        setTimeout(() => {
+            cargarInicio();
+        }, 3000);
+    }
+}
 
 // Función para guardar datos de pago procesado (usar después del pago exitoso)
 function guardarDatosPagoProcesado(datosPago) {

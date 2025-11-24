@@ -79,9 +79,7 @@
 }
 
 #carritoModal .modal-footer {
-    background: var(--gray-light);
-    border-top: 1px solid var(--gray-medium);
-    padding: 1.5rem;
+    display: none;
 }
 
 /* Items del carrito */
