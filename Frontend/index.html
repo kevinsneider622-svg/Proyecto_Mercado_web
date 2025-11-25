@@ -525,6 +525,538 @@
         `;
     }
 
+
+
+
+
+
+
+
+// ============================================
+// FILTRADO POR CATEGORÍA - VERSIÓN CORREGIDA
+// ============================================
+
+async function filtrarPorCategoria(categoriaKey) {
+    console.log('🔍 Filtrando por categoría:', categoriaKey);
+    
+    // ✅ CAMBIO 1: Verificar que el contenedor exista
+    const contenedor = document.getElementById('contenidoPrincipal');
+    
+    if (!contenedor) {
+        console.error('❌ No se encontró el contenedor principal');
+        showToast('Error: Contenedor no encontrado', 'danger');
+        return;
+    }
+    
+    // Mapeo de nombres de botones a IDs en BD
+    const mapeoCategoria = {
+        'FRUTAS': { id: 1, nombre: 'Frutas y Verduras', icon: 'fa-apple-alt' },
+        'LACTEOS': { id: 4, nombre: 'Lácteos y Huevos', icon: 'fa-cheese' },
+        'PANADERIA': { id: 2, nombre: 'Panadería', icon: 'fa-bread-slice' },
+        'BEBIDAS': { id: 3, nombre: 'Bebidas', icon: 'fa-wine-bottle' },
+        'DESPENSA': { id: 6, nombre: 'Despensa', icon: 'fa-utensils' } // Solo si existe en tu BD
+    };
+    
+    const categoria = mapeoCategoria[categoriaKey];
+    
+    if (!categoria) {
+        console.error('❌ Categoría no encontrada:', categoriaKey);
+        showToast('Categoría no encontrada', 'warning');
+        return;
+    }
+    
+    console.log('✅ Categoría seleccionada:', categoria);
+    
+    // ✅ CAMBIO 2: Mostrar loading inmediatamente
+    contenedor.innerHTML = `
+        <div class="container mt-4 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas ${categoria.icon} me-2"></i>
+                    ${categoria.nombre}
+                </h2>
+                <button class="btn btn-outline-secondary" onclick="cargarProductos()">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </button>
+            </div>
+            
+            <!-- Filtros de categoría -->
+            <div class="mb-4">
+                <div class="btn-group flex-wrap" role="group">
+                    <button class="btn btn-outline-primary" onclick="cargarProductos()">
+                        <i class="fas fa-th me-1"></i>Todos
+                    </button>
+                    <button class="btn ${categoriaKey === 'FRUTAS' ? 'btn-primary' : 'btn-outline-primary'}" 
+                            onclick="filtrarPorCategoria('FRUTAS')">
+                        <i class="fas fa-apple-alt me-1"></i>Frutas
+                    </button>
+                    <button class="btn ${categoriaKey === 'LACTEOS' ? 'btn-primary' : 'btn-outline-primary'}" 
+                            onclick="filtrarPorCategoria('LACTEOS')">
+                        <i class="fas fa-cheese me-1"></i>Lácteos
+                    </button>
+                    <button class="btn ${categoriaKey === 'PANADERIA' ? 'btn-primary' : 'btn-outline-primary'}" 
+                            onclick="filtrarPorCategoria('PANADERIA')">
+                        <i class="fas fa-bread-slice me-1"></i>Panadería
+                    </button>
+                    <button class="btn ${categoriaKey === 'BEBIDAS' ? 'btn-primary' : 'btn-outline-primary'}" 
+                            onclick="filtrarPorCategoria('BEBIDAS')">
+                        <i class="fas fa-wine-bottle me-1"></i>Bebidas
+                    </button>
+                </div>
+            </div>
+            
+            <div id="productosCategoria" class="row g-4">
+                <div class="col-12">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando productos...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        console.log(`📡 Solicitando productos de categoría ID: ${categoria.id}`);
+        
+        // ✅ CAMBIO 3: Llamar al endpoint correcto
+        const data = await fetchAPI(`/api/productos/categoria/${categoria.id}`);
+        
+        console.log('📦 Respuesta del servidor:', data);
+        
+        // ✅ CAMBIO 4: Verificar que productosCategoria aún exista
+        const productosCategoriaDiv = document.getElementById('productosCategoria');
+        
+        if (!productosCategoriaDiv) {
+            console.error('❌ El div productosCategoria desapareció');
+            return;
+        }
+        
+        if (data.success && data.productos && data.productos.length > 0) {
+            console.log(`✅ ${data.productos.length} productos encontrados`);
+            mostrarProductosCategoria(data.productos, categoria.nombre);
+        } else {
+            console.log('⚠️ No hay productos en esta categoría');
+            productosCategoriaDiv.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h4>No hay productos disponibles</h4>
+                    <p class="text-muted">Esta categoría no tiene productos en este momento</p>
+                    <button class="btn btn-primary mt-3" onclick="cargarProductos()">
+                        <i class="fas fa-arrow-left me-1"></i> Ver todos los productos
+                    </button>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error completo:', error);
+        
+        const productosCategoriaDiv = document.getElementById('productosCategoria');
+        if (productosCategoriaDiv) {
+            productosCategoriaDiv.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error al cargar productos</strong><br>
+                        ${error.message}
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="cargarProductos()">
+                        <i class="fas fa-arrow-left me-1"></i> Volver a todos los productos
+                    </button>
+                </div>
+            `;
+        }
+        
+        showToast('Error al cargar productos de la categoría', 'danger');
+    }
+}
+
+function mostrarProductosCategoria(productos, categoriaNombre) {
+    console.log('🎨 Mostrando productos de categoría:', categoriaNombre);
+    console.log('📦 Productos recibidos:', productos.length);
+    
+    const container = document.getElementById('productosCategoria');
+    
+    if (!container) {
+        console.error('❌ Contenedor productosCategoria no encontrado');
+        return;
+    }
+    
+    if (!productos || productos.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                <h4>No hay productos en esta categoría</h4>
+                <p class="text-muted">Prueba con otra categoría</p>
+            </div>
+        `;
+        return;
+    }
+
+    const baseUrl = window.location.origin;
+
+    container.innerHTML = productos.map(producto => {
+        let imagenUrl;
+        if (producto.imagenUrl) {
+            if (producto.imagenUrl.startsWith('http')) {
+                imagenUrl = producto.imagenUrl;
+            } else if (producto.imagenUrl.startsWith('/')) {
+                imagenUrl = `${baseUrl}${producto.imagenUrl}`;
+            } else {
+                imagenUrl = `${baseUrl}/uploads/productos/${producto.imagenUrl}`;
+            }
+        } else {
+            imagenUrl = `${baseUrl}/uploads/productos/default.jpg`;
+        }
+
+        return `
+        <div class="col-md-3 col-sm-6">
+            <div class="card product-card h-100">
+                <div class="product-badge">${categoriaNombre}</div>
+                <img src="${imagenUrl}" 
+                     class="card-img-top product-img" 
+                     alt="${producto.nombre}"
+                     onerror="this.src='https://via.placeholder.com/300?text=Sin+Imagen'">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">${producto.nombre}</h6>
+                    ${producto.descripcion ? `
+                        <p class="card-text small flex-grow-1 text-muted">
+                            ${producto.descripcion}
+                        </p>
+                    ` : ''}
+                    <p class="card-text small text-muted mb-2">
+                        Stock: <strong>${producto.stockActual || 0}</strong>
+                    </p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="price fs-6">$${Number(producto.precioVenta).toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="input-group input-group-sm mb-2">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', -1, ${producto.stockActual})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" 
+                                   id="cantidad-${producto.id}" 
+                                   class="form-control text-center" 
+                                   value="1" 
+                                   min="1" 
+                                   max="${producto.stockActual}"
+                                   onchange="validarCantidad(this, ${producto.stockActual})"
+                                   onkeyup="validarCantidad(this, ${producto.stockActual})">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="cambiarCantidad('cantidad-${producto.id}', 1, ${producto.stockActual})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="btn btn-sm btn-primary w-100" 
+                                onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")})'>
+                            <i class="fas fa-cart-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+    
+    console.log('✅ Productos renderizados correctamente');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// FUNCIÓN DE BÚSQUEDA
+// ============================================
+
+/**
+ * Busca productos por nombre o descripción
+ * @param {Event} event - Evento del formulario
+ */
+async function buscarProductos(event) {
+    event.preventDefault(); // Evitar que el form recargue la página
+    
+    const searchInput = document.getElementById('searchInput');
+    const query = searchInput.value.trim();
+    
+    console.log('🔍 Buscando:', query);
+    
+    // Validar que haya texto
+    if (!query || query.length < 2) {
+        showToast('Escribe al menos 2 caracteres para buscar', 'warning');
+        return;
+    }
+    
+    const contenedor = document.getElementById('contenidoPrincipal');
+    
+    // Mostrar interfaz de búsqueda
+    contenedor.innerHTML = `
+        <div class="container mt-4 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fas fa-search me-2"></i>
+                        Resultados de búsqueda
+                    </h2>
+                    <p class="text-muted mb-0">Buscando: "<strong>${query}</strong>"</p>
+                </div>
+                <button class="btn btn-outline-secondary" onclick="cargarProductos(); document.getElementById('searchInput').value = '';">
+                    <i class="fas fa-times me-1"></i> Limpiar búsqueda
+                </button>
+            </div>
+            
+            <div id="resultadosBusqueda" class="row g-4">
+                <div class="col-12">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Buscando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // Llamar al endpoint de búsqueda
+        const data = await fetchAPI(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+        
+        console.log('📦 Resultados encontrados:', data);
+        
+        const resultadosDiv = document.getElementById('resultadosBusqueda');
+        
+        if (!resultadosDiv) {
+            console.error('❌ Div de resultados no encontrado');
+            return;
+        }
+        
+        if (data.success && data.productos && data.productos.length > 0) {
+            console.log(`✅ ${data.productos.length} productos encontrados`);
+            mostrarResultadosBusqueda(data.productos, query);
+        } else {
+            // No se encontraron resultados
+            resultadosDiv.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h4>No se encontraron resultados</h4>
+                    <p class="text-muted">
+                        No hay productos que coincidan con "<strong>${query}</strong>"
+                    </p>
+                    <button class="btn btn-primary mt-3" onclick="cargarProductos(); document.getElementById('searchInput').value = '';">
+                        <i class="fas fa-arrow-left me-1"></i> Ver todos los productos
+                    </button>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en búsqueda:', error);
+        
+        const resultadosDiv = document.getElementById('resultadosBusqueda');
+        if (resultadosDiv) {
+            resultadosDiv.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error al buscar productos</strong><br>
+                        ${error.message}
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="cargarProductos()">
+                        <i class="fas fa-arrow-left me-1"></i> Volver a productos
+                    </button>
+                </div>
+            `;
+        }
+        
+        showToast('Error al realizar la búsqueda', 'danger');
+    }
+}
+
+/**
+ * Muestra los resultados de la búsqueda
+ * @param {Array} productos - Array de productos encontrados
+ * @param {string} query - Término de búsqueda
+ */
+function mostrarResultadosBusqueda(productos, query) {
+    console.log('🎨 Mostrando resultados de búsqueda');
+    
+    const container = document.getElementById('resultadosBusqueda');
+    
+    if (!container) {
+        console.error('❌ Contenedor de resultados no encontrado');
+        return;
+    }
+    
+    if (!productos || productos.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h4>No se encontraron resultados</h4>
+                <p class="text-muted">Intenta con otros términos de búsqueda</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const baseUrl = window.location.origin;
+    
+    // Resaltar el término de búsqueda en los resultados
+    const highlightQuery = (text) => {
+        if (!text || !query) return text;
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    };
+    
+    container.innerHTML = `
+        <div class="col-12 mb-3">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Se encontraron <strong>${productos.length}</strong> producto${productos.length !== 1 ? 's' : ''}
+            </div>
+        </div>
+        ${productos.map(producto => {
+            let imagenUrl;
+            if (producto.imagenUrl) {
+                if (producto.imagenUrl.startsWith('http')) {
+                    imagenUrl = producto.imagenUrl;
+                } else if (producto.imagenUrl.startsWith('/')) {
+                    imagenUrl = `${baseUrl}${producto.imagenUrl}`;
+                } else {
+                    imagenUrl = `${baseUrl}/uploads/productos/${producto.imagenUrl}`;
+                }
+            } else {
+                imagenUrl = `${baseUrl}/uploads/productos/default.jpg`;
+            }
+
+            return `
+            <div class="col-md-3 col-sm-6">
+                <div class="card product-card h-100">
+                    <img src="${imagenUrl}" 
+                         class="card-img-top product-img" 
+                         alt="${producto.nombre}"
+                         onerror="this.src='https://via.placeholder.com/300?text=Sin+Imagen'">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">${highlightQuery(producto.nombre)}</h6>
+                        ${producto.descripcion ? `
+                            <p class="card-text small flex-grow-1 text-muted">
+                                ${highlightQuery(producto.descripcion)}
+                            </p>
+                        ` : ''}
+                        <p class="card-text small text-muted mb-2">
+                            Stock: <strong>${producto.stockActual || 0}</strong>
+                        </p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="price fs-6">$${Number(producto.precioVenta).toLocaleString()}</span>
+                            </div>
+                            
+                            <div class="input-group input-group-sm mb-2">
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="cambiarCantidad('cantidad-${producto.id}', -1, ${producto.stockActual})">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" 
+                                       id="cantidad-${producto.id}" 
+                                       class="form-control text-center" 
+                                       value="1" 
+                                       min="1" 
+                                       max="${producto.stockActual}"
+                                       onchange="validarCantidad(this, ${producto.stockActual})"
+                                       onkeyup="validarCantidad(this, ${producto.stockActual})">
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="cambiarCantidad('cantidad-${producto.id}', 1, ${producto.stockActual})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            
+                            <button class="btn btn-sm btn-primary w-100" 
+                                    onclick='agregarConCantidad(${JSON.stringify(producto).replace(/'/g, "\\'")})'>
+                                <i class="fas fa-cart-plus"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('')}
+    `;
+    
+    console.log('✅ Resultados renderizados correctamente');
+}
+
+/**
+ * Búsqueda en tiempo real (opcional)
+ */
+function inicializarBusquedaTiempoReal() {
+    const searchInput = document.getElementById('searchInput');
+    
+    if (!searchInput) return;
+    
+    let timeoutId;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        
+        const query = this.value.trim();
+        
+        // Solo buscar si hay más de 2 caracteres
+        if (query.length >= 3) {
+            timeoutId = setTimeout(() => {
+                // Crear un evento sintético para reutilizar buscarProductos
+                const fakeEvent = new Event('submit');
+                buscarProductos(fakeEvent);
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     async function cargarProductos() {
         const contenedor = document.getElementById('contenidoPrincipal');
         contenedor.innerHTML = `

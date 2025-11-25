@@ -30,6 +30,79 @@ const validarPaginacion = (req, res, next) => {
     next();
 };
 
+
+
+
+
+
+
+
+/**
+ * @route   GET /api/productos/buscar
+ * @desc    Buscar productos por nombre o descripción
+ * @access  Público
+ */
+router.get('/buscar', async (req, res) => {
+    const { q } = req.query;
+    
+    try {
+        console.log('🔍 Búsqueda recibida:', q);
+        
+        if (!q || q.trim().length < 2) {
+            return res.status(400).json({
+                success: false,
+                error: 'El término de búsqueda debe tener al menos 2 caracteres'
+            });
+        }
+        
+        const searchTerm = `%${q.trim()}%`;
+        
+        const query = `
+            SELECT 
+                id, 
+                nombre,
+                precio_venta AS "precioVenta", 
+                stock_actual AS "stockActual", 
+                imagen_url AS "imagenUrl",
+                descripcion,
+                categoria_id AS "categoriaId"
+            FROM productos
+            WHERE activo = true 
+            AND (
+                LOWER(nombre) LIKE LOWER($1)
+                OR LOWER(descripcion) LIKE LOWER($1)
+            )
+            ORDER BY nombre
+            LIMIT 50
+        `;
+        
+        const result = await db.query(query, [searchTerm]);
+        
+        console.log(`✅ Productos encontrados: ${result.rows.length}`);
+        
+        res.json({
+            success: true,
+            productos: result.rows,
+            total: result.rows.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en búsqueda:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al buscar productos',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
 // ============================================
 // RUTAS DE CONSULTA
 // ⚠️ IMPORTANTE: Las rutas específicas deben ir ANTES de las dinámicas (/:id)
@@ -96,30 +169,14 @@ router.get('/destacados', async (req, res) => {
     }
 });
 
-/**
- * @route   GET /api/productos/categoria/:categoriaId
- * @desc    Obtener productos por categoría
- * @access  Público
- */
 router.get('/categoria/:categoriaId', validarPaginacion, async (req, res) => {
     const { categoriaId } = req.params;
     const { limit, page } = req.paginacion;
     const offset = (page - 1) * limit;
     
     try {
-        console.log(`📦 Solicitando productos categoría: ${categoriaId}`);
+        console.log(`📦 Solicitando productos categoría ID: ${categoriaId}`);
         
-        // 1. Obtener conteo por categoría
-        const countQuery = `
-            SELECT COUNT(*) 
-            FROM productos 
-            WHERE categoria_id = $1 AND activo = true
-        `;
-        const totalCountResult = await db.query(countQuery, [categoriaId]);
-        const totalProducts = parseInt(totalCountResult.rows[0].count);
-        const totalPages = Math.ceil(totalProducts / limit);
-        
-        // 2. Obtener productos de la categoría
         const productsQuery = `
             SELECT 
                 id, 
@@ -130,41 +187,30 @@ router.get('/categoria/:categoriaId', validarPaginacion, async (req, res) => {
                 descripcion
             FROM productos
             WHERE categoria_id = $1 AND activo = true
-            ORDER BY id
+            ORDER BY nombre
             LIMIT $2
             OFFSET $3
         `;
         
         const productsResult = await db.query(productsQuery, [categoriaId, limit, offset]);
         
-        console.log(`✅ Productos por categoría obtenidos: ${productsResult.rows.length}`);
+        console.log(`✅ Productos encontrados: ${productsResult.rows.length}`);
         
         res.json({
             success: true,
-            productos: productsResult.rows,
-            pagination: { 
-                page: page,
-                limit: limit,
-                total: totalProducts,
-                pages: totalPages
-            }
+            productos: productsResult.rows
         });
         
     } catch (error) {
-        console.error('❌ Error obteniendo productos por categoría:', error);
+        console.error('❌ Error:', error);
         res.status(500).json({ 
             success: false,
-            error: 'Error obteniendo productos por categoría',
+            error: 'Error obteniendo productos',
             details: error.message 
         });
     }
 });
 
-/**
- * @route   GET /api/productos
- * @desc    Obtener todos los productos con paginación
- * @access  Público
- */
 router.get('/', validarPaginacion, async (req, res) => {
     const { limit, page } = req.paginacion;
     const offset = (page - 1) * limit;
@@ -227,6 +273,9 @@ router.get('/', validarPaginacion, async (req, res) => {
  * @access  Público
  * ⚠️ IMPORTANTE: Esta ruta debe ir AL FINAL porque captura cualquier parámetro
  */
+
+
+
 router.get('/:id', async (req, res) => {
     const { id } = req.params;
     

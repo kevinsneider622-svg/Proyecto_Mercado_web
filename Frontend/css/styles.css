@@ -528,6 +528,62 @@ body {
     font-weight: 600;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================
+   ESTILOS PARA BÚSQUEDA
+============================================ */
+
+mark {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.search-form .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(46, 204, 113, 0.25);
+}
+
+/* Animación para resultados */
+@keyframes fadeInResult {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#resultadosBusqueda .col-md-3 {
+    animation: fadeInResult 0.3s ease-out;
+}
+
+
+
+
+
+
+
+
+
+
 /* ============================================
    RESPONSIVE DESIGN
 ============================================ */
