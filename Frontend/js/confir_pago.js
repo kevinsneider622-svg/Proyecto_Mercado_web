@@ -1,0 +1,435 @@
+// ============================================
+// CONFIGURACIÓN
+// ============================================
+const API_BASE_URL = window.location.hostname.includes('localhost') || 
+                    window.location.hostname.includes('127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://proyecto-mercado-web.onrender.com';
+
+const IS_DEVELOPMENT = window.location.hostname.includes('localhost');
+
+console.log('🌐 Configuración:');
+console.log('   API URL:', API_BASE_URL);
+console.log('   Ambiente:', IS_DEVELOPMENT ? 'Desarrollo' : 'Producción');
+
+// ============================================
+// VARIABLES GLOBALES
+// ============================================
+let verificacionInterval = null;
+
+// ============================================
+// FUNCIONES PARA OBTENER REFERENCIA
+// ============================================
+function obtenerReferencia() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Wompi puede enviar diferentes parámetros
+    const reference = urlParams.get('reference') || 
+                     urlParams.get('ref') ||
+                     urlParams.get('id') ||
+                     localStorage.getItem('ultima_referencia_pago');
+    
+    console.log('🔍 Parámetros de URL:', Object.fromEntries(urlParams));
+    console.log('📋 Referencia encontrada:', reference);
+    
+    return reference;
+}
+
+// ============================================
+// FUNCIÓN PARA VERIFICAR ESTADO
+// ============================================
+async function verificarEstadoPago(reference) {
+    try {
+        console.log('🔍 Verificando estado para referencia:', reference);
+        
+        const response = await fetch(`${API_BASE_URL}/api/pagos/verificar-estado/${reference}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('📊 Response status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', errorText);
+            throw new Error(`Error ${response.status}: No se pudo verificar el estado`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Datos recibidos:', data);
+
+        if (!data.success) {
+            throw new Error(data.error || 'Error verificando estado');
+        }
+
+        return data;
+
+    } catch (error) {
+        console.error('❌ Error en verificación:', error);
+        throw error;
+    }
+}
+
+// ============================================
+// FUNCIONES PARA CARGAR DATOS DE CONFIRMACIÓN
+// ============================================
+
+function cargarDatosConfirmacionPago() {
+    try {
+        const compraProcesada = JSON.parse(localStorage.getItem('compra_procesada') || 'null');
+        const resultadoPago = JSON.parse(localStorage.getItem('resultado_pago') || 'null');
+        const fechaProcesamiento = localStorage.getItem('fecha_procesamiento');
+
+        if (!compraProcesada && !resultadoPago) {
+            return null;
+        }
+
+        const datosConfirmacion = {
+            compra: compraProcesada,
+            resultado: resultadoPago,
+            fechaProcesamiento: fechaProcesamiento,
+            numeroReferencia: generarNumeroReferencia()
+        };
+
+        console.log('📋 Datos de confirmación cargados:', datosConfirmacion);
+        return datosConfirmacion;
+
+    } catch (error) {
+        console.error('❌ Error cargando datos de confirmación:', error);
+        return null;
+    }
+}
+
+function generarNumeroReferencia() {
+    const timestamp = new Date().getTime();
+    const random = Math.floor(Math.random() * 10000);
+    return `REF-${timestamp}-${random}`;
+}
+
+function limpiarDatosConfirmacion() {
+    try {
+        localStorage.removeItem('compra_procesada');
+        localStorage.removeItem('resultado_pago');
+        localStorage.removeItem('fecha_procesamiento');
+        console.log('🧹 Datos de confirmación limpiados');
+    } catch (error) {
+        console.error('Error limpiando datos de confirmación:', error);
+    }
+}
+
+function guardarDatosPagoProcesado(datosPago) {
+    try {
+        localStorage.setItem('compra_procesada', JSON.stringify(datosPago.compra));
+        localStorage.setItem('resultado_pago', JSON.stringify(datosPago.resultado));
+        localStorage.setItem('fecha_procesamiento', new Date().toISOString());
+        console.log('✅ Datos de pago guardados para confirmación');
+    } catch (error) {
+        console.error('❌ Error guardando datos de pago:', error);
+    }
+}
+
+// ============================================
+// FUNCIÓN PARA MOSTRAR CONFIRMACIÓN
+// ============================================
+function mostrarResultadoConfirmacion(datos) {
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusMessage = document.getElementById('statusMessage');
+    const pendingInfo = document.getElementById('pendingInfo');
+
+    // Ocultar loading y mostrar resultado
+    loading.classList.add('hidden');
+    result.classList.remove('hidden');
+
+    const estadoOriginal = datos.resultado?.status || 'pending';
+    const estado = estadoOriginal.toLowerCase();
+    const compra = datos.compra;
+
+    console.log('📊 Estado original:', estadoOriginal);
+    console.log('📊 Estado normalizado:', estado);
+    console.log('📊 Mostrando resultado confirmación');
+
+
+    // Actualizar detalles con los nuevos datos
+    document.getElementById('transactionReference').textContent = datos.numeroReferencia || '-';
+    document.getElementById('transactionStatus').textContent = traducirEstado(estado);
+    // Si tenemos compra, mostramos el monto, sino, intentamos obtenerlo de resultado o no mostramos
+    document.getElementById('transactionAmount').textContent = compra ? formatearMonto(compra.total * 100) : (datos.resultado.amount ? formatearMonto(datos.resultado.amount) : '-');
+    document.getElementById('transactionDate').textContent = formatearFecha(datos.fechaProcesamiento);
+    document.getElementById('paymentMethod').textContent = 'Procesado por Wompi';
+
+    // Aplicar clases de estado a los valores
+    document.getElementById('transactionStatus').className = `detail-value ${estado}`;
+
+    // Configurar UI según estado
+    switch (estado) {
+        case 'approved':
+            statusIcon.className = 'status-icon success glow-effect';
+            statusIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            statusTitle.textContent = '¡Pago Exitoso!';
+            statusMessage.textContent = 'Tu pago ha sido procesado correctamente. Recibirás un correo de confirmación en breve.';
+            crearEfectoConfetti();
+            break;
+
+        case 'pending':
+            statusIcon.className = 'status-icon pending';
+            statusIcon.innerHTML = '<i class="fas fa-clock"></i>';
+            statusTitle.textContent = 'Pago en Proceso';
+            statusMessage.textContent = 'Tu transacción está siendo procesada. Esto puede tardar unos minutos.';
+            pendingInfo.classList.remove('hidden');
+            // Iniciar verificación periódica con la referencia que tenemos
+            if (datos.numeroReferencia) {
+                iniciarVerificacionPeriodica(datos.numeroReferencia);
+            }
+            break;
+
+        case 'declined':
+        case 'rejected': 
+            statusIcon.className = 'status-icon error';
+            statusIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+            statusTitle.textContent = 'Pago Rechazado';
+            statusMessage.textContent = 'Tu pago fue rechazado. Por favor intenta con otro método de pago.';
+            break;
+
+        case 'error':
+        case 'failed':
+            statusIcon.className = 'status-icon error';
+            statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            statusTitle.textContent = 'Error en el Pago';
+            statusMessage.textContent = 'Ocurrió un error al procesar tu pago. Por favor intenta nuevamente.';
+            break;
+
+
+        default:
+            statusIcon.className = 'status-icon pending';
+            statusIcon.innerHTML = '<i class="fas fa-question-circle"></i>';
+            statusTitle.textContent = 'Estado Desconocido';
+            statusMessage.innerHTML = 'No pudimos determinar el estado de tu pago. Por favor contacta a soporte.';
+            console.warn('⚠️ Estado no reconocido:', estadoOriginal);
+        }
+
+    }
+
+// ============================================
+// FUNCIONES AUXILIARES ADICIONALES
+// ============================================
+function traducirEstado(estado) {
+    const estadoNormalizado = estado.toLowerCase();
+    const estados = {
+        'approved': 'Aprobado ✓',
+        'pending': 'Pendiente ✗',
+        'declined': 'Rechazado ✗',
+        'error': 'Error ⚠️',
+        'failed': 'Fallido ⚠️'
+    };
+    return estados [estadoNormalizado] || `${estado} (?)`;
+}
+
+function crearEfectoConfetti() {
+    const colors = ['#2ecc71', '#3498db', '#e74c3c', '#f39c12', '#9b59b6'];
+    const container = document.body;
+    
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animation = `confetti-fall ${Math.random() * 3 + 2}s linear forwards`;
+        container.appendChild(confetti);
+        
+        setTimeout(() => {
+            confetti.remove();
+        }, 5000);
+    }
+}
+
+// ============================================
+// FUNCIÓN PARA MOSTRAR ERROR
+// ============================================
+
+function mostrarError(mensaje) {
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusMessage = document.getElementById('statusMessage');
+
+    loading.classList.add('hidden');
+    result.classList.remove('hidden');
+
+    statusIcon.className = 'status-icon error';
+    statusIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+    statusTitle.textContent = 'Error de Verificación';
+    statusMessage.innerHTML = mensaje + '<br><br><small>Por favor intenta recargar la página o contacta a soporte.</small>';
+
+    // Ocultar detalles si hay error
+    document.getElementById('transactionDetails').style.display = 'none';
+}
+
+// ============================================
+// VERIFICACIÓN PERIÓDICA
+// ============================================
+function iniciarVerificacionPeriodica(reference) {
+    // Limpiar intervalo anterior si existe
+    if (verificacionInterval) {
+        clearInterval(verificacionInterval);
+    }
+
+    console.log('🔄 Iniciando verificación periódica cada 10 segundos...');
+
+    let intentos = 0;
+    const MAX_INTENTOS = 30; // 5 minutos máximo
+
+    verificacionInterval = setInterval(async () => {
+        intentos++;
+        console.log(`🔄 Verificación #${intentos}...`);
+
+        if (intentos > MAX_INTENTOS) {
+            console.log('⏱️ Tiempo máximo de verificación alcanzado');
+            clearInterval(verificacionInterval);
+            verificacionInterval = null;
+            return;
+        }
+
+        try {
+            const data = await verificarEstadoPago(reference);
+            
+            // Si el estado cambió, actualizar localStorage y recargar
+            if (data.data.estado !== 'PENDING' && data.data.estado !== 'no_encontrado') {
+                console.log('✅ Estado actualizado:', data.data.estado);
+                // Guardar los datos en localStorage para que al recargar se muestre el estado actual
+                const datosPago = {
+                    compra: null, // No tenemos la compra en este flujo
+                    resultado: {
+                        status: data.data.estado,
+                        transactionId: data.data.referencia,
+                        reference: data.data.referencia,
+                        fecha: data.data.fecha || new Date().toISOString()
+                    }
+                };
+                guardarDatosPagoProcesado(datosPago);
+                // Recargar la página para mostrar el estado actual
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error en verificación periódica:', error);
+        }
+    }, 10000); // 10 segundos
+}
+
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
+function formatearMonto(centavos) {
+    if (!centavos) return '-';
+    const pesos = centavos / 100;
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).format(pesos);
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '-';
+    return new Date(fecha).toLocaleString('es-CO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function traducirMetodoPago(metodo) {
+    const metodos = {
+        'CARD': 'Tarjeta de Crédito/Débito',
+        'NEQUI': 'Nequi',
+        'PSE': 'PSE',
+        'BANCOLOMBIA_TRANSFER': 'Transferencia Bancolombia',
+        'BANCOLOMBIA_QR': 'QR Bancolombia'
+    };
+    return metodos[metodo] || metodo || 'No especificado';
+}
+
+// ============================================
+// FUNCIONES DE NAVEGACIÓN ACTUALIZADAS
+// ============================================
+function volverAlInicio() {
+    // Limpiar datos de confirmación
+    limpiarDatosConfirmacion();
+    
+    // Redirigir al inicio
+    window.location.href = '/';
+}
+
+function hacerOtraCompra() {
+    // Limpiar datos y redirigir
+    limpiarDatosConfirmacion();
+    window.location.href = '/';
+}
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚀 PÁGINA DE CONFIRMACIÓN DE PAGO');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📍 URL:', window.location.href);
+
+    let datosConfirmacion = cargarDatosConfirmacionPago();
+    let reference = obtenerReferencia();
+
+    // Si no hay datos de confirmación pero hay referencia, intentar verificar con la API
+    if (!datosConfirmacion && reference) {
+        console.log('🔍 No hay datos en localStorage, verificando con API...');
+        try {
+            const data = await verificarEstadoPago(reference);
+            if (data.success) {
+                // Convertir la respuesta de la API al formato de datos de confirmación
+                datosConfirmacion = {
+                    compra: null, // No tenemos la compra en este flujo, pero podríamos guardarla en otro lugar
+                    resultado: {
+                        status: data.data.estado,
+                        transactionId: data.data.referencia,
+                        reference: data.data.referencia,
+                        fecha: data.data.fecha || new Date().toISOString()
+                    },
+                    fechaProcesamiento: data.data.fecha || new Date().toISOString(),
+                    numeroReferencia: data.data.referencia
+                };
+            } else {
+                throw new Error(data.error || 'Error verificando estado');
+            }
+        } catch (error) {
+            console.error('❌ Error al verificar con API:', error);
+            mostrarError('No se pudo verificar el estado del pago. ' + error.message);
+            return;
+        }
+    }
+
+    if (!datosConfirmacion) {
+        console.error('❌ No se encontraron datos de confirmación');
+        mostrarError('No se encontró información de la transacción. Por favor verifica el link o contacta a soporte.');
+        return;
+    }
+
+    console.log('✅ Datos de confirmación cargados:', datosConfirmacion);
+
+    try {
+        // Mostrar resultado usando los datos cargados
+        mostrarResultadoConfirmacion(datosConfirmacion);
+
+    } catch (error) {
+        console.error('❌ Error fatal:', error);
+        mostrarError(`Error al procesar la confirmación: ${error.message}`);
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+});

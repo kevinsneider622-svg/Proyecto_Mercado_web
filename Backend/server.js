@@ -1,87 +1,112 @@
-// ============================================
-// SERVER.JS - Servidor Principal Mejorado
-// ============================================
-
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import fs from 'fs';
 
-// Configurar __dirname para ES modules
+// Importar rutas
+import productosRoutes from './routes/productos.js';
+import dashboardRoutes from './routes/dashboard.js';
+import authRoutes from './routes/auth.js';
+import pagosRoutes from './routes/pagos.js';
+import uploadRoutes from './routes/upload.js';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000; 
+
+// Fix para __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Importar rutas
-import pagosRoutes from './routes/pagos.js';
-import productosRoutes from './routes/productos.js';
-
-// Crear app de Express
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Determinar entorno
-const isProduction = process.env.NODE_ENV === 'production';
-const isRender = !!process.env.RENDER_EXTERNAL_URL;
-const isVercel = !!process.env.VERCEL_URL;
-
 // ============================================
-// CONFIGURACIÓN DE CORS
+// CONFIGURACIÓN DE MIDDLEWARES
 // ============================================
 
+app.use(express.json()); // Para parsear JSON
+app.use(express.urlencoded({ extended: true })); // Para parsear form data
+
+// Configuración de CORS mejorada
 const corsOptions = {
     origin: function (origin, callback) {
-        // Permitir requests sin origin (como Postman, curl, etc.)
-        if (!origin) return callback(null, true);
-        
         const allowedOrigins = [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://localhost:5173', // Vite dev server
-            'https://proyecto-mercado-web.onrender.com',
-            'https://proyecto-mercado-web-zebx.vercel.app'
+            'http://localhost:3000',             
+            'http://127.0.0.1:3000',             
+            'https://proyecto-mercado-web.onrender.com',   
         ];
-        
-        // En desarrollo, permitir cualquier localhost
-        if (!isProduction && origin.includes('localhost')) {
+
+        console.log('🌐 Origen de la petición:', origin);
+
+        //Permitir requests sin origen (mismo servidor, Postman, etc.)
+
+        if (!origin) {
+            console.log('🔓 Permitiendo request sin origen');
+            return callback(null, true);
+        }    
+
+        // En desarrollo, permitir todos los orígenes
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('⚙️  Modo desarrollo - Origen permitido:', origin);
             return callback(null, true);
         }
-        
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.warn('⚠️  CORS bloqueado para origen:', origin);
-            callback(null, isProduction);
-        }
-    },
+
+            if (isAllowed) {
+                console.log('✅ Origen permitido por CORS:', origin);
+                callback(null, true);
+            } else {
+                console.log('❌ Origen bloqueado por CORS:', origin);
+                console.log('📋 Orígenes permitidos:', allowedOrigins);
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
+
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
+// Aplicar CORS
 app.use(cors(corsOptions));
 
-// ============================================
-// MIDDLEWARES GLOBALES
-// ============================================
+// Permitir preflight para todas las rutas (CORS)
+app.options('*', cors(corsOptions));
 
-// Parser de JSON y URL-encoded
+// Parsers de body
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging de requests (solo en desarrollo)
-if (!isProduction) {
-    app.use((req, res, next) => {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] ${req.method} ${req.path}`);
-        if (req.body && Object.keys(req.body).length > 0) {
-            console.log('   Body:', JSON.stringify(req.body, null, 2));
+// Servir el frontend correctamente (index:true para SPA)
+const frontendPath = path.join(__dirname, '../Frontend');
+
+if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath, {
+        index: 'index.html',
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.html')) {
+                res.setHeader('Cache-Control', 'no-cache');
+            }
         }
-        next();
-    });
+    }));
+    console.log('✅ Frontend configurado en:', frontendPath);
+} else {
+    console.log('⚠️  Frontend no encontrado en:', frontendPath);
 }
 
-// Headers de seguridad
+// Middleware para logging de requests
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`📨 [${timestamp}] ${req.method} ${req.path}`);
+    console.log(`   🌐 Origin: ${req.get('origin') || 'No origin'}`);
+    console.log(`   👤 IP: ${req.ip}`);
+    if (Object.keys(req.body).length > 0) {
+        console.log(`   📦 Body:`, JSON.stringify(req.body).substring(0, 100));
+    }
+    next();
+});
+
+// Middleware de seguridad básica
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -90,252 +115,250 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// SERVIR ARCHIVOS ESTÁTICOS
+// RUTAS DE LA API
 // ============================================
 
-// Servir carpeta de uploads (imágenes de productos)
-const uploadsPath = path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(uploadsPath, {
-    maxAge: isProduction ? '1d' : '0',
-    etag: true
-}));
-
-// Servir frontend
-const frontendPath = path.join(__dirname, '../frontend');
-app.use(express.static(frontendPath, {
-    maxAge: isProduction ? '1h' : '0',
-    etag: true,
-    index: 'index.html'
-}));
-
-console.log('📁 Rutas de archivos estáticos:');
-console.log('   Uploads:', uploadsPath);
-console.log('   Frontend:', frontendPath);
-
-// ============================================
-// HEALTH CHECK
-// ============================================
-
-app.get('/health', (req, res) => {
-    const healthCheck = {
-        status: 'OK',
-        uptime: process.uptime(),
+// Ruta raíz para verificar que el servidor está funcionando
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'API SuperMercado - Funcionando correctamente',
+        version: '1.0.0',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        platform: isRender ? 'Render' : isVercel ? 'Vercel' : 'Local',
-        wompiEnv: process.env.WOMPI_ENV || 'sandbox',
-        nodeVersion: process.version,
-        memory: {
-            used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
-        },
-
-        wompiConfigured: !!(process.env.WOMPI_PUBLIC_KEY && process.env.WOMPI_INTEGRITY_SECRET)
-    };
-       
-    res.status(200).json(healthCheck);
-});
-
-// ============================================
-// API ROUTES
-// ============================================
-
-// Rutas de productos
-app.use('/api/productos', productosRoutes);
-
-// Rutas de pagos Wompi
-app.use('/api/pagos', pagosRoutes);
-
-// ============================================
-// RUTA PRINCIPAL (SPA)
-// ============================================
-
-// Catch-all para servir index.html en cualquier ruta no API
-app.get('*', (req, res, next) => {
-    // Si la ruta empieza con /api, pasar al siguiente handler
-    if (req.path.startsWith('/api')) {
-        return next();
-    }
-    
-    // Servir index.html para todas las demás rutas (SPA)
-    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
-        if (err) {
-            console.error('Error sirviendo index.html:', err);
-            res.status(500).send('Error al cargar la aplicación');
-        }
+        environment: process.env.NODE_ENV || 'development'
     });
 });
+
+// Rutas de autenticación
+app.use('/routes/auth', authRoutes);
+
+// Rutas de productos
+app.use('/routes/productos', productosRoutes);
+
+// Rutas del dashboard
+app.use('/routes/dashboard', dashboardRoutes);
+
+// Rutas de pagos PSE
+app.use('/routes/pagos', pagosRoutes);
+
+// Rutas de upload
+app.use('/routes/upload', uploadRoutes);
+
+// ============================================
+// RUTAS DE PRUEBA Y DIAGNÓSTICO
+// ============================================
+
+// Ruta de prueba de base de datos
+app.get('/routes/test-db', async (req, res) => {
+    try {
+        const db = await import('./db.js');
+        
+        // Primero prueba conexión básica
+        const connectionTest = await db.default.query('SELECT NOW() as current_time');
+        
+        // Intenta contar productos
+        let productosInfo = { mensaje: 'Tabla no disponible' };
+        try {
+            const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
+            productosInfo = {
+                total: parseInt(result.rows[0].total),
+                tabla: 'productos',
+                estado: 'activa'
+            };
+        } catch (tableError) {
+            try {
+                // Intentar sin filtro 'activo'
+                const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
+                productosInfo = {
+                    total: parseInt(result.rows[0].total),
+                    tabla: 'productos',
+                    estado: 'sin columna activo'
+                };
+            } catch {
+                productosInfo = { error: 'Tabla productos no existe' };
+            }
+        }
+        
+        res.json({ 
+            success: true,
+            mensaje: 'Conexión a la base de datos exitosa',
+            timestamp: connectionTest.rows[0].current_time,
+            postgres_version: connectionTest.rows[0].pg_version.split(' ')[0],
+            productos: productosInfo
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en test-db:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error de conexión a la base de datos',
+            details: error.message 
+        });
+    }
+});
+
+// Ruta de salud del servidor
+app.get('/routes/health', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Servidor funcionando correctamente',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0',
+        uptime: process.uptime()
+    });
+});
+
+// ============================================
+// SERVICIÓN DE ARCHIVOS ESTÁTICOS
+// ============================================
+
+// Servir archivos subidos (corrige la ruta para que funcione en producción y desarrollo)
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+    setHeaders: (res, filePath) => {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    }
+}));
 
 // ============================================
 // MANEJO DE ERRORES
 // ============================================
 
-// 404 para rutas API no encontradas
-app.use('/api/*', (req, res) => {
-    res.status(404).json({
+// Manejo de rutas API no encontradas
+app.use('/routes/*', (req, res) => {
+    console.log(`❌ Ruta API no encontrada: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ 
         success: false,
-        error: 'Endpoint no encontrado',
-        path: req.path
+        error: 'Ruta no encontrada',
+        path: req.originalUrl,
     });
 });
 
-// Error handler global
-app.use((err, req, res, next) => {
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('❌ ERROR NO MANEJADO:');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('Timestamp:', new Date().toISOString());
-    console.error('Ruta:', req.method, req.path);
-    console.error('Error:', err.message);
-    console.error('Stack:', err.stack);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-    const statusCode = err.status || err.statusCode || 500;
-    
-    res.status(statusCode).json({
+// Error handler global para rutas de API
+app.use('/routes/*', (err, req, res, next) => {
+    console.error('❌ Error global de API:', err);
+    res.status(err.status || 500).json({ 
         success: false,
-        error: isProduction ? 'Error interno del servidor' : err.message,
-        ...((!isProduction) && { 
-            stack: err.stack,
-            details: err.toString() 
-        })
+        error: err.message || 'Error interno del servidor',
     });
 });
 
-
-// ============================================
-// INICIAR SERVIDOR
-// ============================================
-
-const server = app.listen(PORT, () => {
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🚀 SERVIDOR INICIADO CORRECTAMENTE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    // Información del servidor
-    console.log('📍 Puerto:', PORT);
-    console.log('🌍 Entorno:', process.env.NODE_ENV || 'development');
-    console.log('🏠 Plataforma:', isRender ? 'Render' : isVercel ? 'Vercel' : 'Local');
-    console.log('🔑 Wompi:', process.env.WOMPI_ENV || 'sandbox');
-    console.log('📦 Node:', process.version);
-    
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    // URLs disponibles
-    if (!isProduction) {
-        console.log('🔗 URLs disponibles:');
-        console.log(`   Local:    http://localhost:${PORT}`);
-        console.log(`   Network:  http://127.0.0.1:${PORT}`);
-    } else if (isRender) {
-        console.log('🔗 URL:', process.env.RENDER_EXTERNAL_URL);
-    } else if (isVercel) {
-        console.log('🔗 URL:', `https://${process.env.VERCEL_URL}`);
+// Catch-all route para SPA
+app.use('*', (req, res) => {
+    // Si es una ruta de API, devolver error
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({
+            success: false,
+            error: 'Endpoint de API no encontrado'
+        });
     }
     
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    // Rutas disponibles
-    console.log('📋 Rutas API disponibles:');
-    console.log('   GET    /health');
-    console.log('   GET    /api/productos');
-    console.log('   GET    /api/productos/destacados');
-    console.log('   GET    /api/productos/ofertas');
-    console.log('   GET    /api/pagos/config');
-    console.log('   GET    /api/pagos/bancos-pse');
-    console.log('   POST   /api/pagos/crear-transaccion');
-    console.log('   GET    /api/pagos/transaccion/:id');
-    
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
-    // Validaciones de configuración
-    const warnings = [];
-    
-    if (!process.env.WOMPI_PUBLIC_KEY) {
-        warnings.push('WOMPI_PUBLIC_KEY no configurado');
-    }
-    
-    if (!process.env.WOMPI_PRIVATE_KEY) {
-        warnings.push('WOMPI_PRIVATE_KEY no configurado');
-    }
-    
-    if (!process.env.WOMPI_INTEGRITY_SECRET) {
-        warnings.push('WOMPI_INTEGRITY_SECRET no configurado');
-    }
-    
-    if (!process.env.WOMPI_EVENT_SECRET) {
-        warnings.push('WOMPI_EVENT_SECRET no configurado');
-    }
-    
-    if (warnings.length > 0) {
-        console.log('⚠️  ADVERTENCIAS:');
-        warnings.forEach(warning => console.log(`   - ${warning}`));
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    }
-    
-    // Info de modo
-    if (!isProduction) {
-        console.log('⚠️  MODO DESARROLLO - Logs detallados activados');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    }
-    
-    console.log('\n✅ Servidor listo para recibir peticiones\n');
-});
-
-
-// ============================================
-// MANEJO DE SEÑALES DE CIERRE
-// ============================================
-
-const gracefulShutdown = (signal) => {
-    console.log(`\n⚠️  ${signal} recibido. Cerrando servidor gracefully...`);
-    
-    server.close(() => {
-        console.log('✅ Servidor cerrado correctamente');
-        process.exit(0);
-    });
-    
-    // Forzar cierre después de 10 segundos
-    setTimeout(() => {
-        console.error('❌ No se pudo cerrar el servidor gracefully, forzando cierre...');
-        process.exit(1);
-    }, 10000);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Manejar errores no capturados
-process.on('uncaughtException', (error) => {
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('💥 UNCAUGHT EXCEPTION:');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('Error:', error.message);
-    console.error('Stack:', error.stack);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-    // En producción, intentar cerrar gracefully
-    if (isProduction) {
-        gracefulShutdown('UNCAUGHT_EXCEPTION');
+    // Para cualquier otra ruta, intentar servir el frontend
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
     } else {
-        // En desarrollo, solo loggear
-        console.error('⚠️  Servidor continúa ejecutándose en modo desarrollo\n');
+        res.json({
+            success: true,
+            message: 'Backend funcionando - Frontend en Vercel',
+            api: 'https://proyecto-mercado-web.onrender.com',
+            frontend: 'https://proyecto-mercado-web.vercel.app'
+        });
     }
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('💥 UNHANDLED REJECTION:');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error('Razón:', reason);
-    console.error('Promesa:', promise);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+// ============================================
+// INICIALIZACIÓN DEL SERVIDOR
+// ============================================
+
+// Función para inicializar la base de datos
+async function initializeDatabase() {
+    try {
+        const db = await import('./db.js');
+        
+        // 1. Prueba conexión básica
+        const connectionTest = await db.default.query('SELECT NOW() as current_time');
+        console.log('✅ Base de datos conectada - Hora servidor:', connectionTest.rows[0].current_time);
+        
+        // 2. Verificar tabla productos
+        try {
+            const tableCheck = await db.default.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'productos'
+                );
+            `);
+            
+            if (tableCheck.rows[0].exists) {
+                // 3. Contar productos
+                try {
+                    const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
+                    console.log('📦 Productos activos:', Number(result.rows[0].total));
+                } catch {
+                    const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
+                    console.log('📦 Total productos:', Number(result.rows[0].total));
+                }
+            } else {
+                console.log('⚠️  Tabla productos no encontrada');
+            }
+        } catch (tableError) {
+            console.log('⚠️  Error verificando tabla:', tableError.message);
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error conectando a la base de datos:', error.message);
+        return false;
+    }
+}
+
+// Iniciar servidor
+async function startServer() {
+    console.log('🚀 Iniciando servidor...');
     
-    // No cerrar el servidor por promesas rechazadas, solo loggear
-    console.error('⚠️  Servidor continúa ejecutándose\n');
+    // Verificar conexión a la base de datos
+    const dbConnected = await initializeDatabase();
+    
+    if (!dbConnected) {
+        console.warn('⚠️  Servidor iniciado sin conexión a base de datos');
+    }
+    
+    // Iniciar servidor
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log('='.repeat(50));    
+        console.log(`🎉 Servidor ejecutándose en puerto: ${PORT}`);
+        console.log(`🌐 URL externa: ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}`);
+        console.log(`📊 Entorno: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🗄️  Base de datos: ${dbConnected ? '✅ Conectada' : '❌ Desconectada'}`);
+        console.log('='.repeat(50));
+        console.log('📋 Rutas disponibles:');
+        console.log('   🏠 / - Información del servidor');
+        console.log('   🔐 /routes/auth/* - Autenticación');
+        console.log('   📦 /routes/productos/* - Productos');
+        console.log('   📊 /routes/dashboard/* - Dashboard');
+        console.log('   💳 /routes/pagos/* - Pagos PSE');
+        console.log('   🩺 /routes/health - Salud del servidor');
+        console.log('   🧪 /routes/test-db - Prueba de base de datos');
+        console.log('='.repeat(50));
+    });
+}
+
+// Manejo graceful de cierre
+process.on('SIGINT', () => {
+    console.log('\n🛑 Cerrando servidor gracefulmente...');
+    process.exit(0);
 });
 
-// ============================================
-// EXPORTAR APP (para testing)
-// ============================================
+
+// Iniciar la aplicación
+startServer().catch(error => {
+    console.error('💥 Error fatal iniciando servidor:', error);
+    process.exit(1);
+});
 
 export default app;
