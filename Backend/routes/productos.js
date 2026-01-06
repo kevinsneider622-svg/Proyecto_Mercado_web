@@ -31,12 +31,6 @@ const validarPaginacion = (req, res, next) => {
 };
 
 
-
-
-
-
-
-
 /**
  * @route   GET /api/productos/buscar
  * @desc    Buscar productos por nombre o descripción

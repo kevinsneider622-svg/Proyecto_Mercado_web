@@ -1,6 +1,5 @@
 // ============================================
 // WOMPI.JS - BACKEND CONFIGURATION
-// Con debugging mejorado
 // ============================================
 
 import crypto from 'crypto';
@@ -29,7 +28,6 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 const isProduction = process.env.NODE_ENV === 'production';
 const hostname = process.env.HOSTNAME || '';
 const isRender = hostname.includes('onrender.com') || !!process.env.RENDER_EXTERNAL_URL;
-const isVercel = hostname.includes('vercel.app') || !!process.env.VERCEL_URL;
 
 // ============================================
 // DETERMINAR BASE_URL
@@ -39,15 +37,6 @@ let BASE_URL;
 if (process.env.BASE_URL) {
   BASE_URL = process.env.BASE_URL;
 } else if (isRender && process.env.RENDER_EXTERNAL_URL) {
-  BASE_URL = process.env.RENDER_EXTERNAL_URL;
-} else if (isVercel) {
-  if (process.env.VERCEL_URL) {
-    BASE_URL = process.env.VERCEL_URL.startsWith('http') 
-      ? process.env.VERCEL_URL 
-      : `https://${process.env.VERCEL_URL}`;
-  } else {
-    BASE_URL = 'https://proyecto-mercado-web-zebx.vercel.app';
-  }
 } else {
   BASE_URL = 'http://127.0.0.1:3000';
 }
@@ -87,7 +76,6 @@ const wompiConfig = {
   environment: process.env.WOMPI_ENV || 'sandbox',
   isProduction,
   isRender,
-  isVercel,
   
   // ============================================
   // MÉTODOS
@@ -146,7 +134,6 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('📌 NODE_ENV:', process.env.NODE_ENV || 'development');
 console.log('📌 HOSTNAME:', hostname || 'local');
 console.log('📌 RENDER_EXTERNAL_URL:', process.env.RENDER_EXTERNAL_URL || 'N/A');
-console.log('📌 VERCEL_URL:', process.env.VERCEL_URL || 'N/A');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
 console.log('🔑 Estado de Variables de Wompi:');
@@ -192,7 +179,6 @@ if (missingVars.length === 0) {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🔑 Entorno Wompi:', wompiConfig.environment.toUpperCase());
   console.log('🌐 Modo:', isProduction ? 'PRODUCCIÓN' : 'DESARROLLO');
-  console.log('🏠 Plataforma:', isRender ? 'Render' : isVercel ? 'Vercel' : 'Local');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🔗 URLs configuradas:');
   console.log('   Base URL:', wompiConfig.baseUrl);
