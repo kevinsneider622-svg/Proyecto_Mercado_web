@@ -1,14 +1,16 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+const path = require ('path'); 
+const {Pool}  = require  ('pg');
+const dotenv = require ('dotenv');
 
-dotenv.config();
+
+dotenv.config ({path: path.join(__dirname, '..', '.env')});
 
 // Configuración del pool de conexiones
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
+  password: String(process.env.DB_PASSWORD || ''),
   port: process.env.DB_PORT || 5432,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   
@@ -108,7 +110,7 @@ const closePool = async () => {
 };
 
 // Exportar todas las funciones
-export default {
+module.exports = {
   pool,
   query,
   withTransaction,

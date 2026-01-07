@@ -16,14 +16,11 @@
     <link rel="stylesheet" href="css/cart.css">
     <link rel="stylesheet" href="css/dashboard.css">
     
-    <script type="module"> 
-        import { CONFIG, UTILS, getAPI_BASE_URL } from './js/config.js';
-        
-        // Hacer disponible globalmente
-        window.CONFIG = CONFIG;
-        window.UTILS = UTILS;
-        window.API_BASE_URL = getAPI_BASE_URL();
 
+
+    <script src = "../js/config.js"></script>
+    <script> 
+    
         window.cart = [];
         window.currentUser = null;
 
@@ -39,35 +36,28 @@
 </head>
 <body>
 
-
-    
-    <!-- ========================================
-         ENCABEZADO SUPERIOR MEJORADO
-    ======================================== -->
-    <div class="top-header">
-        <div class="container">
-            <div class="header-promo">
-                <div class="promo-item">
-                    <i class="fas fa-shipping-fast"></i>
-                    <span>Envío gratis desde $50.000</span>
-                </div>
-                <div class="promo-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Pago 100% seguro</span>
-                </div>
+        <div class="header-promo">
+            <div class="promo-item">
+                <i class="fas fa-shipping-fast"></i>
+                <span>Envío gratis desde $50.000</span>
             </div>
-            <div class="header-contact">
-                <a href="tel:+573508239549" class="contact-item">
-                    <i class="fas fa-phone"></i>
-                    <span>+57 350 823 9549</span>
-                </a>
-                <a href="mailto:info@tudespensa.com" class="contact-item">
-                    <i class="fas fa-envelope"></i>
-                    <span>info@tudespensa.com</span>
-                </a>
+            <div class="promo-item">
+                <i class="fas fa-shield-alt"></i>
+                <span>Pago 100% seguro</span>
             </div>
         </div>
+        <div class="header-contact">
+            <a href="tel:+573508239549" class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span>+57 350 823 9549</span>
+            </a>
+            <a href="mailto:info@tudespensa.com" class="contact-item">
+                <i class="fas fa-envelope"></i>
+                <span>info@tudespensa.com</span>
+            </a>
+        </div>
     </div>
+</div>
 
     <!-- ========================================
          NAVEGACIÓN PRINCIPAL CON BARRA BUSCADORA

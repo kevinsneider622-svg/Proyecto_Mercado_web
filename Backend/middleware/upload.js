@@ -1,11 +1,6 @@
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-// Para usar __dirname con ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const multer = require ('multer');
+const path = require('path');
+const fs = require ('fs');
 
 // Asegurar que existan las carpetas
 const ensureUploadDirs = () => {
@@ -104,7 +99,7 @@ const handleUploadErrors = (err, req, res, next) => {
   next();
 };
 
-export {
+module.exports = {
   uploadMiddleware,
   handleUploadErrors,
   ensureUploadDirs

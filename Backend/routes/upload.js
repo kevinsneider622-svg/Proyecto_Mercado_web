@@ -1,15 +1,10 @@
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { uploadMiddleware, handleUploadErrors } from '../middleware/upload.js';
-import auth from './auth.js';
+const express = require ('express');
+const path = require ('path');
+const fs = require ('fs');
+const { uploadMiddleware, handleUploadErrors } = require ('../middleware/upload.js');
+const {auth} = require ('../middleware/auth.js');
 
 const router = express.Router();
-
-// Para usar __dirname con ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * @route   POST /api/upload/perfil
@@ -238,4 +233,4 @@ async function obtenerUsuarioPorId(usuarioId) {
   };
 }
 
-export default router;
+module.exports = router;

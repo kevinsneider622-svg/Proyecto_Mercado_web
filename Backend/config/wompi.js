@@ -2,11 +2,11 @@
 // WOMPI.JS - BACKEND CONFIGURATION
 // ============================================
 
-import crypto from 'crypto';
+const crypto = require ('crypto');
 
 // Cargar dotenv solo en desarrollo
 if (process.env.NODE_ENV !== 'production') {
-  const dotenv = await import('dotenv');
+  const dotenv = require ('dotenv');
   dotenv.config();
 }
 
@@ -39,6 +39,7 @@ if (process.env.BASE_URL) {
 } else if (isRender && process.env.RENDER_EXTERNAL_URL) {
 } else {
   BASE_URL = 'http://127.0.0.1:3000';
+
 }
 
 // ============================================
@@ -202,10 +203,17 @@ if (missingVars.length === 0) {
 // ============================================
 // EXPORTAR
 // ============================================
-export const generateIntegritySignature = (reference, amountInCents, currency, integrityKey) => {
+module.exports = generateIntegritySignature = (reference, amountInCents, currency, integrityKey) => {
   const cadena = `${reference}${amountInCents}${currency}${integrityKey}`;
   return crypto.createHash('sha256').update(cadena).digest('hex');
 };
 
-export default wompiConfig;
-export const config = wompiConfig;
+
+
+
+module.exports = {
+
+default: wompiConfig,
+config: wompiConfig
+
+} ;

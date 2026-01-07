@@ -1,6 +1,6 @@
-import { generateIntegritySignature } from '../config/wompi.js';
+const { generateIntegritySignature } = require ('../config/wompi.js');
 
-export const crearTransaccion = async (req, res) => {
+const crearTransaccion = async (req, res) => {
   try {
     const { amount, reference, customerEmail, currency = 'COP' } = req.body;
 
@@ -60,3 +60,5 @@ export const crearTransaccion = async (req, res) => {
     });
   }
 };
+
+module.exports = crearTransaccion;

@@ -1,25 +1,29 @@
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-import fs from 'fs';
+const express = require ('express');
+const cors = require ('cors');
+const path = require ('path');
+const dotenv  = require ('dotenv');
+const fs = require ('fs');
 
 // Importar rutas
-import productosRoutes from './routes/productos.js';
-import dashboardRoutes from './routes/dashboard.js';
-import authRoutes from './routes/auth.js';
-import pagosRoutes from './routes/pagos.js';
-import uploadRoutes from './routes/upload.js';
-
-dotenv.config();
+const productosRoutes  = require ('./routes/productos.js');
+const dashboardRoutes = require ('./routes/dashboard.js');
+const authRoutes = require ('./routes/auth.js');
+const pagosRoutes = require ('./routes/pagos.js');
+const uploadRoutes = require ('./routes/upload.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000; 
 
-// Fix para __dirname en ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const envPath = path.join(__dirname, '..', '.env');
+console.log ('.env cargando desde:', envPath);
+
+const result = dotenv.config ({path: envPath});
+
+if (result.error) {
+    console.error ('Falla al cargar .env:', result.error)
+} else {
+    console.log ('.env ha sido cargado exitosamente:');
+}
 
 // ============================================
 // CONFIGURACIÓN DE MIDDLEWARES
@@ -27,6 +31,7 @@ const __dirname = path.dirname(__filename);
 
 app.use(express.json()); // Para parsear JSON
 app.use(express.urlencoded({ extended: true })); // Para parsear form data
+
 
 // Configuración de CORS mejorada
 const corsOptions = {
@@ -52,7 +57,9 @@ const corsOptions = {
             return callback(null, true);
         }
 
-            if (isAllowed) {
+
+        const isAllowed = allowedOrigins.includes(origin);
+            if (isAllowed)  {
                 console.log('✅ Origen permitido por CORS:', origin);
                 callback(null, true);
             } else {
@@ -130,36 +137,36 @@ app.get('/', (req, res) => {
 });
 
 // Rutas de autenticación
-app.use('/routes/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Rutas de productos
-app.use('/routes/productos', productosRoutes);
+app.use('/api/productos', productosRoutes);
 
 // Rutas del dashboard
-app.use('/routes/dashboard', dashboardRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Rutas de pagos PSE
-app.use('/routes/pagos', pagosRoutes);
+app.use('/api/pagos', pagosRoutes);
 
 // Rutas de upload
-app.use('/routes/upload', uploadRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ============================================
 // RUTAS DE PRUEBA Y DIAGNÓSTICO
 // ============================================
 
 // Ruta de prueba de base de datos
-app.get('/routes/test-db', async (req, res) => {
+app.get('/api/test-db', async (req, res) => {
     try {
-        const db = await import('./db.js');
+        const db = require ('./db.js');
         
         // Primero prueba conexión básica
-        const connectionTest = await db.default.query('SELECT NOW() as current_time');
+        const connectionTest = await db.query('SELECT NOW() as current_time');
         
         // Intenta contar productos
         let productosInfo = { mensaje: 'Tabla no disponible' };
         try {
-            const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
+            const result = await db.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
             productosInfo = {
                 total: parseInt(result.rows[0].total),
                 tabla: 'productos',
@@ -168,7 +175,7 @@ app.get('/routes/test-db', async (req, res) => {
         } catch (tableError) {
             try {
                 // Intentar sin filtro 'activo'
-                const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
+                const result = await db.query('SELECT COUNT(*) as total FROM productos');
                 productosInfo = {
                     total: parseInt(result.rows[0].total),
                     tabla: 'productos',
@@ -198,7 +205,7 @@ app.get('/routes/test-db', async (req, res) => {
 });
 
 // Ruta de salud del servidor
-app.get('/routes/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         message: 'Servidor funcionando correctamente',
@@ -229,7 +236,7 @@ app.use('/uploads', express.static(uploadsPath, {
 // ============================================
 
 // Manejo de rutas API no encontradas
-app.use('/routes/*', (req, res) => {
+app.use('/api/*', (req, res) => {
     console.log(`❌ Ruta API no encontrada: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ 
         success: false,
@@ -239,7 +246,7 @@ app.use('/routes/*', (req, res) => {
 });
 
 // Error handler global para rutas de API
-app.use('/routes/*', (err, req, res, next) => {
+app.use('/api/*', (err, req, res, next) => {
     console.error('❌ Error global de API:', err);
     res.status(err.status || 500).json({ 
         success: false,
@@ -264,9 +271,8 @@ app.use('*', (req, res) => {
     } else {
         res.json({
             success: true,
-            message: 'Backend funcionando - Frontend en Vercel',
-            api: 'https://proyecto-mercado-web.onrender.com',
-            frontend: 'https://proyecto-mercado-web.vercel.app'
+            message: 'Back + Front Funcionando en Render',
+            api: 'https://proyecto-mercado-web.onrender.com'
         });
     }
 });
@@ -278,15 +284,15 @@ app.use('*', (req, res) => {
 // Función para inicializar la base de datos
 async function initializeDatabase() {
     try {
-        const db = await import('./db.js');
+        const db = require ('./db.js');
         
         // 1. Prueba conexión básica
-        const connectionTest = await db.default.query('SELECT NOW() as current_time');
+        const connectionTest = await db.query('SELECT NOW() as current_time');
         console.log('✅ Base de datos conectada - Hora servidor:', connectionTest.rows[0].current_time);
         
         // 2. Verificar tabla productos
         try {
-            const tableCheck = await db.default.query(`
+            const tableCheck = await db.query(`
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
                     WHERE table_name = 'productos'
@@ -296,10 +302,10 @@ async function initializeDatabase() {
             if (tableCheck.rows[0].exists) {
                 // 3. Contar productos
                 try {
-                    const result = await db.default.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
+                    const result = await db.query('SELECT COUNT(*) as total FROM productos WHERE activo = true');
                     console.log('📦 Productos activos:', Number(result.rows[0].total));
                 } catch {
-                    const result = await db.default.query('SELECT COUNT(*) as total FROM productos');
+                    const result = await db.query('SELECT COUNT(*) as total FROM productos');
                     console.log('📦 Total productos:', Number(result.rows[0].total));
                 }
             } else {
@@ -338,12 +344,12 @@ async function startServer() {
         console.log('='.repeat(50));
         console.log('📋 Rutas disponibles:');
         console.log('   🏠 / - Información del servidor');
-        console.log('   🔐 /routes/auth/* - Autenticación');
-        console.log('   📦 /routes/productos/* - Productos');
-        console.log('   📊 /routes/dashboard/* - Dashboard');
-        console.log('   💳 /routes/pagos/* - Pagos PSE');
-        console.log('   🩺 /routes/health - Salud del servidor');
-        console.log('   🧪 /routes/test-db - Prueba de base de datos');
+        console.log('   🔐 /api/auth/* - Autenticación');
+        console.log('   📦 /api/productos/* - Productos');
+        console.log('   📊 /api/dashboard/* - Dashboard');
+        console.log('   💳 /api/pagos/* - Pagos PSE');
+        console.log('   🩺 /api/health - Salud del servidor');
+        console.log('   🧪 /api/test-db - Prueba de base de datos');
         console.log('='.repeat(50));
     });
 }
@@ -361,4 +367,4 @@ startServer().catch(error => {
     process.exit(1);
 });
 
-export default app;
+module.exports = app;

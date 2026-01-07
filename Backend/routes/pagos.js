@@ -1,7 +1,7 @@
-import express from 'express';
-import crypto from 'crypto';
-import wompiConfig from '../config/wompi.js';
-import db from '../db.js';
+const express = require ('express');
+const crypto = require ('crypto');
+const wompiConfig = require ('../config/wompi.js');
+const db = require ('../db.js');
 
 const router = express.Router();
 
@@ -554,4 +554,4 @@ function mapearEstadoWompi(estadoWompi) {
     return estados[estadoWompi] || 'desconocido';
 }
 
-export default router;
+module.exports = router;

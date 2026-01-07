@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
-import db from '../db.js';
+const jwt = require ('jsonwebtoken');
+const db = require ('../db.js');
 
 /**
  * Middleware de autenticación JWT
@@ -181,8 +181,8 @@ const optionalAuth = async (req, res, next) => {
 };
 
 // Exportar middlewares
-export default auth;
-export {
+module.exports = {
+    auth,
     requireRole,
     optionalAuth
 };

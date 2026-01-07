@@ -1,5 +1,5 @@
-import express from 'express';
-import db from '../db.js';
+const express = require ('express');
+const db = require ('../db.js');
 
 const router = express.Router();
 
@@ -125,7 +125,7 @@ router.get('/test', async (req, res) => {
 });
 
 /**
- * @route   GET /api/productos/destacados
+ * @route   GET /Backend/routes/productos/destacados
  * @desc    Obtener productos destacados
  * @access  Público
  */
@@ -317,4 +317,4 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-export default router;
+module.exports = router;

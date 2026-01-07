@@ -1,8 +1,8 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import db from '../db.js';
-import auth from '../middleware/auth.js';
+const express = require ('express');
+const bcrypt = require ('bcryptjs');
+const jwt = require ('jsonwebtoken');
+const db = require ('../db.js');
+const {auth} = require ('../middleware/auth.js');
 
 
 const router = express.Router();
@@ -394,4 +394,4 @@ router.get('/test', (req, res) => {
 
 console.log('✅ Rutas de autenticación cargadas correctamente');
 
-export default router;
+module.exports = router;

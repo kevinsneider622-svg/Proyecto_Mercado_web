@@ -7,25 +7,9 @@ const CONFIG = {
         // URL base de la API - detecta automáticamente el entorno
         baseUrl: (() => {
            
-            // Verificar si existe variable de entorno (Front) 
-            if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
-                console.log('✅ Usando VITE_API_URL', window.ENV.VITE_API_URL);
-                return window.ENV.VITE_API_URL;
-            }
-
-
-            // Detectar entorno por hostname (Local)
-            
             const hostname = window.location.hostname;
             console.log('🏠 Hostname detectado:', hostname);
 
-              // Si estamos en Vercel, usar el backend en Render
-            if (hostname.includes('vercel.app')) {
-                console.log('🎯 Entorno: Frontend en Vercel → Backend en Render');
-                return 'https://proyecto-mercado-web.onrender.com';
-            }
-
-            // Si estamos en localhost, usar localhost
             const isDevelopment = hostname === 'localhost' ||
                                 hostname === '127.0.0.1' ||
                                 hostname.includes('local'); 
@@ -33,11 +17,16 @@ const CONFIG = {
             console.log('🎯 Entorno:', isDevelopment ? 'Desarrollo' : 'Producción');
 
             // Retornar URL según entorno
-            return isDevelopment
-                ? 'http://localhost:3000'  // Desarrollo
-                : 'https://proyecto-mercado-web.onrender.com'; // Producción  
+            if (isDevelopment) {
+                return 'http://localhost:3000'
+            } else {
+                return `${window.location.protocol}//${window.location.host}`;
+            }
+
         })()
+
     },
+
      
     // URLs específicas
     endpoints: {
@@ -708,21 +697,3 @@ if (document.readyState === 'loading') {
 } else {
     initializeApp();
 }
-
-// ============================================
-// EXPORTACIONES ES6 (para módulos)
-// ============================================
-
-export {
-    CONFIG,
-    UTILS,
-    getAPI_BASE_URL,
-    currentUser,
-    currentPage,
-    cart,
-    initializeApp,
-    showToast,
-    updateCartCounter,
-    saveCartToStorage,
-    setTheme
-};

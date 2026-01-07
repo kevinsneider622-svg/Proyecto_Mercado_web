@@ -1,5 +1,5 @@
-import express from 'express';
-import db from '../db.js';
+const express = require ('express');
+const db = require ('../db.js');
 
 const router = express.Router();
 
@@ -262,4 +262,4 @@ router.get('/tendencias', verificarAdmin, async (req, res) => {
     }
 });
 
-export default router;
+module.exports = router;
