@@ -1156,9 +1156,7 @@
     // ============================================
     // FUNCIONES DEL CARRITO 
     // ============================================
-    // ============================================
-    // FUNCIONES DEL CARRITO - CORREGIDAS
-    // ============================================
+
 
     function modificarCantidadCarrito(id, cambio) {
     console.log('🔄 Modificando cantidad:', { id, cambio });
