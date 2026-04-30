@@ -1,7 +1,7 @@
 const express = require ('express');
 const cors = require ('cors');
 const path = require ('path');
-const dotenv  = require ('dotenv');
+const dotenv = require ('dotenv');
 const fs = require ('fs');
 
 // Importar rutas
@@ -15,14 +15,14 @@ const app = express();
 const PORT = process.env.PORT || 3000; 
 
 const envPath = path.join(__dirname, '..', '.env');
-console.log ('.env cargando desde:', envPath);
+console.log ('📂 .env cargando desde:', envPath);
 
 const result = dotenv.config ({path: envPath});
 
 if (result.error) {
-    console.error ('Falla al cargar .env:', result.error)
+    console.error ('❌ error al cargar .env:', result.error);
 } else {
-    console.log ('.env ha sido cargado exitosamente:');
+    console.log ('✅ .env cargado correctamente');
 }
 
 // ============================================
